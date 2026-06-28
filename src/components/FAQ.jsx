@@ -1,7 +1,32 @@
 import { useState, useRef } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
-import faq from '../data/faq.json'
+const faq = [
+  {
+    id: 1,
+    pergunta: "Quem pode utilizar os descontos?",
+    resposta:
+      "Todos os alunos ativos da Escola Oficial do Inter Viamão mediante apresentação da carteirinha."
+  },
+  {
+    id: 2,
+    pergunta: "Como faço para receber o desconto?",
+    resposta:
+      "Basta apresentar sua carteirinha do Clube de Benefícios antes do pagamento."
+  },
+  {
+    id: 3,
+    pergunta: "Os descontos valem em todas as unidades?",
+    resposta:
+      "Os benefícios são válidos nas unidades participantes indicadas nesta página."
+  },
+  {
+    id: 4,
+    pergunta: "A carteirinha tem validade?",
+    resposta:
+      "Sim. Ela é válida enquanto o aluno estiver regularmente matriculado."
+  }
+];
 
 function FaqItem({ item, isOpen, onToggle }) {
   return (

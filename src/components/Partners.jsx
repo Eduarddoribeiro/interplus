@@ -1,7 +1,18 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
-import partners from '../data/partners.json'
 import PartnerCard from './PartnerCard'
+
+const partners = [
+  {
+    id: 1,
+    nome: "Em breve",
+    categoria: "Todos",
+    desconto: "Novos benefícios em breve",
+    imagem: "/placeholder.png",
+    instagram: "",
+    site: ""
+  }
+];
 
 const ALL = 'Todos'
 

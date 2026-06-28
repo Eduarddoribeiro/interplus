@@ -1,9 +1,35 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Store, Gift, Users, Star } from 'lucide-react'
-import stats from '../data/stats.json'
 
 const iconMap = { Store, Gift, Users, Star }
+
+const stats = [
+  {
+    id: 1,
+    icon: "Store",
+    value: "20+",
+    label: "Empresas parceiras"
+  },
+  {
+    id: 2,
+    icon: "Gift",
+    value: "30%",
+    label: "Descontos exclusivos"
+  },
+  {
+    id: 3,
+    icon: "Users",
+    value: "300+",
+    label: "Famílias beneficiadas"
+  },
+  {
+    id: 4,
+    icon: "Star",
+    value: "100%",
+    label: "Benefício gratuito"
+  }
+]
 
 export default function Stats() {
   const ref = useRef(null)
