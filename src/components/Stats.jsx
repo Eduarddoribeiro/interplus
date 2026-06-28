@@ -1,33 +1,33 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { Store, Gift, Users, Star } from 'lucide-react'
+import { Store, BadgePercent, Handshake, HeartHandshake } from 'lucide-react'
 
-const iconMap = { Store, Gift, Users, Star }
+const iconMap = { Store, BadgePercent, Handshake, HeartHandshake }
 
 const stats = [
   {
     id: 1,
     icon: "Store",
-    value: "20+",
-    label: "Empresas parceiras"
+    title: "Empresas Parceiras",
+    description: "Negócios locais que oferecem benefícios exclusivos aos nossos alunos."
   },
   {
     id: 2,
-    icon: "Gift",
-    value: "30%",
-    label: "Descontos exclusivos"
+    icon: "BadgePercent",
+    title: "Descontos Exclusivos",
+    description: "Vantagens negociadas especialmente para quem faz parte da Família Inter."
   },
   {
     id: 3,
-    icon: "Users",
-    value: "300+",
-    label: "Famílias beneficiadas"
+    icon: "Handshake",
+    title: "Uso Simples",
+    description: "Apresente sua carteirinha de aluno no estabelecimento parceiro e aproveite seu benefício."
   },
   {
     id: 4,
-    icon: "Star",
-    value: "100%",
-    label: "Benefício gratuito"
+    icon: "HeartHandshake",
+    title: "Família Inter",
+    description: "Mais vantagens para quem faz parte da Escola Oficial do Inter Viamão."
   }
 ]
 
@@ -44,12 +44,17 @@ export default function Stats() {
           transition={{ duration: 0.5 }}
           ref={ref}
         >
-          <p className="text-[11px] font-bold text-inter-red tracking-[.12em] uppercase mb-3">
-            Números que importam
-          </p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-neutral-900 tracking-tight">
-            Benefícios reais para famílias reais
-          </h2>
+         <p className="text-[11px] font-bold text-inter-red tracking-[.12em] uppercase mb-3">
+  Clube de Benefícios
+</p>
+
+<h2 className="font-display text-5xl uppercase text-neutral-900 leading-none">
+  Vantagens de fazer parte da Família Inter
+</h2>
+
+<p className="text-neutral-500 mt-5 max-w-2xl">
+  Muito além dos treinos. Nossa comunidade tem acesso a benefícios exclusivos em empresas parceiras de Viamão.
+</p>
         </motion.div>
 
         <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-px bg-neutral-200 rounded-2xl overflow-hidden">
@@ -63,13 +68,21 @@ export default function Stats() {
                 transition={{ duration: 0.5, delay: i * 0.08 }}
                 className="bg-white px-8 py-10 flex flex-col items-center text-center hover:bg-neutral-50 transition-colors group"
               >
-                <div className="w-11 h-11 rounded-xl bg-inter-red/8 flex items-center justify-center mb-5 group-hover:bg-inter-red/15 transition-colors">
-                  {Icon && <Icon size={20} className="text-inter-red" />}
-                </div>
-                <div className="text-4xl md:text-5xl font-black text-neutral-900 tracking-[-0.04em] leading-none">
-                  {s.value}
-                </div>
-                <div className="text-xs font-medium text-neutral-400 mt-2.5">{s.label}</div>
+                <div className="w-14 h-14 rounded-2xl bg-inter-red/10 flex items-center justify-center mb-6 group-hover:bg-inter-red transition-all duration-300">
+  {Icon && (
+    <Icon
+      size={26}
+      className="text-inter-red group-hover:text-white transition-colors duration-300"
+    />
+  )}
+</div>
+                <h3 className="font-display text-2xl md:text-3xl uppercase text-neutral-900 leading-none">
+  {s.title}
+</h3>
+
+<p className="text-sm text-neutral-500 leading-relaxed mt-3">
+  {s.description}
+</p>
               </motion.div>
             )
           })}
