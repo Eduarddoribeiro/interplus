@@ -4,8 +4,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
+  sans: ["Inter", "sans-serif"],
+  display: ["Teko", "sans-serif"],
+},
       colors: {
         inter: {
           red: '#C8102E',
