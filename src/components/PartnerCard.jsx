@@ -1,86 +1,204 @@
 import { motion } from 'framer-motion'
-import { Instagram, Globe, MessageCircle, MapPin } from 'lucide-react'
+import {
+  Instagram,
+  Globe,
+  MessageCircle,
+  MapPin
+} from 'lucide-react'
 
 export default function PartnerCard({ partner, index }) {
-  const { nome, categoria, logo, imagem, desconto, descricao, instagram, site, whatsapp, endereco } = partner
+  const {
+    nome,
+    categoria,
+    imagem,
+    desconto,
+    descricao,
+    instagram,
+    site,
+    whatsapp,
+    endereco
+  } = partner
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
+    <motion.article
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.4, delay: index * 0.06 }}
-      className="group relative bg-white rounded-2xl border border-neutral-200 overflow-hidden hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300"
+      transition={{ duration: 0.45, delay: index * 0.08 }}
+      className="
+        flex
+        flex-col
+        h-full
+        group
+        overflow-hidden
+        rounded-3xl
+        bg-white
+        border
+        border-neutral-200
+        hover:border-inter-red/30
+        hover:shadow-xl
+        hover:-translate-y-2
+        transition-all
+        duration-300
+      "
     >
-      {/* Red accent bar */}
-      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-inter-red scale-y-0 group-hover:scale-y-100 origin-top transition-transform duration-300 z-10" />
-
-      {/* Image */}
-      <div className="relative h-44 overflow-hidden bg-neutral-100">
+      <div className="relative h-44 shrink-0 overflow-hidden bg-neutral-100">
         <img
           src={imagem}
           alt={nome}
           loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        {/* Discount badge */}
-        <div className="absolute top-3 right-3 px-2.5 py-1 bg-inter-red text-white text-[11px] font-black rounded-full tracking-wide shadow-lg">
+
+        <div
+          className="
+            absolute
+            top-4
+            right-4
+            rounded-xl
+            bg-inter-red
+            px-3
+            py-1.5
+            text-[11px]
+            font-bold
+            uppercase
+            tracking-wide
+            text-white
+            shadow-lg
+          "
+        >
           {desconto}
         </div>
       </div>
 
-      {/* Body */}
-      <div className="p-5">
-        {/* Header row */}
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-lg shrink-0">
-            {logo}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-neutral-900 truncate">{nome}</h3>
-            <p className="text-xs text-neutral-400 font-medium mt-0.5">{categoria}</p>
-          </div>
-        </div>
+      <div className="p-6 flex flex-col flex-1">
+        <span
+          className="
+            inline-flex
+            w-fit
+            rounded-full
+            bg-inter-red/10
+            px-3
+            py-1
+            mb-3
+            text-[10px]
+            font-bold
+            uppercase
+            tracking-[.18em]
+            text-inter-red
+          "
+        >
+          {categoria}
+        </span>
 
-        {/* Description */}
-        <p className="text-xs text-neutral-500 leading-relaxed mb-1">{descricao}</p>
+        <h3
+          className="
+            font-display
+            text-3xl
+            uppercase
+            leading-none
+            tracking-wide
+            text-neutral-900
+            mb-2
+          "
+        >
+          {nome}
+        </h3>
 
-        {/* Address */}
+        <p
+          className="
+            text-sm
+            leading-6
+            text-neutral-500
+            mb-3
+          "
+        >
+          {descricao}
+        </p>
+
         {endereco && (
-          <div className="flex items-center gap-1 mb-4">
-            <MapPin size={11} className="text-neutral-300 shrink-0" />
-            <span className="text-[11px] text-neutral-400 truncate">{endereco}</span>
+          <div className="flex items-start gap-2 mb-4">
+            <MapPin
+              size={15}
+              className="text-inter-red mt-1 shrink-0"
+            />
+            <span className="text-sm text-neutral-600">
+              {endereco}
+            </span>
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          <a
-            href={instagram}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-neutral-200 text-[11px] font-semibold text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 transition-all"
-          >
-            <Instagram size={12} /> Instagram
-          </a>
-          <a
-            href={site}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-neutral-200 text-[11px] font-semibold text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 transition-all"
-          >
-            <Globe size={12} /> Site
-          </a>
-          <a
-            href={`https://wa.me/${whatsapp}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-[#25D366]/40 text-[11px] font-semibold text-[#25D366] hover:bg-[#25D366] hover:text-white hover:border-[#25D366] transition-all"
-          >
-            <MessageCircle size={12} /> WhatsApp
-          </a>
+        <div className="mt-auto w-full">
+          {whatsapp && (
+            <a
+              href={`https://wa.me/${whatsapp}`}
+              target="_blank"
+              rel="noreferrer"
+              className="
+                flex
+                items-center
+                justify-center
+                gap-2
+                w-full
+                rounded-xl
+                bg-[#22C55E]
+                py-3
+                text-sm
+                font-semibold
+                text-white
+                transition-all
+                hover:bg-[#16A34A]
+              "
+            >
+              <MessageCircle size={17} />
+              Entrar em contato
+            </a>
+          )}
+
+          {(instagram || site) && (
+            <div className="flex justify-center gap-5 mt-3">
+              {instagram && (
+                <a
+                  href={instagram}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="
+                    flex
+                    items-center
+                    gap-1
+                    text-sm
+                    text-neutral-500
+                    hover:text-inter-red
+                    transition-colors
+                  "
+                >
+                  <Instagram size={15} />
+                  Instagram
+                </a>
+              )}
+
+              {site && (
+                <a
+                  href={site}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="
+                    flex
+                    items-center
+                    gap-1
+                    text-sm
+                    text-neutral-500
+                    hover:text-inter-red
+                    transition-colors
+                  "
+                >
+                  <Globe size={15} />
+                  Site
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
-    </motion.div>
+    </motion.article>
   )
 }

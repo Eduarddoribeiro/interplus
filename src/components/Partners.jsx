@@ -5,16 +5,81 @@ import PartnerCard from './PartnerCard'
 const partners = [
   {
     id: 1,
-    nome: "Sua empresa aqui",
-    categoria: "Parceiros",
-    desconto: "EM BREVE",
-    imagem: "/placeholder.png",
+    nome: "Academia Evolution",
+    categoria: "Academia",
+    desconto: "15% OFF",
+    imagem: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
     descricao:
-      "Estamos formando a primeira rede de parceiros da Escola Oficial do Inter Viamão. Sua empresa pode fazer parte dessa história.",
-    instagram: "",
+      "Treinamento, musculação e acompanhamento personalizado para toda a família.",
+    instagram: "https://instagram.com/",
     site: "",
-    whatsapp: "",
-    endereco: ""
+    whatsapp: "5551999991111",
+    endereco: "Av. Liberdade, 820 - Viamão"
+  },
+  {
+    id: 2,
+    nome: "Bella Pizza",
+    categoria: "Restaurante",
+    desconto: "10% OFF",
+    imagem: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&q=80",
+    descricao:
+      "Pizzas artesanais, massas e um ambiente ideal para reunir a família.",
+    instagram: "https://instagram.com/",
+    site: "",
+    whatsapp: "5551999992222",
+    endereco: "Rua Júlio de Castilhos, 315 - Viamão"
+  },
+  {
+    id: 3,
+    nome: "Ótica Visão",
+    categoria: "Ótica",
+    desconto: "20% OFF",
+    imagem: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=800&q=80",
+    descricao:
+      "Óculos de grau, solares e lentes com atendimento especializado.",
+    instagram: "https://instagram.com/",
+    site: "https://example.com",
+    whatsapp: "5551999993333",
+    endereco: "Centro de Viamão"
+  },
+  {
+    id: 4,
+    nome: "Clínica Vida",
+    categoria: "Saúde",
+    desconto: "12% OFF",
+    imagem: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=80",
+    descricao:
+      "Consultas, exames e atendimento humanizado para toda a família.",
+    instagram: "https://instagram.com/",
+    site: "",
+    whatsapp: "5551999994444",
+    endereco: "Av. Senador Salgado Filho, 1200"
+  },
+  {
+    id: 5,
+    nome: "Pet Center Amigo",
+    categoria: "Pet Shop",
+    desconto: "18% OFF",
+    imagem: "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=800&q=80",
+    descricao:
+      "Banho, tosa, acessórios e produtos para o bem-estar do seu pet.",
+    instagram: "https://instagram.com/",
+    site: "",
+    whatsapp: "5551999995555",
+    endereco: "Rua Bento Gonçalves, 450"
+  },
+  {
+    id: 6,
+    nome: "Livraria Horizonte",
+    categoria: "Educação",
+    desconto: "10% OFF",
+    imagem: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&q=80",
+    descricao:
+      "Livros, materiais escolares e artigos de papelaria para todas as idades.",
+    instagram: "https://instagram.com/",
+    site: "",
+    whatsapp: "5551999996666",
+    endereco: "Praça Júlio de Castilhos, 88"
   }
 ]
 
