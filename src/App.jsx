@@ -17,7 +17,7 @@ export default function App() {
         <Stats />
         <HowItWorks />
         <Partners />
-        <Banner />
+        {/* <Banner /> */}
         <BecomePartner />
         <FAQ />
       </main>

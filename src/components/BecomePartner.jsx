@@ -8,21 +8,26 @@ import {
   Store
 } from 'lucide-react'
 
+import SectionHeader from './common/SectionHeader'
+
 const benefits = [
   {
     icon: <Megaphone size={18} />,
     title: 'Divulgação institucional',
-    description: 'Sua empresa será divulgada no site e nas redes sociais da Escola Oficial do Inter Viamão.'
+    description:
+      'Sua empresa será divulgada no site e nas redes sociais da Escola Oficial do Inter Viamão.'
   },
   {
     icon: <Users size={18} />,
     title: 'Novos clientes',
-    description: 'Conecte sua marca a centenas de famílias da nossa comunidade.'
+    description:
+      'Conecte sua marca a centenas de famílias da nossa comunidade.'
   },
   {
     icon: <BadgePercent size={18} />,
     title: 'Benefício exclusivo',
-    description: 'Você define o desconto ou vantagem oferecida aos alunos.'
+    description:
+      'Você define o desconto ou vantagem oferecida aos alunos.'
   }
 ]
 
@@ -38,36 +43,34 @@ export default function BecomePartner() {
     <section
       id="seja-parceiro"
       ref={ref}
-      className="bg-inter-red py-24 px-6 md:px-12 overflow-hidden"
+      className="bg-inter-red py-24"
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
 
         <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: .6 }}
-          className="grid lg:grid-cols-2 gap-20 items-center"
-        >
+  initial={{ opacity: 0, y: 25 }}
+  animate={inView ? { opacity: 1, y: 0 } : {}}
+  transition={{ duration: .6 }}
+  className="grid lg:grid-cols-[1.05fr_.95fr] gap-20 items-start"
+>
 
           {/* ESQUERDA */}
 
           <div>
-
-            <span className="text-white/70 uppercase tracking-[.18em] text-xs font-bold">
-              Seja um parceiro
-            </span>
-
-            <h2 className="font-display text-5xl md:text-6xl uppercase leading-[.9] text-white mt-4">
-              Sua empresa pode crescer junto da Família Inter
-            </h2>
-
-            <p className="mt-8 text-lg leading-8 text-white/80 max-w-xl">
-              Faça parte do Clube de Benefícios da Escola Oficial do Inter
-              Viamão e aproxime sua marca de uma comunidade formada por
-              alunos, pais e responsáveis.
-            </p>
-
-            <div className="space-y-5 mt-10">
+      <SectionHeader
+  light
+  className="max-w-xl mb-14"
+  eyebrow="Seja um parceiro"
+  title={
+    <>
+      Sua empresa pode crescer
+      <br />
+      junto da Família Inter
+    </>
+  }
+  description="Faça parte do Clube de Benefícios da Escola Oficial do Inter Viamão e aproxime sua marca de uma comunidade formada por alunos, pais e responsáveis."
+/>
+            <div className="space-y-6">
 
               {benefits.map((item) => (
 
@@ -136,7 +139,6 @@ export default function BecomePartner() {
               Quero ser parceiro
 
               <ArrowRight size={18} />
-
             </a>
 
           </div>
@@ -144,7 +146,7 @@ export default function BecomePartner() {
           {/* DIREITA */}
 
           <motion.div
-            initial={{ opacity: 0, scale: .95 }}
+            initial={{ opacity: 0, scale: .96 }}
             animate={inView ? { opacity: 1, scale: 1 } : {}}
             transition={{ delay: .15 }}
             className="
@@ -171,51 +173,34 @@ export default function BecomePartner() {
               <Store size={30} />
             </div>
 
-            <h3 className="text-3xl font-display uppercase leading-none text-neutral-900 mb-8">
+            <h3 className="font-display text-3xl uppercase leading-none text-neutral-900 mb-8">
               O que sua empresa recebe?
             </h3>
 
             <div className="space-y-6">
 
-              <div className="flex justify-between items-center border-b border-neutral-100 pb-4">
-                <span className="text-neutral-500">
-                  Divulgação permanente
-                </span>
+              {[
+                'Divulgação permanente',
+                'Publicação nas redes sociais',
+                'Alcance de famílias locais',
+                'Participação gratuita'
+              ].map((item) => (
 
-                <span className="font-bold">
-                  ✓
-                </span>
-              </div>
+                <div
+                  key={item}
+                  className="flex justify-between items-center border-b border-neutral-100 pb-4"
+                >
+                  <span className="text-neutral-500">
+                    {item}
+                  </span>
 
-              <div className="flex justify-between items-center border-b border-neutral-100 pb-4">
-                <span className="text-neutral-500">
-                  Publicação nas redes sociais
-                </span>
+                  <span className="font-bold text-inter-red">
+                    ✓
+                  </span>
 
-                <span className="font-bold">
-                  ✓
-                </span>
-              </div>
+                </div>
 
-              <div className="flex justify-between items-center border-b border-neutral-100 pb-4">
-                <span className="text-neutral-500">
-                  Alcance de famílias locais
-                </span>
-
-                <span className="font-bold">
-                  ✓
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-500">
-                  Participação gratuita
-                </span>
-
-                <span className="font-bold">
-                  ✓
-                </span>
-              </div>
+              ))}
 
             </div>
 
@@ -229,8 +214,8 @@ export default function BecomePartner() {
             >
               <p className="text-sm leading-7 text-neutral-600">
                 Basta oferecer um benefício exclusivo aos alunos da Escola
-                Oficial do Inter Viamão. Nossa equipe fará a análise da
-                proposta e entrará em contato para concluir a parceria.
+                Oficial do Inter Viamão. Nossa equipe analisará a proposta
+                e entrará em contato para formalizar a parceria.
               </p>
             </div>
 

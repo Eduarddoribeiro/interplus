@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation } from 'swiper/modules'
+import SectionHeader from './common/SectionHeader'
 
 import 'swiper/css'
 import 'swiper/css/navigation'
@@ -113,21 +114,17 @@ export default function Partners() {
           transition={{ duration: .5 }}
           className="mb-12"
         >
-          <p className="text-[11px] font-bold uppercase tracking-[.12em] text-inter-red mb-3">
-            Empresas Parceiras
-          </p>
-
-          <h2 className="font-display text-5xl md:text-6xl uppercase leading-[.9]">
-            Onde você poderá
-            <br />
-            aproveitar seus benefícios
-          </h2>
-
-          <p className="mt-5 max-w-2xl text-neutral-500 leading-8">
-            Estamos formando nossa rede de empresas parceiras.
-            Em breve você encontrará descontos e vantagens exclusivas para
-            alunos e famílias da Escola Oficial do Inter Viamão.
-          </p>
+          <SectionHeader
+  eyebrow="Empresas Parceiras"
+  title={
+    <>
+      Onde você poderá
+      <br />
+      aproveitar seus benefícios
+    </>
+  }
+  description="Estamos formando nossa rede de empresas parceiras. Em breve você encontrará descontos e vantagens exclusivas para alunos e famílias da Escola Oficial do Inter Viamão."
+/>
         </motion.div>
 
         {/* Filtros */}
