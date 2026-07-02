@@ -16,3 +16,32 @@
     text-wrap: balance;
   }
 }
+
+/* ---------- SWIPER ---------- */
+
+.partners-swiper .swiper-button-next,
+.partners-swiper .swiper-button-prev {
+  color: #C8102E;
+  width: auto;
+  height: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  transition: all .25s ease;
+}
+
+.partners-swiper .swiper-button-next::after,
+.partners-swiper .swiper-button-prev::after {
+  font-size: 38px;
+  font-weight: 900;
+}
+
+.partners-swiper .swiper-button-next:hover,
+.partners-swiper .swiper-button-prev:hover {
+  color: #8d0f22;
+  transform: scale(1.15);
+}
+
+.partners-swiper .swiper-button-disabled {
+  opacity: .25;
+}
