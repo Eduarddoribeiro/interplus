@@ -1,92 +1,174 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { Store, BadgePercent, Handshake, HeartHandshake } from 'lucide-react'
+import {
+  Store,
+  BadgePercent,
+  Handshake,
+  HeartHandshake
+} from 'lucide-react'
 
-const iconMap = { Store, BadgePercent, Handshake, HeartHandshake }
+import SectionHeader from './common/SectionHeader'
+
+const iconMap = {
+  Store,
+  BadgePercent,
+  Handshake,
+  HeartHandshake
+}
 
 const stats = [
   {
     id: 1,
-    icon: "Store",
-    title: "Empresas Parceiras",
-    description: "Negócios locais que oferecem benefícios exclusivos aos nossos alunos."
+    icon: 'Store',
+    title: 'Empresas Parceiras',
+    description:
+      'Negócios locais que oferecem benefícios exclusivos aos nossos alunos.'
   },
   {
     id: 2,
-    icon: "BadgePercent",
-    title: "Descontos Exclusivos",
-    description: "Vantagens negociadas especialmente para quem faz parte da Família Inter."
+    icon: 'BadgePercent',
+    title: 'Descontos Exclusivos',
+    description:
+      'Vantagens negociadas especialmente para quem faz parte da Família Inter.'
   },
   {
     id: 3,
-    icon: "Handshake",
-    title: "Uso Simples",
-    description: "Apresente sua carteirinha de aluno no estabelecimento parceiro e aproveite seu benefício."
+    icon: 'Handshake',
+    title: 'Uso Simples',
+    description:
+      'Apresente sua carteirinha de aluno no estabelecimento parceiro e aproveite seu benefício.'
   },
   {
     id: 4,
-    icon: "HeartHandshake",
-    title: "Família Inter",
-    description: "Mais vantagens para quem faz parte da Escola Oficial do Inter Viamão."
+    icon: 'HeartHandshake',
+    title: 'Família Inter',
+    description:
+      'Mais vantagens para quem faz parte da Escola Oficial do Inter Viamão.'
   }
 ]
 
 export default function Stats() {
   const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-80px' })
+
+  const inView = useInView(ref, {
+    once: true,
+    margin: '-80px'
+  })
 
   return (
-    <section id="stats" className="py-24 bg-neutral-50 px-6 md:px-12">
-      <div className="max-w-5xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-          ref={ref}
-        >
-         <p className="text-[11px] font-bold text-inter-red tracking-[.12em] uppercase mb-3">
-  Clube de Benefícios
-</p>
+    <section
+      id="stats"
+      className="py-24 bg-neutral-50"
+      ref={ref}
+    >
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
 
-<h2 className="font-display text-5xl uppercase text-neutral-900 leading-none">
-  Vantagens de fazer parte da Família Inter
-</h2>
+        <SectionHeader
+          eyebrow="Clube de Benefícios"
+          title={
+            <>
+              Vantagens de fazer
+              <br />
+              parte da Família Inter
+            </>
+          }
+          description="Muito além dos treinos. Nossa comunidade tem acesso a benefícios exclusivos em empresas parceiras de Viamão."
+        />
 
-<p className="text-neutral-500 mt-5 max-w-2xl">
-  Muito além dos treinos. Nossa comunidade tem acesso a benefícios exclusivos em empresas parceiras de Viamão.
-</p>
-        </motion.div>
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6 mt-16">
 
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-px bg-neutral-200 rounded-2xl overflow-hidden">
-          {stats.map((s, i) => {
-            const Icon = iconMap[s.icon]
+          {stats.map((item, index) => {
+
+            const Icon = iconMap[item.icon]
+
             return (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="bg-white px-8 py-10 flex flex-col items-center text-center hover:bg-neutral-50 transition-colors group"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-inter-red/10 flex items-center justify-center mb-6 group-hover:bg-inter-red transition-all duration-300">
-  {Icon && (
-    <Icon
-      size={26}
-      className="text-inter-red group-hover:text-white transition-colors duration-300"
-    />
-  )}
-</div>
-                <h3 className="font-display text-2xl md:text-3xl uppercase text-neutral-900 leading-none">
-  {s.title}
-</h3>
 
-<p className="text-sm text-neutral-500 leading-relaxed mt-3">
-  {s.description}
-</p>
-              </motion.div>
+              <motion.article
+                key={item.id}
+                initial={{ opacity: 0, y: 24 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{
+                  duration: .5,
+                  delay: index * .08
+                }}
+                className="
+                  group
+                  h-full
+                  rounded-3xl
+                  border
+                  border-neutral-200
+                  bg-white
+                  p-8
+                  transition-all
+                  duration-300
+                  hover:-translate-y-2
+                  hover:border-inter-red/30
+                  hover:shadow-xl
+                "
+              >
+
+                <div
+                  className="
+                    w-16
+                    h-16
+                    rounded-2xl
+                    bg-inter-red/10
+                    flex
+                    items-center
+                    justify-center
+                    mb-8
+                    transition-all
+                    duration-300
+                    group-hover:bg-inter-red
+                  "
+                >
+
+                  {Icon && (
+
+                    <Icon
+                      size={30}
+                      className="
+                        text-inter-red
+                        transition-colors
+                        duration-300
+                        group-hover:text-white
+                      "
+                    />
+
+                  )}
+
+                </div>
+
+                <h3
+                  className="
+                    font-display
+                    text-3xl
+                    uppercase
+                    leading-none
+                    text-neutral-900
+                    mb-5
+                  "
+                >
+                  {item.title}
+                </h3>
+
+                <p
+                  className="
+                    text-neutral-500
+                    leading-7
+                  "
+                >
+                  {item.description}
+                </p>
+
+              </motion.article>
+
             )
+
           })}
+
         </div>
+
       </div>
     </section>
   )

@@ -1,104 +1,185 @@
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
-import { BadgeCheck, Store, BadgePercent } from "lucide-react";
+import { useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
+import {
+  BadgeCheck,
+  Store,
+  BadgePercent
+} from 'lucide-react'
+
+import SectionHeader from './common/SectionHeader'
 
 const steps = [
   {
-    num: "01",
+    num: '01',
     icon: BadgeCheck,
-    title: "Apresente sua carteirinha",
-    desc: "Ao visitar uma empresa parceira, basta apresentar sua carteirinha de aluno da Escola Oficial do Inter Viamão.",
+    title: 'Apresente sua carteirinha',
+    desc:
+      'Ao visitar uma empresa parceira, basta apresentar sua carteirinha de aluno da Escola Oficial do Inter Viamão.'
   },
   {
-    num: "02",
+    num: '02',
     icon: Store,
-    title: "Escolha um parceiro",
-    desc: "Confira os estabelecimentos participantes do Clube de Benefícios e aproveite as vantagens disponíveis.",
+    title: 'Escolha um parceiro',
+    desc:
+      'Confira os estabelecimentos participantes do Clube de Benefícios e aproveite as vantagens disponíveis.'
   },
   {
-    num: "03",
+    num: '03',
     icon: BadgePercent,
-    title: "Receba seu benefício",
-    desc: "O desconto é aplicado na hora, de forma simples, rápida e exclusiva para alunos ativos da Família Inter.",
-  },
-];
+    title: 'Receba seu benefício',
+    desc:
+      'O desconto é aplicado na hora, de forma simples, rápida e exclusiva para alunos ativos da Família Inter.'
+  }
+]
 
 export default function HowItWorks() {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const ref = useRef(null)
+
+  const inView = useInView(ref, {
+    once: true,
+    margin: '-80px'
+  })
 
   return (
-    <section id="como-funciona" className="py-24 bg-white px-6 md:px-12">
-      <div className="max-w-5xl mx-auto" ref={ref}>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-        >
-          <p className="text-[11px] font-bold text-inter-red tracking-[.12em] uppercase mb-3">
-            Como Funciona
-          </p>
+    <section
+      id="como-funciona"
+      className="py-24 bg-white"
+      ref={ref}
+    >
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
 
-          <h2 className="font-display text-5xl md:text-6xl uppercase leading-none text-neutral-900">
-            Aproveitar seus benefícios é muito simples
-          </h2>
+        <SectionHeader
+          eyebrow="Como Funciona"
+          title={
+            <>
+              Aproveitar seus benefícios
+              <br />
+              é muito simples
+            </>
+          }
+          description="Em poucos passos, você utiliza sua carteirinha de aluno e garante descontos exclusivos nas empresas parceiras da Escola Oficial do Inter Viamão."
+        />
 
-          <p className="mt-5 text-neutral-500 text-base leading-relaxed max-w-xl">
-            Em poucos passos, você utiliza sua carteirinha de aluno e garante
-            descontos exclusivos nas empresas parceiras da Escola Oficial do
-            Inter Viamão.
-          </p>
-        </motion.div>
+        <div className="relative mt-16">
 
-        <div className="mt-14 grid md:grid-cols-3 gap-6 relative">
-          {/* Connector line (desktop) */}
-          <div className="hidden md:block absolute top-9 left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent pointer-events-none" />
+          <div className="hidden lg:block absolute top-10 left-[17%] right-[17%] h-px bg-neutral-200" />
 
-          {steps.map((s, i) => {
-            const Icon = s.icon;
+          <div className="grid lg:grid-cols-3 gap-8">
 
-            return (
-              <motion.div
-                key={s.num}
-                initial={{ opacity: 0, y: 24 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.55, delay: i * 0.1 }}
-                className="group relative p-8 rounded-2xl border border-neutral-200 bg-white hover:border-inter-red/40 hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300"
-              >
-                {/* Step badge */}
-                <div className="w-12 h-12 rounded-xl bg-inter-red flex items-center justify-center mb-6">
-                  <Icon size={22} className="text-white" />
-                </div>
+            {steps.map((step, index) => {
 
-                <div className="text-[10px] font-bold text-neutral-300 tracking-widest mb-2">
-                  PASSO {s.num}
-                </div>
+              const Icon = step.icon
 
-                <h3
+              return (
+
+                <motion.article
+                  key={step.num}
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={inView ? { opacity: 1, y: 0 } : {}}
+                  transition={{
+                    duration: .5,
+                    delay: index * .12
+                  }}
                   className="
-    font-display
-    text-3xl
-    uppercase
-    leading-none
-    tracking-wide
-    text-neutral-900
-    mb-4
-  "
+                    group
+                    relative
+                    h-full
+                    rounded-3xl
+                    border
+                    border-neutral-200
+                    bg-white
+                    p-8
+                    transition-all
+                    duration-300
+                    hover:-translate-y-2
+                    hover:border-inter-red/30
+                    hover:shadow-xl
+                  "
                 >
-                  {s.title}
-                </h3>
 
-                <p className="text-sm text-neutral-500 leading-relaxed">
-                  {s.desc}
-                </p>
+                  <div className="flex items-center justify-between mb-8">
 
-                {/* Hover accent line */}
-                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-inter-red rounded-l-2xl scale-y-0 group-hover:scale-y-100 origin-top transition-transform duration-300" />
-              </motion.div>
-            );
-          })}
+                    <div
+                      className="
+                        w-14
+                        h-14
+                        rounded-2xl
+                        bg-inter-red
+                        flex
+                        items-center
+                        justify-center
+                      "
+                    >
+                      <Icon
+                        size={26}
+                        className="text-white"
+                      />
+                    </div>
+
+                    <span
+                      className="
+                        text-[11px]
+                        font-bold
+                        uppercase
+                        tracking-[.18em]
+                        text-neutral-300
+                      "
+                    >
+                      PASSO {step.num}
+                    </span>
+
+                  </div>
+
+                  <h3
+                    className="
+                      font-display
+                      text-3xl
+                      uppercase
+                      leading-none
+                      text-neutral-900
+                      mb-5
+                    "
+                  >
+                    {step.title}
+                  </h3>
+
+                  <p
+                    className="
+                      text-neutral-500
+                      leading-7
+                    "
+                  >
+                    {step.desc}
+                  </p>
+
+                  <div
+                    className="
+                      absolute
+                      left-0
+                      top-0
+                      bottom-0
+                      w-1
+                      rounded-l-3xl
+                      bg-inter-red
+                      scale-y-0
+                      origin-top
+                      transition-transform
+                      duration-300
+                      group-hover:scale-y-100
+                    "
+                  />
+
+                </motion.article>
+
+              )
+
+            })}
+
+          </div>
+
         </div>
+
       </div>
     </section>
-  );
+  )
 }
