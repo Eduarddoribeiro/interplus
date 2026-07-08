@@ -3,25 +3,34 @@ import { motion, useInView } from 'framer-motion'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation } from 'swiper/modules'
 import SectionHeader from './common/SectionHeader'
-
+import {
+  LayoutGrid,
+  Dumbbell,
+  Utensils,
+  Glasses,
+  HeartPulse,
+  PawPrint,
+  GraduationCap,
+  Gem
+} from 'lucide-react'
 import 'swiper/css'
 import 'swiper/css/navigation'
-
-
+import polettoJoiasLogo from '../assets/partners/poletto-joias.webp'
 import PartnerCard from './PartnerCard'
 
 const partners = [
   {
     id: 1,
-    nome: "Academia Evolution",
-    categoria: "Academia",
-    desconto: "15% OFF",
-    imagem: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
+    nome: "Poletto Joias",
+    categoria: "Joias e Acessórios",
+    desconto: "10% OFF",
+    imagem: polettoJoiasLogo,
     descricao: "Treinamento, musculação e acompanhamento personalizado para toda a família.",
-    instagram: "https://instagram.com/",
+    instagram: "https://www.instagram.com/polettojoias/",
     site: "",
-    whatsapp: "5551999991111",
-    endereco: "Av. Liberdade, 820 - Viamão"
+    whatsapp: "51993735839",
+    maps: "https://maps.app.goo.gl/EXHscTjoroQXYWt88"
+
   },
   {
     id: 2,
@@ -87,6 +96,17 @@ const partners = [
 
 const ALL = 'Todos'
 
+const categoryIcons = {
+  Todos: LayoutGrid,
+  Academia: Dumbbell,
+  Restaurante: Utensils,
+  Ótica: Glasses,
+  Saúde: HeartPulse,
+  'Pet Shop': PawPrint,
+  Educação: GraduationCap,
+  'Joias e Acessórios': Gem
+}
+
 export default function Partners() {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-60px' })
@@ -118,9 +138,9 @@ export default function Partners() {
   eyebrow="Empresas Parceiras"
   title={
     <>
-      Onde você poderá
+      Escolha onde 
       <br />
-      aproveitar seus benefícios
+      usar sua carteirinha
     </>
   }
   description="Estamos formando nossa rede de empresas parceiras. Em breve você encontrará descontos e vantagens exclusivas para alunos e famílias da Escola Oficial do Inter Viamão."
@@ -135,19 +155,43 @@ export default function Partners() {
           transition={{ delay: .15 }}
           className="flex flex-wrap gap-2 mb-12"
         >
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActive(cat)}
-              className={`px-5 py-2 rounded-full border transition-all ${
-                active === cat
-                  ? 'bg-inter-red border-inter-red text-white'
-                  : 'bg-white border-neutral-200 hover:border-neutral-400'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat) => {
+  const Icon = categoryIcons[cat]
+
+  return (
+    <button
+      key={cat}
+      onClick={() => setActive(cat)}
+      className={`
+        inline-flex
+        items-center
+        gap-2
+        rounded-full
+        px-5
+        py-2.5
+        border
+        text-sm
+        font-medium
+        transition-all
+        duration-300
+        ${
+          active === cat
+            ? 'bg-inter-red border-inter-red text-white shadow-md'
+            : 'bg-white border-neutral-200 text-neutral-600 hover:border-inter-red/40 hover:text-inter-red'
+        }
+      `}
+    >
+      {Icon && (
+        <Icon
+          size={16}
+          strokeWidth={2.2}
+        />
+      )}
+
+      <span>{cat}</span>
+    </button>
+  )
+})}
         </motion.div>
 
         {/* Carrossel */}

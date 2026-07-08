@@ -1,104 +1,154 @@
-import { useState, useRef } from 'react'
-import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
+
+import SectionHeader from './common/SectionHeader'
+
 const faq = [
   {
     id: 1,
-    pergunta: "Quem pode utilizar os descontos?",
+    pergunta: 'Quem pode utilizar os descontos?',
     resposta:
-      "Todos os alunos ativos da Escola Oficial do Inter Viamão mediante apresentação da carteirinha."
+      'Todos os alunos ativos da Escola Oficial do Inter Viamão mediante apresentação da carteirinha.'
   },
   {
     id: 2,
-    pergunta: "Como faço para receber o desconto?",
+    pergunta: 'Como faço para receber o desconto?',
     resposta:
-      "Basta apresentar sua carteirinha do Clube de Benefícios antes do pagamento."
+      'Basta apresentar sua carteirinha do Clube de Benefícios antes do pagamento.'
   },
   {
     id: 3,
-    pergunta: "Os descontos valem em todas as unidades?",
+    pergunta: 'Os descontos valem em todas as unidades?',
     resposta:
-      "Os benefícios são válidos nas unidades participantes indicadas nesta página."
+      'Os benefícios são válidos nas unidades participantes indicadas nesta página.'
   },
   {
     id: 4,
-    pergunta: "A carteirinha tem validade?",
+    pergunta: 'A carteirinha tem validade?',
     resposta:
-      "Sim. Ela é válida enquanto o aluno estiver regularmente matriculado."
+      'Sim. Ela permanece válida enquanto o aluno estiver regularmente matriculado.'
   }
-];
+]
 
 function FaqItem({ item, isOpen, onToggle }) {
   return (
-    <div className="border-b border-neutral-200">
+    <motion.article
+      layout
+      className="
+        rounded-3xl
+        border
+        border-neutral-200
+        bg-white
+        px-8
+        transition-all
+        duration-300
+        hover:border-inter-red/30
+        hover:shadow-lg
+      "
+    >
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between gap-4 py-5 text-left group"
+        className="w-full py-6 flex items-center justify-between gap-6 text-left"
       >
-        <span className={`text-sm font-semibold transition-colors ${isOpen ? 'text-inter-red' : 'text-neutral-800 group-hover:text-inter-red'}`}>
+        <h3
+          className={`
+            font-semibold
+            text-lg
+            transition-colors
+            ${
+              isOpen
+                ? 'text-inter-red'
+                : 'text-neutral-900'
+            }
+          `}
+        >
           {item.pergunta}
-        </span>
+        </h3>
+
         <ChevronDown
-          size={18}
-          className={`shrink-0 text-neutral-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-inter-red' : ''}`}
+          size={22}
+          className={`
+            shrink-0
+            transition-all
+            duration-300
+            ${
+              isOpen
+                ? 'rotate-180 text-inter-red'
+                : 'text-neutral-400'
+            }
+          `}
         />
       </button>
+
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
-            key="answer"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.28, ease: 'easeInOut' }}
+            initial={{
+              height: 0,
+              opacity: 0
+            }}
+            animate={{
+              height: 'auto',
+              opacity: 1
+            }}
+            exit={{
+              height: 0,
+              opacity: 0
+            }}
+            transition={{
+              duration: .25
+            }}
             className="overflow-hidden"
           >
-            <p className="text-sm text-neutral-500 leading-relaxed pb-5">
+            <p className="pb-7 leading-7 text-neutral-500">
               {item.resposta}
             </p>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.article>
   )
 }
 
 export default function FAQ() {
-  const ref    = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-60px' })
-  const [openId, setOpenId] = useState(null)
+  const [openId, setOpenId] = useState(1)
 
   return (
-    <section id="faq" className="py-24 bg-white px-6 md:px-12">
-      <div className="max-w-2xl mx-auto" ref={ref}>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-12"
-        >
-          <p className="text-[11px] font-bold text-inter-red tracking-[.12em] uppercase mb-3">
-            Dúvidas frequentes
-          </p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-neutral-900 tracking-tight">
-            Temos respostas
-          </h2>
-        </motion.div>
+    <section
+      id="faq"
+      className="py-24 bg-white"
+    >
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
+        <SectionHeader
+          align="center"
+          eyebrow="Dúvidas Frequentes"
+          title="Temos respostas"
+          description="Respondemos as principais dúvidas sobre o Clube de Benefícios da Escola Oficial do Inter Viamão."
+        />
+
+        <div className="max-w-4xl mx-auto mt-14 space-y-4">
+
           {faq.map((item) => (
+
             <FaqItem
               key={item.id}
               item={item}
               isOpen={openId === item.id}
-              onToggle={() => setOpenId(openId === item.id ? null : item.id)}
+              onToggle={() =>
+                setOpenId(
+                  openId === item.id
+                    ? null
+                    : item.id
+                )
+              }
             />
+
           ))}
-        </motion.div>
+
+        </div>
+
       </div>
     </section>
   )
