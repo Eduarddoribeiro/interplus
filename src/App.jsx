@@ -1,27 +1,26 @@
-import Navbar       from './components/Navbar'
-import Hero         from './components/Hero'
-import Stats        from './components/Stats'
-import HowItWorks   from './components/HowItWorks'
-import Partners     from './components/Partners'
-import Banner       from './components/Banner'
-import BecomePartner from './components/BecomePartner'
-import FAQ          from './components/FAQ'
-import Footer       from './components/Footer'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+
+import Benefits from './pages/Benefits'
+import CommercialCenter from './pages/CommercialCenter'
 
 export default function App() {
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main>
-        <Hero />
-        <Stats />
-        <HowItWorks />
-        <Partners />
-        {/* <Banner /> */}
-        <BecomePartner />
-        <FAQ />
-      </main>
-      <Footer />
-    </div>
+    <BrowserRouter>
+
+      <Routes>
+
+        <Route
+          path="/"
+          element={<Benefits />}
+        />
+
+        <Route
+          path="/commercial-center"
+          element={<CommercialCenter />}
+        />
+
+      </Routes>
+
+    </BrowserRouter>
   )
 }
