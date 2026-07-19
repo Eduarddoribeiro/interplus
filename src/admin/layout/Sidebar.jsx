@@ -17,9 +17,9 @@ const menu = [
     to: '/admin'
   },
   {
-    label: 'Leads',
+    label: 'Contatos',
     icon: Users,
-    to: '/admin/leads'
+    to: '/admin/students'
   },
   {
     label: 'Experimentais',

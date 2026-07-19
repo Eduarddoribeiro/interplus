@@ -5,7 +5,7 @@ import Benefits from './pages/Benefits'
 import Layout from './admin/layout/Layout'
 
 import Dashboard from './admin/pages/Dashboard'
-import Leads from './admin/pages/Leads'
+import Students from './admin/pages/Students'
 import Experimentals from './admin/pages/Experimentals'
 import FollowUps from './admin/pages/FollowUps'
 import Reports from './admin/pages/Reports'
@@ -37,8 +37,8 @@ export default function App() {
           />
 
           <Route
-            path="leads"
-            element={<Leads />}
+            path="Students"
+            element={<Students />}
           />
 
           <Route
