@@ -16,6 +16,7 @@
     "@fontsource/inter": "^5.2.8",
     "@fontsource/manrope": "^5.2.8",
     "@fontsource/teko": "^5.2.7",
+    "@supabase/supabase-js": "^2.110.7",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.383.0",
     "react": "^18.3.0",

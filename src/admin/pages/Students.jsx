@@ -1,13 +1,31 @@
+import { useEffect, useState } from 'react'
 import SectionTitle from '../components/SectionTitle'
 import { Search, Plus, Filter } from 'lucide-react'
+import { getContacts } from '../../services/contacts'
 
 export default function Students() {
+  const [contacts, setContacts] = useState([])
+
+  useEffect(() => {
+    async function loadContacts() {
+      try {
+        const data = await getContacts()
+        console.log(data)
+        setContacts(data)
+      } catch (error) {
+        console.error('Erro ao buscar contatos:', error)
+      }
+    }
+
+    loadContacts()
+  }, [])
+
   return (
     <div className="space-y-8">
 
       <SectionTitle
-        title="Alunos"
-        description="Gerencie todos os alunos desde o primeiro contato até a matrícula."
+        title="Contatos"
+        description="Gerencie todos os contatos desde o primeiro atendimento até a matrícula."
       />
 
       {/* Toolbar */}
@@ -23,7 +41,7 @@ export default function Students() {
 
           <input
             type="text"
-            placeholder="Buscar aluno, responsável ou WhatsApp..."
+            placeholder="Buscar criança, responsável ou WhatsApp..."
             className="w-full rounded-xl border border-neutral-200 bg-white py-3 pl-11 pr-4 outline-none transition focus:border-inter-red"
           />
 
@@ -32,80 +50,79 @@ export default function Students() {
         <div className="flex gap-3">
 
           <button className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-3 font-medium hover:bg-neutral-100">
-
             <Filter size={18} />
-
             Filtros
-
           </button>
 
           <button className="flex items-center gap-2 rounded-xl bg-inter-red px-5 py-3 font-semibold text-white shadow-lg hover:opacity-90">
-
             <Plus size={18} />
-
             Novo Contato
-
           </button>
 
         </div>
 
       </div>
 
-      {/* Students */}
+      {/* Lista */}
 
       <div className="space-y-5">
 
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+        {contacts.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-10 text-center text-neutral-500">
+            Nenhum contato cadastrado.
+          </div>
+        )}
 
-          <div className="flex items-start justify-between">
+        {contacts.map((contact) => (
 
-            <div>
+          <div
+            key={contact.id}
+            className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm"
+          >
 
-              <h3 className="text-lg font-bold">
-                João Pedro
-              </h3>
+            <div className="flex items-start justify-between">
 
-              <p className="text-sm text-neutral-500">
-                8 anos
+              <div>
+
+                <h3 className="text-lg font-bold">
+                  {contact.child_name}
+                </h3>
+
+                <p className="text-sm text-neutral-500">
+                  Responsável: {contact.responsible_name}
+                </p>
+
+              </div>
+
+              <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
+                {contact.status}
+              </span>
+
+            </div>
+
+            <div className="mt-5 grid gap-3 text-sm text-neutral-600 lg:grid-cols-2">
+
+              <p>📱 {contact.phone}</p>
+
+              <p>📍 {contact.source || '-'}</p>
+
+              <p>🏠 {contact.neighborhood || '-'}</p>
+
+              <p>
+                ⚽ {contact.experimental_date
+                  ? `${contact.experimental_date} • ${contact.experimental_time ?? ''}`
+                  : 'Sem experimental agendada'}
               </p>
 
             </div>
 
-            <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
-
-              Experimental Agendada
-
-            </span>
+            <button className="mt-6 w-full rounded-xl border border-neutral-200 py-3 font-medium transition hover:bg-neutral-100">
+              Abrir Ficha
+            </button>
 
           </div>
 
-          <div className="mt-5 grid gap-3 text-sm text-neutral-600 lg:grid-cols-2">
-
-            <p>
-              👤 Responsável: Carlos Silva
-            </p>
-
-            <p>
-              📱 (51) 99999-9999
-            </p>
-
-            <p>
-              📍 Origem: Instagram
-            </p>
-
-            <p>
-              ⚽ Experimental: 23/07 • 19:00
-            </p>
-
-          </div>
-
-          <button className="mt-6 w-full rounded-xl border border-neutral-200 py-3 font-medium transition hover:bg-neutral-100">
-
-            Abrir Ficha
-
-          </button>
-
-        </div>
+        ))}
 
       </div>
 
