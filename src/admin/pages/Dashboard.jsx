@@ -4,10 +4,10 @@ import {
   followUps
 } from '../data/mock'
 
-import StatCard from '../components/StatCard'
-import SectionTitle from '../components/SectionTitle'
-import ExperimentalCard from '../components/ExperimentalCard'
-import FollowUpCard from '../components/FollowUpCard'
+import StatCard from '../components/common/StatCard'
+import SectionTitle from '../components/common/SectionTitle'
+import ExperimentalCard from '../components/dashboard/ExperimentalCard'
+import FollowUpCard from '../components/dashboard/FollowUpCard'
 
 export default function Dashboard() {
   return (
