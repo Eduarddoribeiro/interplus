@@ -1,20 +1,17 @@
-import Layout from './Layout'
-
 import {
   stats,
   experimentals,
   followUps
-} from './data/mock'
+} from '../data/mock'
 
-import StatCard from './components/StatCard'
-import SectionTitle from './components/SectionTitle'
-import ExperimentalCard from './components/ExperimentalCard'
-import FollowUpCard from './components/FollowUpCard'
+import StatCard from '../components/StatCard'
+import SectionTitle from '../components/SectionTitle'
+import ExperimentalCard from '../components/ExperimentalCard'
+import FollowUpCard from '../components/FollowUpCard'
 
 export default function Dashboard() {
   return (
-    <Layout>
-
+    <>
       <SectionTitle
         title="Visão Geral"
         description="Acompanhe experimentais, retornos e novos leads."
@@ -72,7 +69,6 @@ export default function Dashboard() {
         </div>
 
       </div>
-
-    </Layout>
+    </>
   )
 }
