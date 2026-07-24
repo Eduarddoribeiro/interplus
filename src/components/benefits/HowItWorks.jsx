@@ -6,7 +6,7 @@ import {
   BadgePercent
 } from 'lucide-react'
 
-import SectionHeader from '../commonSectionHeader'
+import SectionHeader from '../common/SectionHeader'
 
 const steps = [
   {
