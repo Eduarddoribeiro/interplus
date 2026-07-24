@@ -7,7 +7,7 @@ import {
   HeartHandshake
 } from 'lucide-react'
 
-import SectionHeader from '../common/sectionHeader'
+import SectionHeader from '../common/SectionHeader'
 
 const iconMap = {
   Store,

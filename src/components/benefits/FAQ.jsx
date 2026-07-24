@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 
-import SectionHeader from '../common/sectionHeader'
+import SectionHeader from '../common/SectionHeader'
 
 const faq = [
   {
