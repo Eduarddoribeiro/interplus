@@ -16,11 +16,13 @@
     "@fontsource/inter": "^5.2.8",
     "@fontsource/manrope": "^5.2.8",
     "@fontsource/teko": "^5.2.7",
+    "@supabase/supabase-js": "^2.110.7",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.383.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-icons": "^5.7.0",
+    "react-router-dom": "^7.18.1",
     "swiper": "^14.0.1"
   },
   "devDependencies": {

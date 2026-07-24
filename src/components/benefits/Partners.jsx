@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation } from 'swiper/modules'
-import SectionHeader from './common/SectionHeader'
+import SectionHeader from '../common/sectionHeader'
 import {
   LayoutGrid,
   Dumbbell,
@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import 'swiper/css'
 import 'swiper/css/navigation'
-import polettoJoiasLogo from '../assets/partners/poletto-joias.webp'
+import polettoJoiasLogo from '../../assets/partners/poletto-joias.webp'
 import PartnerCard from './PartnerCard'
 
 const partners = [

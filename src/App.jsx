@@ -1,27 +1,72 @@
-import Navbar       from './components/Navbar'
-import Hero         from './components/Hero'
-import Stats        from './components/Stats'
-import HowItWorks   from './components/HowItWorks'
-import Partners     from './components/Partners'
-import Banner       from './components/Banner'
-import BecomePartner from './components/BecomePartner'
-import FAQ          from './components/FAQ'
-import Footer       from './components/Footer'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Benefits from "./pages/Benefits";
+import PublicRegistration from "./pages/PublicRegistration";
+
+import Layout from "./admin/layout/Layout";
+
+import Dashboard from "./admin/pages/Dashboard";
+import Students from "./admin/pages/Students";
+import Experimentals from "./admin/pages/Experimentals";
+import FollowUps from "./admin/pages/FollowUps";
+import Reports from "./admin/pages/Reports";
+import Settings from "./admin/pages/Settings";
 
 export default function App() {
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main>
-        <Hero />
-        <Stats />
-        <HowItWorks />
-        <Partners />
-        {/* <Banner /> */}
-        <BecomePartner />
-        <FAQ />
-      </main>
-      <Footer />
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+
+        {/* Site */}
+
+        <Route
+          path="/"
+          element={<Benefits />}
+        />
+
+        <Route
+          path="/experimental"
+          element={<PublicRegistration />}
+        />
+
+        {/* CRM */}
+
+        <Route
+          path="/admin"
+          element={<Layout />}
+        >
+          <Route
+            index
+            element={<Dashboard />}
+          />
+
+          <Route
+            path="students"
+            element={<Students />}
+          />
+
+          <Route
+            path="experimentals"
+            element={<Experimentals />}
+          />
+
+          <Route
+            path="follow-ups"
+            element={<FollowUps />}
+          />
+
+          <Route
+            path="reports"
+            element={<Reports />}
+          />
+
+          <Route
+            path="settings"
+            element={<Settings />}
+          />
+        </Route>
+
+      </Routes>
+    </BrowserRouter>
+  );
 }
