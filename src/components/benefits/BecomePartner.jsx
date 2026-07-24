@@ -8,7 +8,7 @@ import {
   Store
 } from 'lucide-react'
 
-import SectionHeader from './common/SectionHeader'
+import SectionHeader from '../common/sectionHeader' 
 
 const benefits = [
   {

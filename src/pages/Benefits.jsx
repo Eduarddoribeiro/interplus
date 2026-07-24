@@ -1,11 +1,11 @@
-import Navbar from '../components/Navbar'
-import Hero from '../components/Hero'
-import Stats from '../components/Stats'
-import HowItWorks from '../components/HowItWorks'
-import Partners from '../components/Partners'
-import BecomePartner from '../components/BecomePartner'
-import FAQ from '../components/FAQ'
-import Footer from '../components/Footer'
+import Navbar from '../components/benefits/Navbar'
+import Hero from '../components/benefits/Hero'
+import Stats from '../components/benefits/Stats'
+import HowItWorks from '../components/benefits/HowItWorks'
+import Partners from '../components/benefits/Partners'
+import BecomePartner from '../components/benefits/BecomePartner'
+import FAQ from '../components/benefits/FAQ'
+import Footer from '../components/benefits/Footer'
 
 export default function Benefits() {
   return (

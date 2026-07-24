@@ -1,20 +1,20 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Benefits from './pages/Benefits'
+import Benefits from "./pages/Benefits";
+import PublicRegistration from "./pages/PublicRegistration";
 
-import Layout from './admin/layout/Layout'
+import Layout from "./admin/layout/Layout";
 
-import Dashboard from './admin/pages/Dashboard'
-import Students from './admin/pages/Students'
-import Experimentals from './admin/pages/Experimentals'
-import FollowUps from './admin/pages/FollowUps'
-import Reports from './admin/pages/Reports'
-import Settings from './admin/pages/Settings'
+import Dashboard from "./admin/pages/Dashboard";
+import Students from "./admin/pages/Students";
+import Experimentals from "./admin/pages/Experimentals";
+import FollowUps from "./admin/pages/FollowUps";
+import Reports from "./admin/pages/Reports";
+import Settings from "./admin/pages/Settings";
 
 export default function App() {
   return (
     <BrowserRouter>
-
       <Routes>
 
         {/* Site */}
@@ -24,20 +24,24 @@ export default function App() {
           element={<Benefits />}
         />
 
+        <Route
+          path="/experimental"
+          element={<PublicRegistration />}
+        />
+
         {/* CRM */}
 
         <Route
           path="/admin"
           element={<Layout />}
         >
-
           <Route
             index
             element={<Dashboard />}
           />
 
           <Route
-            path="Students"
+            path="students"
             element={<Students />}
           />
 
@@ -60,11 +64,9 @@ export default function App() {
             path="settings"
             element={<Settings />}
           />
-
         </Route>
 
       </Routes>
-
     </BrowserRouter>
-  )
+  );
 }

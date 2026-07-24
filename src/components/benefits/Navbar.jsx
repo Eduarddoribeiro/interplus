@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { useScrolled } from "../hooks/useScrolled";
+import { useScrolled } from "../../hooks/useScrolled";
 
 const links = [
   { label: "Como funciona", href: "#como-funciona" },
