@@ -1,30 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  LOST_REASON,
-  LOST_REASON_OPTIONS,
-} from "../../constants/lostReasons";
 
 import {
   AlertCircle,
   CalendarClock,
-  CalendarDays,
   CircleCheckBig,
-  Clock3,
-  GraduationCap,
   ListPlus,
-  MessageCircle,
   PhoneCall,
   RefreshCw,
-  RotateCcw,
   UserRound,
   X,
-  XCircle,
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
-import {
-  WAITING_REASON_CARD_LABELS,
-} from "../../constants/waitingListReasons";
+
+import FollowUpCard from "../components/followUps/FollowUpCard";
+import WaitingListCard from "../components/followUps/WaitingListCard";
+
+import { LOST_REASON_OPTIONS } from "../../constants/lostReasons";
 
 import {
   getFollowUpCenter,
@@ -33,7 +25,6 @@ import {
   loseFromFollowUp,
   closeWaitingListContact,
 } from "../../services/contacts";
-
 
 const FILTERS = [
   {
@@ -58,8 +49,6 @@ const FILTERS = [
   },
 ];
 
-
-
 export default function FollowUps() {
   const [followUps, setFollowUps] = useState([]);
   const [waitingList, setWaitingList] = useState([]);
@@ -67,14 +56,11 @@ export default function FollowUps() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [activeFilter, setActiveFilter] =
-    useState("today");
+  const [activeFilter, setActiveFilter] = useState("today");
 
-  const [actionContact, setActionContact] =
-    useState(null);
+  const [actionContact, setActionContact] = useState(null);
 
-  const [actionType, setActionType] =
-    useState(null);
+  const [actionType, setActionType] = useState(null);
 
   const [saving, setSaving] = useState(false);
 
@@ -94,14 +80,9 @@ export default function FollowUps() {
       setFollowUps(data.followUps || []);
       setWaitingList(data.waitingList || []);
     } catch (err) {
-      console.error(
-        "Erro ao carregar retornos:",
-        err
-      );
+      console.error("Erro ao carregar retornos:", err);
 
-      setError(
-        "Não foi possível carregar os retornos."
-      );
+      setError("Não foi possível carregar os retornos.");
     } finally {
       setLoading(false);
     }
@@ -135,22 +116,19 @@ export default function FollowUps() {
         updated = await scheduleFollowUp(
           actionContact.id,
           payload.followUpDate,
-          payload.notes
+          payload.notes,
         );
       }
 
       if (actionType === "enroll") {
-        updated = await enrollFromFollowUp(
-          actionContact.id,
-          payload.notes
-        );
+        updated = await enrollFromFollowUp(actionContact.id, payload.notes);
       }
 
       if (actionType === "lose") {
         updated = await loseFromFollowUp(
           actionContact.id,
           payload.lostReason,
-          payload.notes
+          payload.notes,
         );
       }
 
@@ -163,32 +141,19 @@ export default function FollowUps() {
        */
       if (updated?.status === "follow_up") {
         setFollowUps((current) =>
-          current.map((item) =>
-            item.id === updated.id
-              ? updated
-              : item
-          )
+          current.map((item) => (item.id === updated.id ? updated : item)),
         );
       } else {
         setFollowUps((current) =>
-          current.filter(
-            (item) =>
-              item.id !== actionContact.id
-          )
+          current.filter((item) => item.id !== actionContact.id),
         );
       }
 
       closeActionForce();
     } catch (err) {
-      console.error(
-        "Erro ao atualizar retorno:",
-        err
-      );
+      console.error("Erro ao atualizar retorno:", err);
 
-      alert(
-        err?.message ||
-          "Não foi possível atualizar o retorno."
-      );
+      alert(err?.message || "Não foi possível atualizar o retorno.");
     } finally {
       setSaving(false);
     }
@@ -204,32 +169,20 @@ export default function FollowUps() {
     try {
       setSaving(true);
 
-      await closeWaitingListContact(
-        actionContact.id,
-        {
-          lostReason: payload.lostReason,
-          notes: payload.notes,
-        }
-      );
+      await closeWaitingListContact(actionContact.id, {
+        lostReason: payload.lostReason,
+        notes: payload.notes,
+      });
 
       setWaitingList((current) =>
-        current.filter(
-          (item) =>
-            item.id !== actionContact.id
-        )
+        current.filter((item) => item.id !== actionContact.id),
       );
 
       closeActionForce();
     } catch (err) {
-      console.error(
-        "Erro ao encerrar lista de interesse:",
-        err
-      );
+      console.error("Erro ao encerrar lista de interesse:", err);
 
-      alert(
-        err?.message ||
-          "Não foi possível encerrar o contato."
-      );
+      alert(err?.message || "Não foi possível encerrar o contato.");
     } finally {
       setSaving(false);
     }
@@ -246,20 +199,15 @@ export default function FollowUps() {
 
   const stats = useMemo(() => {
     const overdue = followUps.filter(
-      (item) =>
-        item.follow_up_date &&
-        item.follow_up_date < today
+      (item) => item.follow_up_date && item.follow_up_date < today,
     ).length;
 
     const todayCount = followUps.filter(
-      (item) =>
-        item.follow_up_date === today
+      (item) => item.follow_up_date === today,
     ).length;
 
     const upcoming = followUps.filter(
-      (item) =>
-        item.follow_up_date &&
-        item.follow_up_date > today
+      (item) => item.follow_up_date && item.follow_up_date > today,
     ).length;
 
     return {
@@ -282,32 +230,23 @@ export default function FollowUps() {
     let result = [...followUps];
 
     if (activeFilter === "today") {
-      result = result.filter(
-        (item) =>
-          item.follow_up_date === today
-      );
+      result = result.filter((item) => item.follow_up_date === today);
     }
 
     if (activeFilter === "overdue") {
       result = result.filter(
-        (item) =>
-          item.follow_up_date &&
-          item.follow_up_date < today
+        (item) => item.follow_up_date && item.follow_up_date < today,
       );
     }
 
     if (activeFilter === "upcoming") {
       result = result.filter(
-        (item) =>
-          item.follow_up_date &&
-          item.follow_up_date > today
+        (item) => item.follow_up_date && item.follow_up_date > today,
       );
     }
 
     return result.sort((a, b) =>
-      (a.follow_up_date || "").localeCompare(
-        b.follow_up_date || ""
-      )
+      (a.follow_up_date || "").localeCompare(b.follow_up_date || ""),
     );
   }, [followUps, activeFilter, today]);
 
@@ -389,13 +328,7 @@ export default function FollowUps() {
             disabled:opacity-50
           "
         >
-          <RefreshCw
-            size={17}
-            className={
-              loading ? "animate-spin" : ""
-            }
-          />
-
+          <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
           Atualizar
         </button>
       </div>
@@ -415,16 +348,13 @@ export default function FollowUps() {
         "
       >
         {FILTERS.map((filter) => {
-          const active =
-            activeFilter === filter.value;
+          const active = activeFilter === filter.value;
 
           return (
             <button
               key={filter.value}
               type="button"
-              onClick={() =>
-                setActiveFilter(filter.value)
-              }
+              onClick={() => setActiveFilter(filter.value)}
               className={`
                 rounded-xl
                 px-4
@@ -461,9 +391,7 @@ export default function FollowUps() {
 
       {!loading && error && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-          <p className="font-semibold text-red-700">
-            {error}
-          </p>
+          <p className="font-semibold text-red-700">{error}</p>
 
           <button
             type="button"
@@ -477,54 +405,44 @@ export default function FollowUps() {
 
       {/* RETORNOS */}
 
-      {!loading &&
-        !error &&
-        activeFilter !== "waiting_list" && (
-          <>
-            {filteredFollowUps.length === 0 ? (
-              <EmptyState
-                type={activeFilter}
-              />
-            ) : (
-              <div className="space-y-4">
-                {filteredFollowUps.map(
-                  (item) => (
-                    <FollowUpCard
-                      key={item.id}
-                      item={item}
-                      today={today}
-                      onAction={openAction}
-                    />
-                  )
-                )}
-              </div>
-            )}
-          </>
-        )}
+      {!loading && !error && activeFilter !== "waiting_list" && (
+        <>
+          {filteredFollowUps.length === 0 ? (
+            <EmptyState type={activeFilter} />
+          ) : (
+            <div className="space-y-4">
+              {filteredFollowUps.map((item) => (
+                <FollowUpCard
+                  key={item.id}
+                  item={item}
+                  today={today}
+                  onAction={openAction}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       {/* LISTA DE INTERESSE */}
 
-      {!loading &&
-        !error &&
-        activeFilter === "waiting_list" && (
-          <>
-            {waitingList.length === 0 ? (
-              <EmptyState
-                type="waiting_list"
-              />
-            ) : (
-              <div className="space-y-4">
-                {waitingList.map((item) => (
-                  <WaitingListCard
-                    key={item.id}
-                    item={item}
-                    onAction={openAction}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        )}
+      {!loading && !error && activeFilter === "waiting_list" && (
+        <>
+          {waitingList.length === 0 ? (
+            <EmptyState type="waiting_list" />
+          ) : (
+            <div className="space-y-4">
+              {waitingList.map((item) => (
+                <WaitingListCard
+                  key={item.id}
+                  item={item}
+                  onAction={openAction}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       {/* MODAL */}
 
@@ -535,8 +453,7 @@ export default function FollowUps() {
           saving={saving}
           onClose={closeAction}
           onSave={
-            actionType ===
-            "close_waiting_list"
+            actionType === "close_waiting_list"
               ? handleCloseWaitingList
               : handleFollowUpAction
           }
@@ -546,441 +463,30 @@ export default function FollowUps() {
   );
 }
 
-/*
- * CARD DE RETORNO
- */
-
-function FollowUpCard({
-  item,
-  today,
-  onAction,
-}) {
-  const whatsappUrl =
-    createWhatsAppUrl(item.phone);
-
-  const isOverdue =
-    item.follow_up_date < today;
-
-  const isToday =
-    item.follow_up_date === today;
-
-  const daysLate = isOverdue
-    ? daysBetween(
-        item.follow_up_date,
-        today
-      )
-    : 0;
-
-  return (
-    <article
-      className={`
-        overflow-hidden
-        rounded-2xl
-        border
-        bg-white
-        transition
-        hover:shadow-md
-        ${
-          isOverdue
-            ? "border-red-200"
-            : "border-neutral-200"
-        }
-      `}
-    >
-      <div className="p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              {item.category?.name && (
-                <span className="text-sm font-semibold text-red-600">
-                  {item.category.name}
-                </span>
-              )}
-
-              {item.experimental_date && (
-                <>
-                  <span className="text-neutral-300">
-                    •
-                  </span>
-
-                  <span className="text-sm text-neutral-500">
-                    Experimental em{" "}
-                    {formatDate(
-                      item.experimental_date
-                    )}
-                  </span>
-                </>
-              )}
-            </div>
-
-            <h3 className="mt-2 text-xl font-bold text-neutral-900">
-              {item.child_name}
-            </h3>
-          </div>
-
-          <FollowUpBadge
-            isOverdue={isOverdue}
-            isToday={isToday}
-            daysLate={daysLate}
-            date={item.follow_up_date}
-          />
-        </div>
-
-        <div className="mt-6 grid gap-5 border-t border-neutral-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-          <Info
-            label="Responsável"
-            value={item.responsible_name}
-          />
-
-          <Info
-            label="WhatsApp"
-            value={item.phone}
-          />
-
-          <Info
-            label="Retorno"
-            value={formatDate(
-              item.follow_up_date
-            )}
-          />
-
-          <Info
-            label="Origem"
-            value={item.source}
-          />
-        </div>
-
-        {item.internal_notes && (
-          <div className="mt-5 rounded-2xl bg-neutral-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-              Observação
-            </p>
-
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-700">
-              {item.internal_notes}
-            </p>
-          </div>
-        )}
-
-        <div className="mt-6 flex flex-col gap-2 border-t border-neutral-100 pt-5 sm:flex-row sm:flex-wrap">
-          {whatsappUrl && (
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="
-                flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                border
-                border-neutral-200
-                px-4
-                py-3
-                text-sm
-                font-semibold
-                text-neutral-700
-                transition
-                hover:bg-neutral-50
-              "
-            >
-              <MessageCircle size={17} />
-              WhatsApp
-            </a>
-          )}
-
-          <button
-            type="button"
-            onClick={() =>
-              onAction(item, "enroll")
-            }
-            className="
-              flex
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              bg-green-600
-              px-4
-              py-3
-              text-sm
-              font-semibold
-              text-white
-              transition
-              hover:bg-green-700
-            "
-          >
-            <GraduationCap size={17} />
-            Matriculou
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              onAction(
-                item,
-                "reschedule"
-              )
-            }
-            className="
-              flex
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              bg-neutral-900
-              px-4
-              py-3
-              text-sm
-              font-semibold
-              text-white
-              transition
-              hover:bg-neutral-800
-            "
-          >
-            <RotateCcw size={17} />
-            Reagendar retorno
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              onAction(item, "lose")
-            }
-            className="
-              flex
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              border
-              border-neutral-200
-              px-4
-              py-3
-              text-sm
-              font-semibold
-              text-neutral-700
-              transition
-              hover:bg-neutral-50
-            "
-          >
-            <XCircle size={17} />
-            Não converteu
-          </button>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-/*
- * CARD DA LISTA DE INTERESSE
- */
-
-function WaitingListCard({
-  item,
-  onAction,
-}) {
-  const whatsappUrl =
-    createWhatsAppUrl(item.phone);
-
-  const reason =
-  WAITING_REASON_CARD_LABELS[item.waiting_list_reason] ||
-  "Lista de interesse";
-
-  return (
-    <article className="rounded-2xl border border-amber-200 bg-white p-5 transition hover:shadow-md sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          {item.category?.name && (
-            <p className="text-sm font-semibold text-red-600">
-              {item.category.name}
-            </p>
-          )}
-
-          <h3 className="mt-2 text-xl font-bold text-neutral-900">
-            {item.child_name}
-          </h3>
-        </div>
-
-        <span className="w-fit rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
-          Lista de interesse
-        </span>
-      </div>
-
-      <div className="mt-6 grid gap-5 border-t border-neutral-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-        <Info
-          label="Responsável"
-          value={item.responsible_name}
-        />
-
-        <Info
-          label="WhatsApp"
-          value={item.phone}
-        />
-
-        <Info
-          label="Aguardando"
-          value={reason}
-        />
-
-        <Info
-          label="Desde"
-          value={
-            item.waiting_list_at
-              ? formatDateTime(
-                  item.waiting_list_at
-                )
-              : null
-          }
-        />
-      </div>
-
-      {item.waiting_list_notes && (
-        <div className="mt-5 rounded-2xl bg-amber-50/60 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-            Interesse
-          </p>
-
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-700">
-            {item.waiting_list_notes}
-          </p>
-        </div>
-      )}
-
-      <div className="mt-6 flex flex-col gap-2 border-t border-neutral-100 pt-5 sm:flex-row sm:flex-wrap">
-        {whatsappUrl && (
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="
-              flex
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              border
-              border-neutral-200
-              px-4
-              py-3
-              text-sm
-              font-semibold
-              text-neutral-700
-              transition
-              hover:bg-neutral-50
-            "
-          >
-            <MessageCircle size={17} />
-            WhatsApp
-          </a>
-        )}
-
-        <button
-          type="button"
-          onClick={() =>
-            alert(
-              "Na próxima etapa vamos conectar este botão à agenda de experimentais."
-            )
-          }
-          className="
-            flex
-            items-center
-            justify-center
-            gap-2
-            rounded-xl
-            bg-red-600
-            px-4
-            py-3
-            text-sm
-            font-semibold
-            text-white
-            transition
-            hover:bg-red-700
-          "
-        >
-          <CalendarDays size={17} />
-          Agendar experimental
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            onAction(
-              item,
-              "close_waiting_list"
-            )
-          }
-          className="
-            flex
-            items-center
-            justify-center
-            gap-2
-            rounded-xl
-            border
-            border-neutral-200
-            px-4
-            py-3
-            text-sm
-            font-semibold
-            text-neutral-700
-            transition
-            hover:bg-neutral-50
-          "
-        >
-          <XCircle size={17} />
-          Encerrar
-        </button>
-      </div>
-    </article>
-  );
-}
 
 /*
  * MODAL DE AÇÃO
  */
 
-function ActionModal({
-  contact,
-  type,
-  saving,
-  onClose,
-  onSave,
-}) {
-  const [followUpDate, setFollowUpDate] =
-    useState("");
+function ActionModal({ contact, type, saving, onClose, onSave }) {
+  const [followUpDate, setFollowUpDate] = useState("");
 
-  const [lostReason, setLostReason] =
-    useState("");
+  const [lostReason, setLostReason] = useState("");
 
-  const [notes, setNotes] =
-    useState("");
+  const [notes, setNotes] = useState("");
 
   const config = getModalConfig(type);
 
   function handleSubmit(event) {
     event.preventDefault();
 
-    if (
-      type === "reschedule" &&
-      !followUpDate
-    ) {
-      alert(
-        "Informe a nova data do retorno."
-      );
+    if (type === "reschedule" && !followUpDate) {
+      alert("Informe a nova data do retorno.");
       return;
     }
 
-    if (
-      (type === "lose" ||
-        type ===
-          "close_waiting_list") &&
-      !lostReason
-    ) {
-      alert(
-        "Informe o motivo do encerramento."
-      );
+    if ((type === "lose" || type === "close_waiting_list") && !lostReason) {
+      alert("Informe o motivo do encerramento.");
       return;
     }
 
@@ -1019,10 +525,7 @@ function ActionModal({
           </button>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="p-6"
-        >
+        <form onSubmit={handleSubmit} className="p-6">
           {type === "enroll" && (
             <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
               <div className="flex gap-3">
@@ -1037,7 +540,8 @@ function ActionModal({
                   </p>
 
                   <p className="mt-1 text-sm text-green-700">
-                    O contato sairá da fila de retornos e será registrado como matriculado.
+                    O contato sairá da fila de retornos e será registrado como
+                    matriculado.
                   </p>
                 </div>
               </div>
@@ -1054,11 +558,7 @@ function ActionModal({
                 type="date"
                 min={getTodayISO()}
                 value={followUpDate}
-                onChange={(event) =>
-                  setFollowUpDate(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => setFollowUpDate(event.target.value)}
                 className="
                   mt-2
                   w-full
@@ -1076,9 +576,7 @@ function ActionModal({
             </div>
           )}
 
-          {(type === "lose" ||
-            type ===
-              "close_waiting_list") && (
+          {(type === "lose" || type === "close_waiting_list") && (
             <div>
               <label className="text-sm font-semibold text-neutral-900">
                 Motivo
@@ -1086,11 +584,7 @@ function ActionModal({
 
               <select
                 value={lostReason}
-                onChange={(event) =>
-                  setLostReason(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => setLostReason(event.target.value)}
                 className="
                   mt-2
                   w-full
@@ -1106,20 +600,13 @@ function ActionModal({
                   focus:ring-red-100
                 "
               >
-                <option value="">
-                  Selecione
-                </option>
+                <option value="">Selecione</option>
 
-                {LOST_REASONS.map(
-                  (reason) => (
-                    <option
-                      key={reason.value}
-                      value={reason.value}
-                    >
-                      {reason.label}
-                    </option>
-                  )
-                )}
+                {LOST_REASON_OPTIONS.map((reason) => (
+                  <option key={reason.value} value={reason.value}>
+                    {reason.label}
+                  </option>
+                ))}
               </select>
             </div>
           )}
@@ -1127,7 +614,6 @@ function ActionModal({
           <div className="mt-6">
             <label className="text-sm font-semibold text-neutral-900">
               Observação
-
               <span className="ml-1 font-normal text-neutral-400">
                 (opcional)
               </span>
@@ -1135,9 +621,7 @@ function ActionModal({
 
             <textarea
               value={notes}
-              onChange={(event) =>
-                setNotes(event.target.value)
-              }
+              onChange={(event) => setNotes(event.target.value)}
               rows={4}
               placeholder={config.placeholder}
               className="
@@ -1172,9 +656,7 @@ function ActionModal({
               disabled={saving}
               className="rounded-xl bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
             >
-              {saving
-                ? "Salvando..."
-                : config.button}
+              {saving ? "Salvando..." : config.button}
             </button>
           </div>
         </form>
@@ -1187,90 +669,42 @@ function getModalConfig(type) {
   const configs = {
     enroll: {
       eyebrow: "Conversão",
-      description:
-        "Registre a matrícula deste contato.",
+      description: "Registre a matrícula deste contato.",
       button: "Confirmar matrícula",
-      placeholder:
-        "Ex.: Família confirmou a matrícula...",
+      placeholder: "Ex.: Família confirmou a matrícula...",
     },
 
     reschedule: {
       eyebrow: "Novo retorno",
-      description:
-        "Escolha quando este contato deve voltar para sua fila.",
+      description: "Escolha quando este contato deve voltar para sua fila.",
       button: "Reagendar retorno",
-      placeholder:
-        "Ex.: Mãe pediu para chamar novamente após o dia 30...",
+      placeholder: "Ex.: Mãe pediu para chamar novamente após o dia 30...",
     },
 
     lose: {
       eyebrow: "Encerrar oportunidade",
-      description:
-        "Registre por que este contato não converteu.",
+      description: "Registre por que este contato não converteu.",
       button: "Registrar não conversão",
-      placeholder:
-        "Ex.: Família informou que o horário não atende...",
+      placeholder: "Ex.: Família informou que o horário não atende...",
     },
 
     close_waiting_list: {
       eyebrow: "Encerrar interesse",
-      description:
-        "Registre por que a família não deseja mais aguardar.",
+      description: "Registre por que a família não deseja mais aguardar.",
       button: "Encerrar contato",
-      placeholder:
-        "Ex.: Família encontrou outra opção...",
+      placeholder: "Ex.: Família encontrou outra opção...",
     },
   };
 
   return configs[type] || configs.lose;
 }
 
-/*
- * BADGE DO RETORNO
- */
-
-function FollowUpBadge({
-  isOverdue,
-  isToday,
-  daysLate,
-  date,
-}) {
-  if (isOverdue) {
-    return (
-      <span className="w-fit rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700">
-        {daysLate === 1
-          ? "Atrasado 1 dia"
-          : `Atrasado ${daysLate} dias`}
-      </span>
-    );
-  }
-
-  if (isToday) {
-    return (
-      <span className="w-fit rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
-        Retorno hoje
-      </span>
-    );
-  }
-
-  return (
-    <span className="w-fit rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
-      {formatDate(date)}
-    </span>
-  );
-}
 
 /*
  * CARD DE INDICADOR
  */
 
-function StatCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  danger = false,
-}) {
+function StatCard({ title, value, subtitle, icon: Icon, danger = false }) {
   return (
     <div
       className={`
@@ -1279,11 +713,7 @@ function StatCard({
         bg-white
         p-4
         sm:p-6
-        ${
-          danger
-            ? "border-red-200"
-            : "border-neutral-200"
-        }
+        ${danger ? "border-red-200" : "border-neutral-200"}
       `}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1296,9 +726,7 @@ function StatCard({
             {value}
           </p>
 
-          <p className="mt-1 text-xs text-neutral-400">
-            {subtitle}
-          </p>
+          <p className="mt-1 text-xs text-neutral-400">{subtitle}</p>
         </div>
 
         <div
@@ -1320,22 +748,6 @@ function StatCard({
   );
 }
 
-function Info({ label, value }) {
-  if (!value) return null;
-
-  return (
-    <div className="min-w-0">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
-        {label}
-      </p>
-
-      <p className="mt-1 break-words text-sm font-semibold text-neutral-900">
-        {value}
-      </p>
-    </div>
-  );
-}
-
 /*
  * ESTADO VAZIO
  */
@@ -1344,59 +756,48 @@ function EmptyState({ type }) {
   const content = {
     today: {
       title: "Nenhum retorno para hoje",
-      description:
-        "Sua agenda de contatos está livre hoje.",
+      description: "Sua agenda de contatos está livre hoje.",
       icon: PhoneCall,
     },
 
     overdue: {
       title: "Nenhum retorno atrasado",
-      description:
-        "Todos os acompanhamentos estão em dia.",
+      description: "Todos os acompanhamentos estão em dia.",
       icon: CircleCheckBig,
     },
 
     upcoming: {
       title: "Nenhum próximo retorno",
-      description:
-        "Não existem contatos agendados para os próximos dias.",
+      description: "Não existem contatos agendados para os próximos dias.",
       icon: CalendarClock,
     },
 
     all: {
       title: "Nenhum retorno pendente",
-      description:
-        "Não existem oportunidades aguardando acompanhamento.",
+      description: "Não existem oportunidades aguardando acompanhamento.",
       icon: UserRound,
     },
 
     waiting_list: {
       title: "Lista de interesse vazia",
-      description:
-        "Nenhuma família está aguardando vaga ou abertura de turma.",
+      description: "Nenhuma família está aguardando vaga ou abertura de turma.",
       icon: ListPlus,
     },
   };
 
-  const selected =
-    content[type] || content.all;
+  const selected = content[type] || content.all;
 
   const Icon = selected.icon;
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
-      <Icon
-        size={32}
-        className="mx-auto text-neutral-300"
-      />
+      <Icon size={32} className="mx-auto text-neutral-300" />
 
       <h3 className="mt-4 text-lg font-bold text-neutral-900">
         {selected.title}
       </h3>
 
-      <p className="mt-2 text-sm text-neutral-500">
-        {selected.description}
-      </p>
+      <p className="mt-2 text-sm text-neutral-500">{selected.description}</p>
     </div>
   );
 }
@@ -1410,67 +811,9 @@ function getTodayISO() {
 
   const year = now.getFullYear();
 
-  const month = String(
-    now.getMonth() + 1
-  ).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
 
-  const day = String(
-    now.getDate()
-  ).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
-}
-
-function formatDate(dateString) {
-  if (!dateString) return "-";
-
-  const date = new Date(
-    `${dateString}T00:00:00`
-  );
-
-  return date.toLocaleDateString(
-    "pt-BR"
-  );
-}
-
-function formatDateTime(dateString) {
-  if (!dateString) return "-";
-
-  return new Date(
-    dateString
-  ).toLocaleDateString("pt-BR");
-}
-
-function daysBetween(from, to) {
-  const start = new Date(
-    `${from}T12:00:00`
-  );
-
-  const end = new Date(
-    `${to}T12:00:00`
-  );
-
-  const difference =
-    end.getTime() - start.getTime();
-
-  return Math.floor(
-    difference /
-      (1000 * 60 * 60 * 24)
-  );
-}
-
-function createWhatsAppUrl(phone) {
-  if (!phone) return null;
-
-  const numbers =
-    phone.replace(/\D/g, "");
-
-  if (!numbers) return null;
-
-  const internationalPhone =
-    numbers.startsWith("55")
-      ? numbers
-      : `55${numbers}`;
-
-  return `https://wa.me/${internationalPhone}`;
 }

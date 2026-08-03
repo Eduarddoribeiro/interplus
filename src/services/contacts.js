@@ -28,6 +28,9 @@ import {
   buildLostUpdate,
 } from "../builders/contactBuilders";
 
+import {
+  getFollowUpState,
+} from "../helpers/followUpRules";
 /* =========================================================
  * SELECTS
  * =======================================================*/
@@ -1096,30 +1099,43 @@ export async function scheduleFollowUp(
   }
 
   if (!followUpDate) {
-    throw new Error("Informe a data do retorno.");
+    throw new Error(
+      "Informe a data do próximo retorno.",
+    );
   }
 
-  const current = await getContactById(contactId);
+  const current =
+    await getContactById(contactId);
+
+  const isAlreadyInFollowUp =
+    current.status ===
+      CONTACT_STATUS.FOLLOW_UP &&
+    Boolean(current.follow_up_started_at);
 
   /*
-   * Se ainda não existe um ciclo de acompanhamento,
-   * estamos apenas programando o primeiro retorno.
+   * O limite só é verificado quando o contato
+   * já está dentro de um ciclo de acompanhamento.
    *
-   * Se já existe, o reagendamento representa uma
-   * nova tentativa comercial realizada.
+   * O primeiro agendamento apenas inicia o ciclo
+   * e não conta como tentativa.
    */
-  const firstTime =
-    current.status !== CONTACT_STATUS.FOLLOW_UP ||
-    !current.follow_up_started_at;
+  if (isAlreadyInFollowUp) {
+    const followUpState =
+      getFollowUpState(current);
 
-  const updates = buildFollowUpUpdate(
-    current,
-    {
+    if (!followUpState.canReschedule) {
+      throw new Error(
+        "Este acompanhamento atingiu o limite. Encerre a oportunidade ou matricule o atleta.",
+      );
+    }
+  }
+
+  const updates =
+    buildFollowUpUpdate(current, {
       followUpDate,
       notes,
-      firstTime,
-    },
-  );
+      firstTime: !isAlreadyInFollowUp,
+    });
 
   const { data, error } = await supabase
     .from("contacts")
