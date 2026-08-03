@@ -3,6 +3,21 @@ import { CONTACT_STATUS } from "../constants/contactStatus";
 
 import { LOST_REASON } from "../constants/lostReasons";
 import { ENROLLMENT_STATUS } from "../constants/enrollmentStatus";
+import { EXPERIMENTAL_STATUS } from "../constants/experimentalStatus";
+import {
+  appendInternalNote,
+  cleanOptionalText,
+  ensureUpdated,
+  nowISO,
+} from "../helpers/contactHelpers";
+import {
+  withUpdatedAt,
+  clearCommercialFields,
+  clearFollowUpFields,
+  clearWaitingListFields,
+  clearLostFields,
+  clearExperimentalFields,
+} from "../helpers/contactUpdates";
 
 /* =========================================================
  * SELECTS
@@ -101,75 +116,7 @@ const PROTECTED_COMMERCIAL_STATUSES = [
   CONTACT_STATUS.LOST,
 ];
 
- 
 
-
-
-/* =========================================================
- * HELPERS
- * =======================================================*/
-
-function nowISO() {
-  return new Date().toISOString();
-}
-
-function ensureUpdated(data) {
-  if (!data || data.length === 0) {
-    throw new Error("O Supabase não atualizou nenhuma linha.");
-  }
-
-  return data[0];
-}
-
-function cleanOptionalText(value) {
-  if (typeof value !== "string") {
-    return value ?? null;
-  }
-
-  const text = value.trim();
-
-  return text || null;
-}
-
-function appendInternalNote(currentNotes, note) {
-  const cleanNote = cleanOptionalText(note);
-
-  if (!cleanNote) {
-    return currentNotes || null;
-  }
-
-  const date = new Intl.DateTimeFormat("pt-BR").format(new Date());
-
-  const line = `[${date}] ${cleanNote}`;
-
-  if (!currentNotes?.trim()) {
-    return line;
-  }
-
-  return `${currentNotes.trim()}\n\n${line}`;
-}
-
-/* =========================================================
- * HELPERS DE LIMPEZA
- * =======================================================*/
-
-function clearWaitingListFields(updates) {
-  updates.waiting_list_reason = null;
-  updates.waiting_list_notes = null;
-  updates.waiting_list_at = null;
-}
-
-function clearFollowUpFields(updates) {
-  updates.follow_up_date = null;
-}
-
-function clearLostFields(updates) {
-  updates.lost_reason = null;
-}
-
-function clearExperimentalResult(updates) {
-  updates.experimental_result = null;
-}
 /* =========================================================
  * VAGAS PARA EXPERIMENTAL
  * =======================================================*/
@@ -456,7 +403,7 @@ export async function addContactInternalNote(contactId, note) {
     .from("contacts")
     .update({
       internal_notes: internalNotes,
-      updated_at: new Date().toISOString(),
+      ...withUpdatedAt(),
     })
     .eq("id", contactId)
     .select(CONTACT_WITH_CATEGORY);
@@ -473,7 +420,7 @@ export async function updateContactStatus(contactId, status) {
     .from("contacts")
     .update({
       status,
-      updated_at: new Date().toISOString(),
+      ...withUpdatedAt()
     })
     .eq("id", contactId)
     .select(CONTACT_WITH_CATEGORY);
@@ -494,7 +441,7 @@ export async function updateExperimentalCoachNotes(sessionId, coachNotes = "") {
     .from("experimental_sessions")
     .update({
       coach_notes: cleanOptionalText(coachNotes),
-      updated_at: new Date().toISOString(),
+      ...withUpdatedAt()
     })
     .eq("id", sessionId)
     .select(SESSION_WITH_CONTACT)
@@ -534,7 +481,7 @@ export async function updateExperimentalSessionStatus(
     .update({
       status,
       notes: sessionNotes,
-      updated_at: new Date().toISOString(),
+      ...withUpdatedAt()
     })
     .eq("id", sessionId)
     .select(SESSION_WITH_CONTACT)
@@ -558,7 +505,7 @@ export async function updateExperimentalSessionStatus(
         category_id: updatedSession.category_id,
         experimental_date: updatedSession.experimental_date,
         experimental_time: updatedSession.experimental_time,
-        updated_at: new Date().toISOString(),
+        ...withUpdatedAt()
       })
       .eq("id", currentContact.id);
   }
@@ -595,7 +542,7 @@ export async function deleteExperimentalSession(sessionId) {
           category_id: latest.category_id,
           experimental_date: latest.experimental_date,
           experimental_time: latest.experimental_time,
-          updated_at: new Date().toISOString(),
+          ...withUpdatedAt()
         })
         .eq("id", contact.id);
     }
@@ -610,7 +557,7 @@ export async function deleteExperimentalSession(sessionId) {
           experimental_date: null,
           experimental_time: null,
           experimental_result: null,
-          updated_at: new Date().toISOString(),
+          ...withUpdatedAt()
         })
         .eq("id", contact.id);
     }
@@ -719,7 +666,7 @@ export async function saveExperimentalResult(
     waiting_list_notes: null,
     waiting_list_at: null,
 
-    updated_at: new Date().toISOString(),
+    ...withUpdatedAt()
   };
 
   if (result === "follow_up") {
@@ -784,7 +731,7 @@ export async function enrollContact(
   }
 
   const updates = {
-    status: "enrolled",
+    status: CONTACT_STATUS.ENROLLED,
 
     experimental_result: "enrolled",
 
@@ -803,7 +750,7 @@ export async function enrollContact(
     waiting_list_notes: null,
     waiting_list_at: null,
 
-    updated_at: new Date().toISOString(),
+    ...withUpdatedAt()
   };
 
   if (notes.trim()) {
@@ -868,7 +815,7 @@ export async function cancelEnrollment(
         : `Matrícula encerrada. Motivo: ${reason}.`,
     ),
 
-    updated_at: new Date().toISOString(),
+    ...withUpdatedAt()
   };
 
   const { data, error } = await supabase
@@ -910,7 +857,7 @@ export async function reactivateEnrollment(contactId, { notes = "" } = {}) {
       notes ? `Matrícula reativada. ${notes}` : "Matrícula reativada.",
     ),
 
-    updated_at: new Date().toISOString(),
+    ...withUpdatedAt()
   };
 
   const { data, error } = await supabase
@@ -1032,7 +979,7 @@ export async function addToWaitingList(contactId, { reason, notes = "" }) {
   const current = await getContactById(contactId);
 
   const updates = {
-    status: "waiting_list",
+    status: CONTACT_STATUS.WAITING_LIST,
 
     waiting_list_reason: reason,
     waiting_list_notes: cleanOptionalText(notes),
@@ -1041,7 +988,7 @@ export async function addToWaitingList(contactId, { reason, notes = "" }) {
     follow_up_date: null,
     lost_reason: null,
 
-    updated_at: new Date().toISOString(),
+    ...withUpdatedAt(),
   };
 
   if (notes.trim()) {
@@ -1123,7 +1070,7 @@ export async function rescheduleExperimental(
 
       lost_reason: null,
 
-      updated_at: new Date().toISOString(),
+      ...withUpdatedAt(),
     })
     .eq("id", contactId)
     .select(CONTACT_WITH_CATEGORY);
@@ -1227,7 +1174,7 @@ export async function scheduleExperimentalFromWaitingList(
       follow_up_date: null,
       lost_reason: null,
 
-      updated_at: new Date().toISOString(),
+      ...withUpdatedAt(),
     })
     .eq("id", contactId)
     .select(CONTACT_WITH_CATEGORY);
@@ -1256,7 +1203,7 @@ export async function closeOpportunity(contactId, { lostReason, notes = "" }) {
   const attended = sessions.some((s) => s.status === "attended");
 
   const updates = {
-    status: "lost",
+    status: CONTACT_STATUS.LOST,
 
     lost_reason: lostReason,
 
@@ -1266,7 +1213,7 @@ export async function closeOpportunity(contactId, { lostReason, notes = "" }) {
     waiting_list_notes: null,
     waiting_list_at: null,
 
-    updated_at: new Date().toISOString(),
+    ...withUpdatedAt(),
   };
 
   if (attended) {
