@@ -23,11 +23,34 @@ export default function AthleteForm({
         return;
       }
 
+      const year = Number(
+        form.birth_date.split("-")[0]
+      );
+
+      const currentYear = new Date().getFullYear();
+
+      // Evita consultar enquanto o ano ainda está incompleto
+      if (
+        !year ||
+        year < 1900 ||
+        year > currentYear
+      ) {
+        updateField("category", null);
+        return;
+      }
+
       try {
-        const data = await getCategoryByBirthDate(form.birth_date);
+        const data = await getCategoryByBirthDate(
+          form.birth_date
+        );
+
         updateField("category", data);
       } catch (err) {
-        console.error(err);
+        console.error(
+          "Erro ao buscar categoria:",
+          err
+        );
+
         updateField("category", null);
       }
     }
@@ -38,6 +61,7 @@ export default function AthleteForm({
   const category = form.category;
 
   const formatTime = (time) => time?.slice(0, 5);
+
 
   return (
     <div className="space-y-8">

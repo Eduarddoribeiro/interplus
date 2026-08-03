@@ -19,7 +19,7 @@ const menu = [
   {
     label: 'Contatos',
     icon: Users,
-    to: '/admin/students'
+    to: '/admin/contacts'
   },
   {
     label: 'Experimentais',

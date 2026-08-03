@@ -7,11 +7,9 @@ export async function getCategoryByBirthDate(birthDate) {
     .lte("min_birth_date", birthDate)
     .gte("max_birth_date", birthDate)
     .eq("active", true)
-    .single();
+    .maybeSingle();
 
-  console.log("birthDate:", birthDate);
-  console.log("data:", data);
-  console.log("error:", error);
+  
 
   if (error) throw error;
 

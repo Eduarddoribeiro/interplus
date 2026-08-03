@@ -9,46 +9,39 @@ import ReviewCard from "./components/ReviewCard";
 import SuccessScreen from "./components/SuccessScreen";
 import { createContact } from "../../services/contacts";
 
+const INITIAL_FORM = {
+  child_name: "",
+  birth_date: "",
+  category: null,
+
+  experimental_date: "",
+  experimental_time: "",
+
+  responsible_name: "",
+  phone: "",
+  email: "",
+  neighborhood: "",
+
+  trained_elsewhere: false,
+  previous_club: "",
+
+  preferred_position: "",
+  coach_notes: "",
+
+  source: "instagram",
+  
+};
+
 export default function RegistrationForm() {
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(null);
-
-  const [form, setForm] = useState({
-    // Atleta
-    child_name: "",
-    birth_date: "",
-
-    // Categoria encontrada automaticamente
-    category: null,
-
-    // Aula experimental
-    experimental_date: "",
-    experimental_time: "",
-
-    // Responsável
-    responsible_name: "",
-    phone: "",
-    email: "",
-    neighborhood: "",
-
-    // Histórico
-    trained_elsewhere: false,
-    previous_club: "",
-
-    // Origem
-    source: "Instagram",
-    observations: "",
-  });
+  const [form, setForm] = useState(INITIAL_FORM);
 
   function updateField(field, value) {
     setForm((prev) => ({
       ...prev,
       [field]: value,
     }));
-  }
-
-  if (success) {
-    return <SuccessScreen type={success} />;
   }
 
   async function handleFinish() {
@@ -65,12 +58,18 @@ export default function RegistrationForm() {
         email: form.email,
         neighborhood: form.neighborhood,
 
-        source: form.source,
+
+        entry_channel: "public_form",
 
         trained_elsewhere: form.trained_elsewhere,
-        previous_club: form.previous_club,
 
-        observations: form.observations,
+        previous_club: form.trained_elsewhere
+          ? form.previous_club
+          : null,
+
+        preferred_position: form.preferred_position,
+
+        coach_notes: form.coach_notes,
 
         category_id: form.category?.id,
 
@@ -95,11 +94,24 @@ export default function RegistrationForm() {
           : "scheduled"
       );
     } catch (error) {
-      console.error(error);
+      console.error("Erro completo:", error);
+console.log("Mensagem:", error?.message);
+console.log("Detalhes:", error?.details);
+console.log("Hint:", error?.hint);
+console.log("Code:", error?.code);
+
+alert(
+  `${error?.message || "Erro desconhecido"}\n\n` +
+  `${error?.details || ""}`
+);
       alert(
         "Não foi possível enviar sua solicitação. Tente novamente."
       );
     }
+  }
+
+  if (success) {
+    return <SuccessScreen type={success} />;
   }
 
   return (
@@ -124,9 +136,9 @@ export default function RegistrationForm() {
           </h2>
 
           <p className="mt-4 max-w-2xl text-white/70">
-            Informe os dados do atleta, escolha uma data disponível para a aula
-            experimental e finalize sua solicitação. Nossa equipe confirmará o
-            agendamento pelo WhatsApp.
+            Informe os dados do atleta, escolha uma data disponível para a
+            aula experimental e finalize sua solicitação. Nossa equipe
+            confirmará o agendamento pelo WhatsApp.
           </p>
 
           <div className="mt-10">
