@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  LOST_REASON,
+  LOST_REASON_OPTIONS,
+} from "../../constants/lostReasons";
 
 import {
   AlertCircle,
@@ -54,41 +58,7 @@ const FILTERS = [
   },
 ];
 
-const LOST_REASONS = [
-  {
-    value: "price",
-    label: "Valor",
-  },
-  {
-    value: "schedule",
-    label: "Horário",
-  },
-  {
-    value: "distance",
-    label: "Distância",
-  },
-  {
-    value: "other_school",
-    label: "Escolheu outra escola",
-  },
-  {
-    value: "child_not_interested",
-    label: "Criança não quis continuar",
-  },
-  {
-    value: "no_response",
-    label: "Família não respondeu",
-  },
-  {
-    value: "no_vacancy",
-    label: "Sem vaga disponível",
-  },
-  {
-    value: "other",
-    label: "Outro",
-  },
-];
- 
+
 
 export default function FollowUps() {
   const [followUps, setFollowUps] = useState([]);
