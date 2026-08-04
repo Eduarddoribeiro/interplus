@@ -2,116 +2,135 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import WaitingListCard from "../components/followUps/WaitingListCard";
-import WaitingListFilters from "../components/followUps/WaitingListFilters";
+import WaitingListFilters from "../components/waitingList/WaitingListFilters";
+import WaitingListHeader from "../components/waitingList/WaitingListHeader";
+import WaitingListDashboard from "../components/waitingList/WaitingListDashboard";
+import WaitingListSection from "../components/waitingList/WaitingListSection";
 
 import { getFollowUpCenter } from "../../services/contacts";
-import { getCategories } from "../../services/categories";
+import { getWaitingListPriority } from "../../helpers/waitingListPriority";
+import { filterWaitingList } from "../../helpers/waitingListFilters";
+import { getInterestCategory } from "../../helpers/waitingListRules";
+import { INITIAL_WAITING_LIST_FILTERS } from "../../constants/waitingListFilters";
 
 export default function WaitingList() {
   const [loading, setLoading] = useState(true);
-
   const [items, setItems] = useState([]);
 
-  const [categories, setCategories] = useState([]);
+  const [filters, setFilters] = useState(
+    INITIAL_WAITING_LIST_FILTERS,
+  );
 
-  const [filters, setFilters] = useState({
-    category: "",
-    shift: "",
-    qualification: "",
-  });
+  /* =========================================================
+   * CARREGAMENTO
+   * =======================================================*/
 
   useEffect(() => {
     loadData();
   }, []);
 
   async function loadData() {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const [data, categoryList] =
-      await Promise.all([
-        getFollowUpCenter(),
-        getCategories(),
-      ]);
+      const data = await getFollowUpCenter();
 
-    setItems(data.waitingList || []);
-    setCategories(categoryList || []);
-  } catch (error) {
-    console.error(
-      "Erro ao carregar lista de interesse:",
-      error,
-    );
-  } finally {
-    setLoading(false);
+      setItems(data.waitingList || []);
+    } catch (error) {
+      console.error(
+        "Erro ao carregar lista de interesse:",
+        error,
+      );
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      if (
-        filters.category &&
-        String(item.interest_category_id) !==
-          String(filters.category)
-      ) {
-        return false;
-      }
+  /* =========================================================
+   * CATEGORIAS DISPONÍVEIS
+   * =======================================================*/
 
-      if (
-        filters.shift &&
-        item.preferred_shift !== filters.shift
-      ) {
-        return false;
-      }
+  const categories = useMemo(() => {
+    const map = new Map();
 
-      if (
-        filters.qualification &&
-        item.qualification_status !==
-          filters.qualification
-      ) {
-        return false;
-      }
+    items.forEach((item) => {
+      const category = getInterestCategory(item);
 
-      return true;
+      if (!category?.id) return;
+
+      map.set(String(category.id), category);
     });
-  }, [items, filters]);
+
+    return Array.from(map.values()).sort((a, b) =>
+      (a.name || "").localeCompare(
+        b.name || "",
+        "pt-BR",
+      ),
+    );
+  }, [items]);
+
+  /* =========================================================
+   * FILTROS
+   * =======================================================*/
+
+  const filteredItems = useMemo(
+    () => filterWaitingList(items, filters),
+    [items, filters],
+  );
+
+  /* =========================================================
+   * AGRUPAMENTO COMERCIAL
+   * =======================================================*/
+
+  const groupedItems = useMemo(() => {
+    const groups = new Map();
+
+    filteredItems.forEach((item) => {
+      const group = getWaitingListPriority(item);
+
+      if (!groups.has(group.key)) {
+        groups.set(group.key, {
+          ...group,
+          items: [],
+        });
+      }
+
+      groups.get(group.key).items.push(item);
+    });
+
+    return Array.from(groups.values()).sort(
+      (a, b) => a.order - b.order,
+    );
+  }, [filteredItems]);
+
+  /* =========================================================
+   * AÇÕES
+   * =======================================================*/
 
   function handleAction(contact, action) {
     console.log(contact, action);
 
-    // vamos implementar na próxima etapa
+    // As ações serão conectadas na próxima etapa.
   }
+
+  /* =========================================================
+   * RENDER
+   * =======================================================*/
 
   return (
     <div className="space-y-8">
-      {/* ================================================= */}
-      {/* HEADER */}
-      {/* ================================================= */}
+      <WaitingListHeader total={items.length} />
 
-      <div>
-        <h1 className="text-3xl font-bold text-neutral-900">
-          Lista de Interesse
-        </h1>
-
-        <p className="mt-2 text-neutral-500">
-          Gerencie famílias aguardando vagas,
-          novas turmas e futuras oportunidades.
-        </p>
-      </div>
-
-      {/* ================================================= */}
-      {/* FILTROS */}
-      {/* ================================================= */}
+      <WaitingListDashboard items={items} />
 
       <WaitingListFilters
         categories={categories}
         filters={filters}
         onChange={setFilters}
+        onClear={() =>
+          setFilters({ ...INITIAL_WAITING_LIST_FILTERS })
+        }
       />
-
-      {/* ================================================= */}
-      {/* LISTA */}
-      {/* ================================================= */}
 
       {loading ? (
         <div className="rounded-2xl border border-neutral-200 bg-white p-12 text-center text-neutral-500">
@@ -122,11 +141,11 @@ export default function WaitingList() {
           Nenhum contato encontrado.
         </div>
       ) : (
-        <div className="space-y-5">
-          {filteredItems.map((item) => (
-            <WaitingListCard
-              key={item.id}
-              item={item}
+        <div className="space-y-10">
+          {groupedItems.map((group) => (
+            <WaitingListSection
+              key={group.key}
+              group={group}
               onAction={handleAction}
             />
           ))}

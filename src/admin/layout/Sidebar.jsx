@@ -3,11 +3,11 @@ import {
   Users,
   CalendarDays,
   PhoneCall,
+  ListChecks,
   BarChart3,
   Settings,
-  LogOut
-} from 'lucide-react'
-
+  LogOut,
+} from "lucide-react";
 import { NavLink } from 'react-router-dom'
 
 const menu = [
@@ -31,6 +31,12 @@ const menu = [
     icon: PhoneCall,
     to: '/admin/follow-ups'
   },
+
+  {
+  label: "Lista de Interesse",
+  icon: ListChecks,
+  to: "/admin/waiting-list",
+},
   {
     label: 'Relatórios',
     icon: BarChart3,

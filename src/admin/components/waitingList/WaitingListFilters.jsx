@@ -29,6 +29,8 @@ export default function WaitingListFilters({
     filters.preferredShift !== WAITING_LIST_FILTER.ALL ||
     filters.qualification !== WAITING_LIST_FILTER.ALL;
 
+  const canClear = typeof onClear === "function";
+
   function updateFilter(key, value) {
     onChange({
       ...filters,
@@ -54,7 +56,7 @@ export default function WaitingListFilters({
           </p>
         </div>
 
-        {hasActiveFilters && (
+        {hasActiveFilters && canClear && (
           <button
             type="button"
             onClick={onClear}

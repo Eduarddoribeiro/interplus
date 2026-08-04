@@ -14,7 +14,7 @@ import SectionTitle from "../components/common/SectionTitle";
 
 import FollowUpCard from "../components/followUps/FollowUpCard";
 import WaitingListCard from "../components/followUps/WaitingListCard";
-import FollowUpActionModal from "../components/followUps/FollowUpActionModal";
+import FollowUpActionModal from "../components/followUps/ContactActionModal";
 import WaitingListQualificationModal from "../components/followUps/WaitingListQualificationModal";
 import { getTodayISO } from "../../helpers/contactPresentation";
 import {

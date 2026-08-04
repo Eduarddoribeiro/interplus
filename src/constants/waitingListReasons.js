@@ -46,6 +46,15 @@ export const WAITING_LIST_REASONS = [
   },
 ];
 
+export const WAITING_LIST_REASON = Object.freeze(
+  Object.fromEntries(
+    WAITING_LIST_REASONS.map(({ value }) => [
+      value.toUpperCase(),
+      value,
+    ]),
+  ),
+);
+
 export const WAITING_REASON_LABELS = Object.fromEntries(
   WAITING_LIST_REASONS.map((item) => [item.value, item.label])
 );

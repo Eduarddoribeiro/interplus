@@ -14,6 +14,7 @@ import FollowUps from "./admin/pages/FollowUps";
 import Reports from "./admin/pages/Reports";
 import Settings from "./admin/pages/Settings";
 import ContactDetails from "./admin/pages/ContactDetails";
+import WaitingList from "./admin/pages/WaitingList";
 
 export default function App() {
   return (
@@ -48,6 +49,8 @@ export default function App() {
           <Route path="experimentals" element={<Experimentals />} />
 
           <Route path="follow-ups" element={<FollowUps />} />
+
+          <Route path="/admin/waiting-list" element={<WaitingList />} />
 
           <Route path="reports" element={<Reports />} />
 
