@@ -28,14 +28,48 @@ import {
   buildLostUpdate,
 } from "../builders/contactBuilders";
 
-import {
-  getFollowUpState,
-} from "../helpers/followUpRules";
+import { getFollowUpState } from "../helpers/followUpRules";
 /* =========================================================
  * SELECTS
  * =======================================================*/
 
-const CATEGORY_SELECT = `
+/*
+ * Categoria relacionada diretamente ao contato.
+ */
+const CONTACT_CATEGORY_SELECT = `
+  category:categories!contacts_category_id_fkey (
+    id,
+    name,
+    weekday,
+    start_time,
+    end_time,
+    trial_status,
+    experimental_limit
+  )
+`;
+
+/*
+ * Categoria de interesse comercial do contato.
+ */
+const INTEREST_CATEGORY_SELECT = `
+  interest_category:categories!contacts_interest_category_id_fkey (
+    id,
+    name,
+    weekday,
+    start_time,
+    end_time,
+    trial_status,
+    experimental_limit
+  )
+`;
+
+/*
+ * Categoria relacionada diretamente à sessão experimental.
+ *
+ * Aqui não usamos contacts_category_id_fkey porque a tabela
+ * raiz da consulta é experimental_sessions.
+ */
+const SESSION_CATEGORY_SELECT = `
   category:categories (
     id,
     name,
@@ -47,19 +81,32 @@ const CATEGORY_SELECT = `
   )
 `;
 
+/* =========================================================
+ * CONTATO + CATEGORIAS
+ * =======================================================*/
+
 const CONTACT_WITH_CATEGORY = `
   *,
-  ${CATEGORY_SELECT}
+  ${CONTACT_CATEGORY_SELECT},
+  ${INTEREST_CATEGORY_SELECT}
 `;
+
+/* =========================================================
+ * SESSÃO + CATEGORIA
+ * =======================================================*/
 
 const SESSION_WITH_CATEGORY = `
   *,
-  ${CATEGORY_SELECT}
+  ${SESSION_CATEGORY_SELECT}
 `;
+
+/* =========================================================
+ * SESSÃO + CATEGORIA + CONTATO
+ * =======================================================*/
 
 const SESSION_WITH_CONTACT = `
   *,
-  ${CATEGORY_SELECT},
+  ${SESSION_CATEGORY_SELECT},
   contact:contacts (
     id,
     child_name,
@@ -75,6 +122,9 @@ const SESSION_WITH_CONTACT = `
     internal_notes,
     status,
     category_id,
+    interest_category_id,
+    preferred_shift,
+    qualification_status,
     follow_up_date,
     follow_up_started_at,
     follow_up_attempts,
@@ -119,22 +169,21 @@ const PROTECTED_COMMERCIAL_STATUSES = [
  * VAGAS PARA EXPERIMENTAL
  * =======================================================*/
 
-async function ensureExperimentalAvailability(
-  categoryId,
-  experimentalDate,
-) {
+async function ensureExperimentalAvailability(categoryId, experimentalDate) {
   if (!categoryId || !experimentalDate) {
     return null;
   }
 
   const { data: category, error: categoryError } = await supabase
     .from("categories")
-    .select(`
+    .select(
+      `
       id,
       name,
       start_time,
       experimental_limit
-    `)
+    `,
+    )
     .eq("id", categoryId)
     .single();
 
@@ -162,9 +211,7 @@ async function ensureExperimentalAvailability(
   const limit = category.experimental_limit ?? 0;
 
   if (limit > 0 && count >= limit) {
-    throw new Error(
-      "Esta data não possui mais vagas para aula experimental.",
-    );
+    throw new Error("Esta data não possui mais vagas para aula experimental.");
   }
 
   return category;
@@ -225,7 +272,8 @@ async function createExperimentalSession({
 async function getLatestExperimentalSession(contactId) {
   const { data, error } = await supabase
     .from("experimental_sessions")
-    .select(`
+    .select(
+      `
       id,
       contact_id,
       category_id,
@@ -234,7 +282,8 @@ async function getLatestExperimentalSession(contactId) {
       status,
       created_at,
       updated_at
-    `)
+    `,
+    )
     .eq("contact_id", contactId)
     .order("experimental_date", {
       ascending: false,
@@ -363,11 +412,7 @@ export async function updateContact(contactId, updates) {
     throw new Error("Contato não informado.");
   }
 
-  if (
-    !updates ||
-    typeof updates !== "object" ||
-    Array.isArray(updates)
-  ) {
+  if (!updates || typeof updates !== "object" || Array.isArray(updates)) {
     throw new Error("Dados inválidos.");
   }
 
@@ -391,20 +436,13 @@ export async function updateContact(contactId, updates) {
   const payload = {};
 
   allowedFields.forEach((field) => {
-    if (
-      Object.prototype.hasOwnProperty.call(
-        updates,
-        field,
-      )
-    ) {
+    if (Object.prototype.hasOwnProperty.call(updates, field)) {
       payload[field] = updates[field];
     }
   });
 
   if (!Object.keys(payload).length) {
-    throw new Error(
-      "Nenhum dado para atualizar.",
-    );
+    throw new Error("Nenhum dado para atualizar.");
   }
 
   const { data, error } = await supabase
@@ -423,21 +461,14 @@ export async function updateContact(contactId, updates) {
   return ensureUpdated(data);
 }
 
-export async function addContactInternalNote(
-  contactId,
-  note,
-) {
+export async function addContactInternalNote(contactId, note) {
   if (!contactId) {
     throw new Error("Contato não informado.");
   }
 
-  const current =
-    await getContactById(contactId);
+  const current = await getContactById(contactId);
 
-  const internalNotes = appendInternalNote(
-    current.internal_notes,
-    note,
-  );
+  const internalNotes = appendInternalNote(current.internal_notes, note);
 
   const { data, error } = await supabase
     .from("contacts")
@@ -455,21 +486,15 @@ export async function addContactInternalNote(
   return ensureUpdated(data);
 }
 
-export async function updateContactStatus(
-  contactId,
-  status,
-) {
+export async function updateContactStatus(contactId, status) {
   if (!contactId) {
     throw new Error("Contato não informado.");
   }
 
-  const validStatuses =
-    Object.values(CONTACT_STATUS);
+  const validStatuses = Object.values(CONTACT_STATUS);
 
   if (!validStatuses.includes(status)) {
-    throw new Error(
-      "Status do contato inválido.",
-    );
+    throw new Error("Status do contato inválido.");
   }
 
   const { data, error } = await supabase
@@ -492,10 +517,7 @@ export async function updateContactStatus(
  * EXPERIMENTAIS
  * =======================================================*/
 
-export async function updateExperimentalCoachNotes(
-  sessionId,
-  coachNotes = "",
-) {
+export async function updateExperimentalCoachNotes(sessionId, coachNotes = "") {
   if (!sessionId) {
     throw new Error("Experimental não informada.");
   }
@@ -530,72 +552,53 @@ export async function updateExperimentalSessionStatus(
     throw new Error("Status da experimental inválido.");
   }
 
-  const currentSession =
-    await getExperimentalSession(sessionId);
+  const currentSession = await getExperimentalSession(sessionId);
 
-  const currentContact =
-    await getContactById(currentSession.contact_id);
+  const currentContact = await getContactById(currentSession.contact_id);
 
-  let sessionNotes =
-    currentSession.notes || null;
+  let sessionNotes = currentSession.notes || null;
 
-  if (
-    correctionReason.trim() &&
-    currentSession.status !== status
-  ) {
+  if (correctionReason.trim() && currentSession.status !== status) {
     sessionNotes = appendInternalNote(
       sessionNotes,
       `Correção: ${currentSession.status} → ${status}. ${correctionReason}`,
     );
   }
 
-  const { data: updatedSession, error } =
-    await supabase
-      .from("experimental_sessions")
-      .update({
-        status,
-        notes: sessionNotes,
-        ...withUpdatedAt(),
-      })
-      .eq("id", sessionId)
-      .select(SESSION_WITH_CONTACT)
-      .single();
+  const { data: updatedSession, error } = await supabase
+    .from("experimental_sessions")
+    .update({
+      status,
+      notes: sessionNotes,
+      ...withUpdatedAt(),
+    })
+    .eq("id", sessionId)
+    .select(SESSION_WITH_CONTACT)
+    .single();
 
   if (error) {
     throw error;
   }
 
-  const latest =
-    await getLatestExperimentalSession(
-      currentContact.id,
-    );
+  const latest = await getLatestExperimentalSession(currentContact.id);
 
-  const isLatestSession =
-    latest?.id === sessionId;
+  const isLatestSession = latest?.id === sessionId;
 
-  const hasProtectedCommercialStatus =
-    PROTECTED_COMMERCIAL_STATUSES.includes(
-      currentContact.status,
-    );
+  const hasProtectedCommercialStatus = PROTECTED_COMMERCIAL_STATUSES.includes(
+    currentContact.status,
+  );
 
-  if (
-    isLatestSession &&
-    !hasProtectedCommercialStatus
-  ) {
-    const { error: contactError } =
-      await supabase
-        .from("contacts")
-        .update({
-          status,
-          category_id:
-            updatedSession.category_id,
-          experimental_date:
-            updatedSession.experimental_date,
-          experimental_time:
-            updatedSession.experimental_time,
-          ...withUpdatedAt(),
-        })
-        .eq("id", currentContact.id);
+  if (isLatestSession && !hasProtectedCommercialStatus) {
+    const { error: contactError } = await supabase
+      .from("contacts")
+      .update({
+        status,
+        category_id: updatedSession.category_id,
+        experimental_date: updatedSession.experimental_date,
+        experimental_time: updatedSession.experimental_time,
+        ...withUpdatedAt(),
+      })
+      .eq("id", currentContact.id);
 
     if (contactError) {
       throw contactError;
@@ -605,18 +608,14 @@ export async function updateExperimentalSessionStatus(
   return updatedSession;
 }
 
-export async function deleteExperimentalSession(
-  sessionId,
-) {
+export async function deleteExperimentalSession(sessionId) {
   if (!sessionId) {
     throw new Error("Experimental não informada.");
   }
 
-  const session =
-    await getExperimentalSession(sessionId);
+  const session = await getExperimentalSession(sessionId);
 
-  const contact =
-    await getContactById(session.contact_id);
+  const contact = await getContactById(session.contact_id);
 
   const { error: deleteError } = await supabase
     .from("experimental_sessions")
@@ -627,15 +626,11 @@ export async function deleteExperimentalSession(
     throw deleteError;
   }
 
-  const latest =
-    await getLatestExperimentalSession(
-      contact.id,
-    );
+  const latest = await getLatestExperimentalSession(contact.id);
 
-  const hasProtectedCommercialStatus =
-    PROTECTED_COMMERCIAL_STATUSES.includes(
-      contact.status,
-    );
+  const hasProtectedCommercialStatus = PROTECTED_COMMERCIAL_STATUSES.includes(
+    contact.status,
+  );
 
   /*
    * Se o contato já avançou comercialmente,
@@ -647,19 +642,16 @@ export async function deleteExperimentalSession(
   }
 
   if (latest) {
-    const { error: contactError } =
-      await supabase
-        .from("contacts")
-        .update({
-          status: latest.status,
-          category_id: latest.category_id,
-          experimental_date:
-            latest.experimental_date,
-          experimental_time:
-            latest.experimental_time,
-          ...withUpdatedAt(),
-        })
-        .eq("id", contact.id);
+    const { error: contactError } = await supabase
+      .from("contacts")
+      .update({
+        status: latest.status,
+        category_id: latest.category_id,
+        experimental_date: latest.experimental_date,
+        experimental_time: latest.experimental_time,
+        ...withUpdatedAt(),
+      })
+      .eq("id", contact.id);
 
     if (contactError) {
       throw contactError;
@@ -668,18 +660,17 @@ export async function deleteExperimentalSession(
     return true;
   }
 
-  const { error: contactError } =
-    await supabase
-      .from("contacts")
-      .update({
-        status: CONTACT_STATUS.NEW_CONTACT,
-        category_id: null,
-        experimental_date: null,
-        experimental_time: null,
-        experimental_result: null,
-        ...withUpdatedAt(),
-      })
-      .eq("id", contact.id);
+  const { error: contactError } = await supabase
+    .from("contacts")
+    .update({
+      status: CONTACT_STATUS.NEW_CONTACT,
+      category_id: null,
+      experimental_date: null,
+      experimental_time: null,
+      experimental_result: null,
+      ...withUpdatedAt(),
+    })
+    .eq("id", contact.id);
 
   if (contactError) {
     throw contactError;
@@ -699,8 +690,7 @@ export async function createContact(contact) {
 
   let category = null;
 
-  const isWaitingList =
-    contact.status === CONTACT_STATUS.WAITING_LIST;
+  const isWaitingList = contact.status === CONTACT_STATUS.WAITING_LIST;
 
   /*
    * Só validamos disponibilidade quando o contato
@@ -708,16 +698,11 @@ export async function createContact(contact) {
    *
    * Lista de interesse não ocupa vaga de experimental.
    */
-  if (
-    !isWaitingList &&
-    contact.category_id &&
-    contact.experimental_date
-  ) {
-    category =
-      await ensureExperimentalAvailability(
-        contact.category_id,
-        contact.experimental_date,
-      );
+  if (!isWaitingList && contact.category_id && contact.experimental_date) {
+    category = await ensureExperimentalAvailability(
+      contact.category_id,
+      contact.experimental_date,
+    );
   }
 
   /*
@@ -726,8 +711,7 @@ export async function createContact(contact) {
    */
   const {
     coach_notes: initialCoachNotes = null,
-    preferred_position:
-      initialPreferredPosition = null,
+    preferred_position: initialPreferredPosition = null,
     ...contactPayload
   } = contact;
 
@@ -736,8 +720,7 @@ export async function createContact(contact) {
    * entrou na lista de interesse.
    */
   if (
-    contactPayload.status ===
-      CONTACT_STATUS.WAITING_LIST &&
+    contactPayload.status === CONTACT_STATUS.WAITING_LIST &&
     !contactPayload.waiting_list_at
   ) {
     contactPayload.waiting_list_at = nowISO();
@@ -771,18 +754,12 @@ export async function createContact(contact) {
     await createExperimentalSession({
       contactId: data.id,
       categoryId: data.category_id,
-      experimentalDate:
-        data.experimental_date,
-      experimentalTime:
-        data.experimental_time ||
-        category?.start_time ||
-        null,
+      experimentalDate: data.experimental_date,
+      experimentalTime: data.experimental_time || category?.start_time || null,
       status: experimentalStatus,
-      notes:
-        "Primeira experimental do contato.",
+      notes: "Primeira experimental do contato.",
       coachNotes: initialCoachNotes,
-      preferredPosition:
-        initialPreferredPosition,
+      preferredPosition: initialPreferredPosition,
     });
   } catch (err) {
     /*
@@ -790,17 +767,13 @@ export async function createContact(contact) {
      * se a experimental não puder ser criada,
      * removemos o contato recém-criado.
      */
-    const { error: rollbackError } =
-      await supabase
-        .from("contacts")
-        .delete()
-        .eq("id", data.id);
+    const { error: rollbackError } = await supabase
+      .from("contacts")
+      .delete()
+      .eq("id", data.id);
 
     if (rollbackError) {
-      console.error(
-        "Erro ao desfazer criação do contato:",
-        rollbackError,
-      );
+      console.error("Erro ao desfazer criação do contato:", rollbackError);
     }
 
     throw err;
@@ -815,12 +788,7 @@ export async function createContact(contact) {
 
 export async function saveExperimentalResult(
   contactId,
-  {
-    result,
-    followUpDate = null,
-    notes = "",
-    lostReason = null,
-  },
+  { result, followUpDate = null, notes = "", lostReason = null },
 ) {
   if (!contactId) {
     throw new Error("Contato não informado.");
@@ -865,17 +833,14 @@ export async function saveExperimentalResult(
        * Esta função registra o resultado comercial
        * da aula experimental.
        */
-      updates.experimental_result =
-        CONTACT_STATUS.FOLLOW_UP;
+      updates.experimental_result = CONTACT_STATUS.FOLLOW_UP;
 
       break;
     }
 
     case CONTACT_STATUS.LOST: {
       if (!lostReason) {
-        throw new Error(
-          "Informe o motivo da não conversão.",
-        );
+        throw new Error("Informe o motivo da não conversão.");
       }
 
       updates = buildLostUpdate(current, {
@@ -910,10 +875,7 @@ export async function saveExperimentalResult(
 
 export async function enrollContact(
   contactId,
-  {
-    notes = "",
-    enrolledAt = null,
-  } = {},
+  { notes = "", enrolledAt = null } = {},
 ) {
   if (!contactId) {
     throw new Error("Contato não informado.");
@@ -924,19 +886,15 @@ export async function enrollContact(
   let enrollmentDate = nowISO();
 
   if (enrolledAt) {
-    enrollmentDate =
-      /^\d{4}-\d{2}-\d{2}$/.test(enrolledAt)
-        ? `${enrolledAt}T12:00:00`
-        : enrolledAt;
+    enrollmentDate = /^\d{4}-\d{2}-\d{2}$/.test(enrolledAt)
+      ? `${enrolledAt}T12:00:00`
+      : enrolledAt;
   }
 
-  const updates = buildEnrollmentUpdate(
-    current,
-    {
-      enrolledAt: enrollmentDate,
-      notes,
-    },
-  );
+  const updates = buildEnrollmentUpdate(current, {
+    enrolledAt: enrollmentDate,
+    notes,
+  });
 
   const { data, error } = await supabase
     .from("contacts")
@@ -951,10 +909,7 @@ export async function enrollContact(
   return ensureUpdated(data);
 }
 
-export async function enrollFromFollowUp(
-  contactId,
-  notes = "",
-) {
+export async function enrollFromFollowUp(contactId, notes = "") {
   return enrollContact(contactId, {
     notes,
   });
@@ -966,51 +921,38 @@ export async function enrollFromFollowUp(
 
 export async function cancelEnrollment(
   contactId,
-  {
-    reason,
-    notes = "",
-    leftAt = null,
-  } = {},
+  { reason, notes = "", leftAt = null } = {},
 ) {
   if (!contactId) {
     throw new Error("Contato não informado.");
   }
 
   if (!reason?.trim()) {
-    throw new Error(
-      "Informe o motivo do cancelamento.",
-    );
+    throw new Error("Informe o motivo do cancelamento.");
   }
 
   const current = await getContactById(contactId);
 
   if (
     current.status !== CONTACT_STATUS.ENROLLED ||
-    current.enrollment_status !==
-      ENROLLMENT_STATUS.ACTIVE
+    current.enrollment_status !== ENROLLMENT_STATUS.ACTIVE
   ) {
-    throw new Error(
-      "Contato não possui matrícula ativa.",
-    );
+    throw new Error("Contato não possui matrícula ativa.");
   }
 
   let departure = nowISO();
 
   if (leftAt) {
-    departure =
-      /^\d{4}-\d{2}-\d{2}$/.test(leftAt)
-        ? `${leftAt}T12:00:00`
-        : leftAt;
+    departure = /^\d{4}-\d{2}-\d{2}$/.test(leftAt)
+      ? `${leftAt}T12:00:00`
+      : leftAt;
   }
 
-  const updates = buildCancellationUpdate(
-    current,
-    {
-      reason,
-      leftAt: departure,
-      notes,
-    },
-  );
+  const updates = buildCancellationUpdate(current, {
+    reason,
+    leftAt: departure,
+    notes,
+  });
 
   const { data, error } = await supabase
     .from("contacts")
@@ -1029,31 +971,18 @@ export async function cancelEnrollment(
  * REATIVAÇÃO DE MATRÍCULA
  * =======================================================*/
 
-export async function reactivateEnrollment(
-  contactId,
-  {
-    notes = "",
-  } = {},
-) {
+export async function reactivateEnrollment(contactId, { notes = "" } = {}) {
   if (!contactId) {
     throw new Error("Contato não informado.");
   }
 
   const current = await getContactById(contactId);
 
-  if (
-    current.enrollment_status !==
-    ENROLLMENT_STATUS.CANCELLED
-  ) {
-    throw new Error(
-      "A matrícula não está cancelada.",
-    );
+  if (current.enrollment_status !== ENROLLMENT_STATUS.CANCELLED) {
+    throw new Error("A matrícula não está cancelada.");
   }
 
-  const updates = buildReactivationUpdate(
-    current,
-    notes,
-  );
+  const updates = buildReactivationUpdate(current, notes);
 
   const { data, error } = await supabase
     .from("contacts")
@@ -1089,27 +1018,19 @@ export async function getFollowUps() {
   return data || [];
 }
 
-export async function scheduleFollowUp(
-  contactId,
-  followUpDate,
-  notes = "",
-) {
+export async function scheduleFollowUp(contactId, followUpDate, notes = "") {
   if (!contactId) {
     throw new Error("Contato não informado.");
   }
 
   if (!followUpDate) {
-    throw new Error(
-      "Informe a data do próximo retorno.",
-    );
+    throw new Error("Informe a data do próximo retorno.");
   }
 
-  const current =
-    await getContactById(contactId);
+  const current = await getContactById(contactId);
 
   const isAlreadyInFollowUp =
-    current.status ===
-      CONTACT_STATUS.FOLLOW_UP &&
+    current.status === CONTACT_STATUS.FOLLOW_UP &&
     Boolean(current.follow_up_started_at);
 
   /*
@@ -1120,8 +1041,7 @@ export async function scheduleFollowUp(
    * e não conta como tentativa.
    */
   if (isAlreadyInFollowUp) {
-    const followUpState =
-      getFollowUpState(current);
+    const followUpState = getFollowUpState(current);
 
     if (!followUpState.canReschedule) {
       throw new Error(
@@ -1130,12 +1050,11 @@ export async function scheduleFollowUp(
     }
   }
 
-  const updates =
-    buildFollowUpUpdate(current, {
-      followUpDate,
-      notes,
-      firstTime: !isAlreadyInFollowUp,
-    });
+  const updates = buildFollowUpUpdate(current, {
+    followUpDate,
+    notes,
+    firstTime: !isAlreadyInFollowUp,
+  });
 
   const { data, error } = await supabase
     .from("contacts")
@@ -1150,19 +1069,13 @@ export async function scheduleFollowUp(
   return ensureUpdated(data);
 }
 
-export async function loseFromFollowUp(
-  contactId,
-  lostReason,
-  notes = "",
-) {
+export async function loseFromFollowUp(contactId, lostReason, notes = "") {
   if (!contactId) {
     throw new Error("Contato não informado.");
   }
 
   if (!lostReason) {
-    throw new Error(
-      "Informe o motivo da não conversão.",
-    );
+    throw new Error("Informe o motivo da não conversão.");
   }
 
   return closeOpportunity(contactId, {
@@ -1192,32 +1105,21 @@ export async function getWaitingList() {
   return data || [];
 }
 
-export async function addToWaitingList(
-  contactId,
-  {
-    reason,
-    notes = "",
-  },
-) {
+export async function addToWaitingList(contactId, { reason, notes = "" }) {
   if (!contactId) {
     throw new Error("Contato não informado.");
   }
 
   if (!reason) {
-    throw new Error(
-      "Informe o motivo da lista de interesse.",
-    );
+    throw new Error("Informe o motivo da lista de interesse.");
   }
 
   const current = await getContactById(contactId);
 
-  const updates = buildWaitingListUpdate(
-    current,
-    {
-      reason,
-      notes,
-    },
-  );
+  const updates = buildWaitingListUpdate(current, {
+    reason,
+    notes,
+  });
 
   const { data, error } = await supabase
     .from("contacts")
@@ -1257,8 +1159,7 @@ export async function rescheduleExperimental(
     throw new Error("Informe a data da experimental.");
   }
 
-  const active =
-    await getLatestExperimentalSession(contactId);
+  const active = await getLatestExperimentalSession(contactId);
 
   const hasActiveExperimental =
     active &&
@@ -1268,47 +1169,35 @@ export async function rescheduleExperimental(
     ].includes(active.status);
 
   if (hasActiveExperimental) {
-    throw new Error(
-      "Este contato já possui uma aula experimental agendada.",
-    );
+    throw new Error("Este contato já possui uma aula experimental agendada.");
   }
 
-  const category =
-    await ensureExperimentalAvailability(
-      categoryId,
-      experimentalDate,
-    );
+  const category = await ensureExperimentalAvailability(
+    categoryId,
+    experimentalDate,
+  );
 
-  const time =
-    experimentalTime ||
-    category?.start_time ||
-    null;
+  const time = experimentalTime || category?.start_time || null;
 
-  const session =
-    await createExperimentalSession({
-      contactId,
-      categoryId,
-      experimentalDate,
-      experimentalTime: time,
+  const session = await createExperimentalSession({
+    contactId,
+    categoryId,
+    experimentalDate,
+    experimentalTime: time,
 
-      status:
-        EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+    status: EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
 
-      notes:
-        notes ||
-        "Experimental reagendada.",
+    notes: notes || "Experimental reagendada.",
 
-      coachNotes,
-    });
+    coachNotes,
+  });
 
   const updates = {
-    status:
-      CONTACT_STATUS.PENDING_CONFIRMATION,
+    status: CONTACT_STATUS.PENDING_CONFIRMATION,
 
     category_id: categoryId,
 
-    experimental_date:
-      experimentalDate,
+    experimental_date: experimentalDate,
 
     experimental_time: time,
 
@@ -1328,17 +1217,13 @@ export async function rescheduleExperimental(
     .select(CONTACT_WITH_CATEGORY);
 
   if (error) {
-    const { error: rollbackError } =
-      await supabase
-        .from("experimental_sessions")
-        .delete()
-        .eq("id", session.id);
+    const { error: rollbackError } = await supabase
+      .from("experimental_sessions")
+      .delete()
+      .eq("id", session.id);
 
     if (rollbackError) {
-      console.error(
-        "Erro ao desfazer criação da experimental:",
-        rollbackError,
-      );
+      console.error("Erro ao desfazer criação da experimental:", rollbackError);
     }
 
     throw error;
@@ -1355,22 +1240,12 @@ export async function rescheduleExperimental(
  * =======================================================*/
 
 export async function getFollowUpCenter() {
-  const [
-    followUpsResult,
-    waitingListResult,
-  ] = await Promise.all([
+  const [followUpsResult, waitingListResult] = await Promise.all([
     supabase
       .from("contacts")
       .select(CONTACT_WITH_CATEGORY)
-      .eq(
-        "status",
-        CONTACT_STATUS.FOLLOW_UP,
-      )
-      .not(
-        "follow_up_date",
-        "is",
-        null,
-      )
+      .eq("status", CONTACT_STATUS.FOLLOW_UP)
+      .not("follow_up_date", "is", null)
       .order("follow_up_date", {
         ascending: true,
       }),
@@ -1378,10 +1253,7 @@ export async function getFollowUpCenter() {
     supabase
       .from("contacts")
       .select(CONTACT_WITH_CATEGORY)
-      .eq(
-        "status",
-        CONTACT_STATUS.WAITING_LIST,
-      )
+      .eq("status", CONTACT_STATUS.WAITING_LIST)
       .order("waiting_list_at", {
         ascending: true,
         nullsFirst: false,
@@ -1397,11 +1269,9 @@ export async function getFollowUpCenter() {
   }
 
   return {
-    followUps:
-      followUpsResult.data || [],
+    followUps: followUpsResult.data || [],
 
-    waitingList:
-      waitingListResult.data || [],
+    waitingList: waitingListResult.data || [],
   };
 }
 
@@ -1411,12 +1281,7 @@ export async function getFollowUpCenter() {
 
 export async function scheduleExperimentalFromWaitingList(
   contactId,
-  {
-    categoryId,
-    experimentalDate,
-    experimentalTime = null,
-    coachNotes = "",
-  },
+  { categoryId, experimentalDate, experimentalTime = null, coachNotes = "" },
 ) {
   if (!contactId) {
     throw new Error("Contato não informado.");
@@ -1427,25 +1292,16 @@ export async function scheduleExperimentalFromWaitingList(
   }
 
   if (!experimentalDate) {
-    throw new Error(
-      "Informe a data da experimental.",
-    );
+    throw new Error("Informe a data da experimental.");
   }
 
-  const current =
-    await getContactById(contactId);
+  const current = await getContactById(contactId);
 
-  if (
-    current.status !==
-    CONTACT_STATUS.WAITING_LIST
-  ) {
-    throw new Error(
-      "Este contato não está na lista de interesse.",
-    );
+  if (current.status !== CONTACT_STATUS.WAITING_LIST) {
+    throw new Error("Este contato não está na lista de interesse.");
   }
 
-  const active =
-    await getLatestExperimentalSession(contactId);
+  const active = await getLatestExperimentalSession(contactId);
 
   const hasActiveExperimental =
     active &&
@@ -1455,46 +1311,35 @@ export async function scheduleExperimentalFromWaitingList(
     ].includes(active.status);
 
   if (hasActiveExperimental) {
-    throw new Error(
-      "Este contato já possui uma aula experimental agendada.",
-    );
+    throw new Error("Este contato já possui uma aula experimental agendada.");
   }
 
-  const category =
-    await ensureExperimentalAvailability(
-      categoryId,
-      experimentalDate,
-    );
+  const category = await ensureExperimentalAvailability(
+    categoryId,
+    experimentalDate,
+  );
 
-  const time =
-    experimentalTime ||
-    category?.start_time ||
-    null;
+  const time = experimentalTime || category?.start_time || null;
 
-  const session =
-    await createExperimentalSession({
-      contactId,
-      categoryId,
-      experimentalDate,
-      experimentalTime: time,
+  const session = await createExperimentalSession({
+    contactId,
+    categoryId,
+    experimentalDate,
+    experimentalTime: time,
 
-      status:
-        EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+    status: EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
 
-      notes:
-        "Experimental agendada a partir da lista de interesse.",
+    notes: "Experimental agendada a partir da lista de interesse.",
 
-      coachNotes,
-    });
+    coachNotes,
+  });
 
   const updates = {
-    status:
-      CONTACT_STATUS.PENDING_CONFIRMATION,
+    status: CONTACT_STATUS.PENDING_CONFIRMATION,
 
     category_id: categoryId,
 
-    experimental_date:
-      experimentalDate,
+    experimental_date: experimentalDate,
 
     experimental_time: time,
 
@@ -1514,17 +1359,13 @@ export async function scheduleExperimentalFromWaitingList(
     .select(CONTACT_WITH_CATEGORY);
 
   if (error) {
-    const { error: rollbackError } =
-      await supabase
-        .from("experimental_sessions")
-        .delete()
-        .eq("id", session.id);
+    const { error: rollbackError } = await supabase
+      .from("experimental_sessions")
+      .delete()
+      .eq("id", session.id);
 
     if (rollbackError) {
-      console.error(
-        "Erro ao desfazer criação da experimental:",
-        rollbackError,
-      );
+      console.error("Erro ao desfazer criação da experimental:", rollbackError);
     }
 
     throw error;
@@ -1539,44 +1380,28 @@ export async function scheduleExperimentalFromWaitingList(
  * ENCERRAMENTO
  * =======================================================*/
 
-export async function closeOpportunity(
-  contactId,
-  {
-    lostReason,
-    notes = "",
-  },
-) {
+export async function closeOpportunity(contactId, { lostReason, notes = "" }) {
   if (!contactId) {
     throw new Error("Contato não informado.");
   }
 
   if (!lostReason) {
-    throw new Error(
-      "Informe o motivo da não conversão.",
-    );
+    throw new Error("Informe o motivo da não conversão.");
   }
 
   const current = await getContactById(contactId);
 
-  const sessions =
-    await getContactExperimentalSessions(
-      contactId,
-    );
+  const sessions = await getContactExperimentalSessions(contactId);
 
   const attended = sessions.some(
-    (session) =>
-      session.status ===
-      EXPERIMENTAL_STATUS.ATTENDED,
+    (session) => session.status === EXPERIMENTAL_STATUS.ATTENDED,
   );
 
-  const updates = buildLostUpdate(
-    current,
-    {
-      lostReason,
-      notes,
-      attended,
-    },
-  );
+  const updates = buildLostUpdate(current, {
+    lostReason,
+    notes,
+    attended,
+  });
 
   const { data, error } = await supabase
     .from("contacts")
@@ -1593,10 +1418,7 @@ export async function closeOpportunity(
 
 export async function closeWaitingListContact(
   contactId,
-  {
-    lostReason = LOST_REASON.OTHER,
-    notes = "",
-  } = {},
+  { lostReason = LOST_REASON.OTHER, notes = "" } = {},
 ) {
   return closeOpportunity(contactId, {
     lostReason,
@@ -1606,10 +1428,7 @@ export async function closeWaitingListContact(
 
 export async function closeNoShowOpportunity(
   contactId,
-  {
-    lostReason,
-    notes = "",
-  },
+  { lostReason, notes = "" },
 ) {
   return closeOpportunity(contactId, {
     lostReason,

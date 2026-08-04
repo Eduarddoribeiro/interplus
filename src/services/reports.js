@@ -18,10 +18,10 @@ const CONTACT_SELECT = `
   entry_channel,
   first_contact_at,
   created_at,
-  category:categories (
-    id,
-    name
-  )
+  category:categories!contacts_category_id_fkey (
+  id,
+  name
+)
 `;
 
 export async function getReportsData() {

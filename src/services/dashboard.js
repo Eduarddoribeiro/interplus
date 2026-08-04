@@ -18,7 +18,7 @@ function getStartOfMonthISO() {
     0,
     0,
     0,
-    0
+    0,
   );
 
   return startOfMonth.toISOString();
@@ -37,7 +37,8 @@ export async function getDashboardData() {
     // 1. Agenda de hoje
     supabase
       .from("contacts")
-      .select(`
+      .select(
+        `
         id,
         child_name,
         birth_date,
@@ -48,14 +49,15 @@ export async function getDashboardData() {
         status,
         experimental_date,
         experimental_time,
-        category:categories (
+        category:categories!contacts_category_id_fkey (
           id,
           name,
           weekday,
           start_time,
           end_time
         )
-      `)
+      `,
+      )
       .eq("experimental_date", today)
       .in("status", [
         "pending_confirmation",
@@ -80,7 +82,8 @@ export async function getDashboardData() {
     // 3. Retornos pendentes
     supabase
       .from("contacts")
-      .select(`
+      .select(
+        `
         id,
         child_name,
         responsible_name,
@@ -89,7 +92,8 @@ export async function getDashboardData() {
         follow_up_date,
         internal_notes,
         experimental_date
-      `)
+      `,
+      )
       .eq("status", "follow_up")
       .order("follow_up_date", {
         ascending: true,
@@ -123,24 +127,19 @@ export async function getDashboardData() {
     throw monthEnrollmentsResult.error;
   }
 
-  const todayExperimentals =
-    todayExperimentalsResult.data ?? [];
+  const todayExperimentals = todayExperimentalsResult.data ?? [];
 
-  const followUps =
-    followUpsResult.data ?? [];
+  const followUps = followUpsResult.data ?? [];
 
   return {
     stats: {
       todayExperimentals: todayExperimentals.length,
 
-      pendingConfirmation:
-        pendingConfirmationResult.count ?? 0,
+      pendingConfirmation: pendingConfirmationResult.count ?? 0,
 
-      pendingFollowUps:
-        followUps.length,
+      pendingFollowUps: followUps.length,
 
-      monthEnrollments:
-        monthEnrollmentsResult.count ?? 0,
+      monthEnrollments: monthEnrollmentsResult.count ?? 0,
     },
 
     todayExperimentals,
