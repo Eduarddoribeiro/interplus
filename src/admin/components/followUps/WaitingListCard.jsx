@@ -7,63 +7,44 @@ import {
   HelpCircle,
   MessageCircle,
   XCircle,
+  ClipboardPenLine,
 } from "lucide-react";
 
 import ContactInfo from "../contacts/ContactInfo";
 
-import {
-  FOLLOW_UP_ACTION,
-} from "../../../constants/followUpActions";
+import { FOLLOW_UP_ACTION } from "../../../constants/followUpActions";
 
-import {
-  INTEREST_QUALIFICATION,
-} from "../../../constants/interestQualification";
+import { INTEREST_QUALIFICATION } from "../../../constants/interestQualification";
 
-import {
-  PREFERRED_SHIFT_LABELS,
-} from "../../../constants/preferredShift";
+import { PREFERRED_SHIFT_LABELS } from "../../../constants/preferredShift";
 
-import {
-  WAITING_REASON_CARD_LABELS,
-} from "../../../constants/waitingListReasons";
+import { WAITING_REASON_CARD_LABELS } from "../../../constants/waitingListReasons";
 
 import {
   createWhatsAppUrl,
   formatContactDateTime,
 } from "../../../helpers/contactPresentation";
 
-import {
-  getWaitingListQualification,
-} from "../../../helpers/waitingListRules";
+import { getWaitingListQualification } from "../../../helpers/waitingListRules";
 
 /* =========================================================
  * COMPONENTE
  * =======================================================*/
 
-export default function WaitingListCard({
-  item,
-  onAction,
-}) {
-  const whatsappUrl =
-    createWhatsAppUrl(item.phone);
+export default function WaitingListCard({ item, onAction }) {
+  const whatsappUrl = createWhatsAppUrl(item.phone);
 
-  const waitingReasonLabel =
-    getWaitingReasonLabel(
-      item.waiting_list_reason,
-    );
+  const waitingReasonLabel = getWaitingReasonLabel(item.waiting_list_reason);
 
-  const qualification =
-    getWaitingListQualification(item);
+  const qualification = getWaitingListQualification(item);
 
-  const categoryName =
-    qualification.category?.name || null;
+  const categoryName = qualification.category?.name || null;
 
-  const preferredShiftLabel =
-    qualification.preferredShift
-      ? PREFERRED_SHIFT_LABELS[
-          qualification.preferredShift
-        ] || qualification.preferredShift
-      : null;
+
+  const preferredShiftLabel = qualification.preferredShift
+    ? PREFERRED_SHIFT_LABELS[qualification.preferredShift] ||
+      qualification.preferredShift
+    : null;
 
   return (
     <article
@@ -93,11 +74,7 @@ export default function WaitingListCard({
 
               {preferredShiftLabel && (
                 <>
-                  {categoryName && (
-                    <span className="text-neutral-300">
-                      •
-                    </span>
-                  )}
+                  {categoryName && <span className="text-neutral-300">•</span>}
 
                   <span className="text-sm font-semibold text-purple-600">
                     {preferredShiftLabel}
@@ -107,26 +84,19 @@ export default function WaitingListCard({
 
               {item.waiting_list_at && (
                 <>
-                  {(categoryName ||
-                    preferredShiftLabel) && (
-                    <span className="text-neutral-300">
-                      •
-                    </span>
+                  {(categoryName || preferredShiftLabel) && (
+                    <span className="text-neutral-300">•</span>
                   )}
 
                   <span className="text-sm text-neutral-500">
-                    Na lista desde{" "}
-                    {formatContactDateTime(
-                      item.waiting_list_at,
-                    )}
+                    Na lista desde {formatContactDateTime(item.waiting_list_at)}
                   </span>
                 </>
               )}
             </div>
 
             <h3 className="mt-2 text-xl font-bold text-neutral-900">
-              {item.child_name ||
-                "Criança não informada"}
+              {item.child_name || "Criança não informada"}
             </h3>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -134,9 +104,7 @@ export default function WaitingListCard({
                 Lista de interesse
               </span>
 
-              <QualificationBadge
-                status={qualification.status}
-              />
+              <QualificationBadge status={qualification.status} />
             </div>
           </div>
         </div>
@@ -146,30 +114,15 @@ export default function WaitingListCard({
          * =============================================== */}
 
         <div className="mt-6 grid gap-5 border-t border-neutral-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-          <ContactInfo
-            label="Responsável"
-            value={item.responsible_name}
-          />
+          <ContactInfo label="Responsável" value={item.responsible_name} />
 
-          <ContactInfo
-            label="WhatsApp"
-            value={item.phone}
-          />
+          <ContactInfo label="WhatsApp" value={item.phone} />
 
-          <ContactInfo
-            label="Categoria de interesse"
-            value={categoryName}
-          />
+          <ContactInfo label="Categoria de interesse" value={categoryName} />
 
-          <ContactInfo
-            label="Turno desejado"
-            value={preferredShiftLabel}
-          />
+          <ContactInfo label="Turno desejado" value={preferredShiftLabel} />
 
-          <ContactInfo
-            label="Origem"
-            value={item.source}
-          />
+          <ContactInfo label="Origem" value={item.source} />
         </div>
 
         {/* =================================================
@@ -190,11 +143,7 @@ export default function WaitingListCard({
                 </p>
 
                 <p className="mt-1 text-sm leading-6 text-amber-800">
-                  Falta completar:{" "}
-                  {qualification.missingFields.join(
-                    ", ",
-                  )}
-                  .
+                  Falta completar: {qualification.missingFields.join(", ")}.
                 </p>
               </div>
             </div>
@@ -215,9 +164,8 @@ export default function WaitingListCard({
                 </p>
 
                 <p className="mt-1 text-sm leading-6 text-amber-800">
-                  Confirme qual categoria a
-                  família procura antes de
-                  qualificar este interesse.
+                  Confirme qual categoria a família procura antes de qualificar
+                  este interesse.
                 </p>
               </div>
             </div>
@@ -294,11 +242,32 @@ export default function WaitingListCard({
 
           <button
             type="button"
+            onClick={() => onAction(item, FOLLOW_UP_ACTION.QUALIFY)}
+            className="
+    flex
+    items-center
+    justify-center
+    gap-2
+    rounded-xl
+    border
+    border-purple-200
+    px-4
+    py-3
+    text-sm
+    font-semibold
+    text-purple-700
+    transition
+    hover:bg-purple-50
+  "
+          >
+            <ClipboardPenLine size={17} />
+            Qualificar cadastro
+          </button>
+
+          <button
+            type="button"
             onClick={() =>
-              onAction(
-                item,
-                FOLLOW_UP_ACTION.SCHEDULE_EXPERIMENTAL,
-              )
+              onAction(item, FOLLOW_UP_ACTION.SCHEDULE_EXPERIMENTAL)
             }
             className="
               flex
@@ -322,12 +291,7 @@ export default function WaitingListCard({
 
           <button
             type="button"
-            onClick={() =>
-              onAction(
-                item,
-                FOLLOW_UP_ACTION.CLOSE_WAITING_LIST,
-              )
-            }
+            onClick={() => onAction(item, FOLLOW_UP_ACTION.CLOSE_WAITING_LIST)}
             className="
               flex
               items-center
@@ -359,10 +323,7 @@ export default function WaitingListCard({
  * =======================================================*/
 
 function QualificationBadge({ status }) {
-  if (
-    status ===
-    INTEREST_QUALIFICATION.COMPLETE
-  ) {
+  if (status === INTEREST_QUALIFICATION.COMPLETE) {
     return (
       <span className="flex w-fit items-center gap-1.5 rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
         <CheckCircle2 size={14} />
@@ -371,10 +332,7 @@ function QualificationBadge({ status }) {
     );
   }
 
-  if (
-    status ===
-    INTEREST_QUALIFICATION.NEEDS_CONFIRMATION
-  ) {
+  if (status === INTEREST_QUALIFICATION.NEEDS_CONFIRMATION) {
     return (
       <span className="flex w-fit items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
         <HelpCircle size={14} />
@@ -400,8 +358,5 @@ function getWaitingReasonLabel(reason) {
     return "Interesse registrado";
   }
 
-  return (
-    WAITING_REASON_CARD_LABELS?.[reason] ||
-    reason
-  );
+  return WAITING_REASON_CARD_LABELS?.[reason] || reason;
 }

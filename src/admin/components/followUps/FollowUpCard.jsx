@@ -65,7 +65,7 @@ export default function FollowUpCard({ item, today, onAction }) {
                   <span className="text-neutral-300">•</span>
 
                   <span className="text-sm text-neutral-500">
-                    Experimental em {formatDate(item.experimental_date)}
+                    Experimental em {formatContactDate(item.experimental_date)}
                   </span>
                 </>
               )}
@@ -272,7 +272,7 @@ function FollowUpBadge({ isOverdue, isToday, daysLate, date, limitReached }) {
 
   return (
     <span className="w-fit rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
-      {formatDate(date)}
+      {formatContactDate(date)}
     </span>
   );
 }

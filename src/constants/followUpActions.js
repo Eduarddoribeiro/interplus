@@ -5,13 +5,14 @@
  * =======================================================*/
 
 export const FOLLOW_UP_ACTION = {
-  RESCHEDULE: "reschedule",
   ENROLL: "enroll",
+  RESCHEDULE: "reschedule",
   LOSE: "lose",
   SCHEDULE_EXPERIMENTAL: "schedule_experimental",
   CLOSE_WAITING_LIST: "close_waiting_list",
-};
 
+  QUALIFY: "qualify",
+};
 /* =========================================================
  * GRUPOS DE AÇÕES
  * =======================================================*/
@@ -23,6 +24,9 @@ export const FOLLOW_UP_CLOSING_ACTIONS = [
   FOLLOW_UP_ACTION.LOSE,
   FOLLOW_UP_ACTION.CLOSE_WAITING_LIST,
 ];
+
+
+
 
 /**
  * Verifica se a ação exige um motivo de encerramento.

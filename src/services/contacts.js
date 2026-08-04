@@ -416,22 +416,27 @@ export async function updateContact(contactId, updates) {
     throw new Error("Dados inválidos.");
   }
 
-  const allowedFields = [
-    "child_name",
-    "birth_date",
-    "responsible_name",
-    "phone",
-    "email",
-    "source",
-    "entry_channel",
-    "neighborhood",
-    "trained_elsewhere",
-    "previous_club",
-    "category_id",
-    "observations",
-    "internal_notes",
-    "first_contact_at",
-  ];
+const allowedFields = [
+  "child_name",
+  "birth_date",
+  "responsible_name",
+  "phone",
+  "email",
+  "source",
+  "entry_channel",
+  "neighborhood",
+  "trained_elsewhere",
+  "previous_club",
+
+  "category_id",
+  "interest_category_id",
+  "preferred_shift",
+  "qualification_status",
+
+  "observations",
+  "internal_notes",
+  "first_contact_at",
+];
 
   const payload = {};
 
