@@ -1,6 +1,8 @@
 import { GraduationCap, MessageCircle, RotateCcw, XCircle } from "lucide-react";
 
 import FollowUpProgress from "./FollowUpProgress";
+import ContactInfo from "../contacts/ContactInfo";
+
 import {
   createWhatsAppUrl,
   daysBetweenDates,
@@ -8,7 +10,8 @@ import {
 } from "../../../helpers/contactPresentation";
 
 import { getFollowUpState } from "../../../helpers/followUpRules";
-import ContactInfo from "../contacts/ContactInfo";
+
+import { FOLLOW_UP_ACTION } from "../../../constants/followUpActions";
 
 /* =========================================================
  * COMPONENTE
@@ -87,27 +90,16 @@ export default function FollowUpCard({ item, today, onAction }) {
          * =============================================== */}
 
         <div className="mt-6 grid gap-5 border-t border-neutral-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-         <ContactInfo
-  label="Responsável"
-  value={item.responsible_name}
-/>
+          <ContactInfo label="Responsável" value={item.responsible_name} />
 
-<ContactInfo
-  label="WhatsApp"
-  value={item.phone}
-/>
+          <ContactInfo label="WhatsApp" value={item.phone} />
 
-<ContactInfo
-  label="Retorno"
-  value={formatContactDate(
-    item.follow_up_date,
-  )}
-/>
+          <ContactInfo
+            label="Retorno"
+            value={formatContactDate(item.follow_up_date)}
+          />
 
-<ContactInfo
-  label="Origem"
-  value={item.source}
-/>
+          <ContactInfo label="Origem" value={item.source} />
         </div>
 
         {/* =================================================
@@ -166,7 +158,7 @@ export default function FollowUpCard({ item, today, onAction }) {
 
           <button
             type="button"
-            onClick={() => onAction(item, "enroll")}
+            onClick={() => onAction(item, FOLLOW_UP_ACTION.ENROLL)}
             className="
               flex
               items-center
@@ -190,7 +182,7 @@ export default function FollowUpCard({ item, today, onAction }) {
           {followUpState.canReschedule && (
             <button
               type="button"
-              onClick={() => onAction(item, "reschedule")}
+              onClick={() => onAction(item, FOLLOW_UP_ACTION.RESCHEDULE)}
               className="
                 flex
                 items-center
@@ -214,7 +206,12 @@ export default function FollowUpCard({ item, today, onAction }) {
 
           <button
             type="button"
-            onClick={() => onAction(item, "lose")}
+            onClick={() =>
+  onAction(
+    item,
+    FOLLOW_UP_ACTION.LOSE,
+  )
+}
             className="
               flex
               items-center
@@ -277,28 +274,6 @@ function FollowUpBadge({ isOverdue, isToday, daysLate, date, limitReached }) {
     <span className="w-fit rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
       {formatDate(date)}
     </span>
-  );
-}
-
-/* =========================================================
- * INFO
- * =======================================================*/
-
-function Info({ label, value }) {
-  if (!value) {
-    return null;
-  }
-
-  return (
-    <div className="min-w-0">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
-        {label}
-      </p>
-
-      <p className="mt-1 break-words text-sm font-semibold text-neutral-900">
-        {value}
-      </p>
-    </div>
   );
 }
 

@@ -20,6 +20,9 @@ import {
   FOLLOW_UP_FILTER,
   FOLLOW_UP_FILTER_OPTIONS,
 } from "../../constants/followUpFilters";
+import { FOLLOW_UP_ACTION } from "../../constants/followUpActions";
+
+import { CONTACT_STATUS } from "../../constants/contactStatus";
 
 import {
   getFollowUpCenter,
@@ -91,7 +94,7 @@ export default function FollowUps() {
 
       let updated;
 
-      if (actionType === "reschedule") {
+      if (actionType === FOLLOW_UP_ACTION.RESCHEDULE) {
         updated = await scheduleFollowUp(
           actionContact.id,
           payload.followUpDate,
@@ -99,11 +102,15 @@ export default function FollowUps() {
         );
       }
 
-      if (actionType === "enroll") {
+      if (
+  actionType === FOLLOW_UP_ACTION.ENROLL
+) {
         updated = await enrollFromFollowUp(actionContact.id, payload.notes);
       }
 
-      if (actionType === "lose") {
+      if (
+  actionType === FOLLOW_UP_ACTION.LOSE
+) {
         updated = await loseFromFollowUp(
           actionContact.id,
           payload.lostReason,
@@ -118,7 +125,9 @@ export default function FollowUps() {
        * Se matriculou/perdeu,
        * removemos da fila.
        */
-      if (updated?.status === "follow_up") {
+      if (
+  updated?.status === CONTACT_STATUS.FOLLOW_UP
+) {
         setFollowUps((current) =>
           current.map((item) => (item.id === updated.id ? updated : item)),
         );
@@ -431,11 +440,12 @@ export default function FollowUps() {
           type={actionType}
           saving={saving}
           onClose={closeAction}
-          onSave={
-            actionType === "close_waiting_list"
-              ? handleCloseWaitingList
-              : handleFollowUpAction
-          }
+         onSave={
+  actionType ===
+  FOLLOW_UP_ACTION.CLOSE_WAITING_LIST
+    ? handleCloseWaitingList
+    : handleFollowUpAction
+}
         />
       )}
     </div>
@@ -496,46 +506,38 @@ function StatCard({ title, value, subtitle, icon: Icon, danger = false }) {
 
 function EmptyState({ type }) {
   const content = {
-  [FOLLOW_UP_FILTER.TODAY]: {
-    title: "Nenhum retorno para hoje",
-    description:
-      "Sua agenda de contatos está livre hoje.",
-    icon: PhoneCall,
-  },
+    [FOLLOW_UP_FILTER.TODAY]: {
+      title: "Nenhum retorno para hoje",
+      description: "Sua agenda de contatos está livre hoje.",
+      icon: PhoneCall,
+    },
 
-  [FOLLOW_UP_FILTER.OVERDUE]: {
-    title: "Nenhum retorno atrasado",
-    description:
-      "Todos os acompanhamentos estão em dia.",
-    icon: CircleCheckBig,
-  },
+    [FOLLOW_UP_FILTER.OVERDUE]: {
+      title: "Nenhum retorno atrasado",
+      description: "Todos os acompanhamentos estão em dia.",
+      icon: CircleCheckBig,
+    },
 
-  [FOLLOW_UP_FILTER.UPCOMING]: {
-    title: "Nenhum próximo retorno",
-    description:
-      "Não existem contatos agendados para os próximos dias.",
-    icon: CalendarClock,
-  },
+    [FOLLOW_UP_FILTER.UPCOMING]: {
+      title: "Nenhum próximo retorno",
+      description: "Não existem contatos agendados para os próximos dias.",
+      icon: CalendarClock,
+    },
 
-  [FOLLOW_UP_FILTER.ALL]: {
-    title: "Nenhum retorno pendente",
-    description:
-      "Não existem oportunidades aguardando acompanhamento.",
-    icon: UserRound,
-  },
+    [FOLLOW_UP_FILTER.ALL]: {
+      title: "Nenhum retorno pendente",
+      description: "Não existem oportunidades aguardando acompanhamento.",
+      icon: UserRound,
+    },
 
-  [FOLLOW_UP_FILTER.WAITING_LIST]: {
-    title: "Lista de interesse vazia",
-    description:
-      "Nenhuma família está aguardando vaga ou abertura de turma.",
-    icon: ListPlus,
-  },
-};
+    [FOLLOW_UP_FILTER.WAITING_LIST]: {
+      title: "Lista de interesse vazia",
+      description: "Nenhuma família está aguardando vaga ou abertura de turma.",
+      icon: ListPlus,
+    },
+  };
 
-const selected =
-  content[type] ||
-  content[FOLLOW_UP_FILTER.ALL];
-
+  const selected = content[type] || content[FOLLOW_UP_FILTER.ALL];
 
   const Icon = selected.icon;
 

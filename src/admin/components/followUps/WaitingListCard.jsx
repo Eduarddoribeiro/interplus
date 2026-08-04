@@ -1,12 +1,18 @@
-import { CalendarDays, MessageCircle, XCircle } from "lucide-react";
+import {
+  CalendarDays,
+  MessageCircle,
+  XCircle,
+} from "lucide-react";
 
+import ContactInfo from "../contacts/ContactInfo";
+
+import { FOLLOW_UP_ACTION } from "../../../constants/followUpActions";
 import { WAITING_REASON_CARD_LABELS } from "../../../constants/waitingListReasons";
 
 import {
   createWhatsAppUrl,
   formatContactDateTime,
 } from "../../../helpers/contactPresentation";
-import ContactInfo from "../contacts/ContactInfo";
 
 /* =========================================================
  * COMPONENTE
@@ -148,7 +154,12 @@ export default function WaitingListCard({ item, onAction }) {
 
           <button
             type="button"
-            onClick={() => onAction(item, "schedule_experimental")}
+            onClick={() =>
+  onAction(
+    item,
+    FOLLOW_UP_ACTION.SCHEDULE_EXPERIMENTAL,
+  )
+}
             className="
               flex
               items-center
@@ -171,7 +182,12 @@ export default function WaitingListCard({ item, onAction }) {
 
           <button
             type="button"
-            onClick={() => onAction(item, "close_waiting_list")}
+            onClick={() =>
+  onAction(
+    item,
+    FOLLOW_UP_ACTION.CLOSE_WAITING_LIST,
+  )
+}
             className="
               flex
               items-center

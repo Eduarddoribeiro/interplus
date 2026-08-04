@@ -8,17 +8,24 @@ import {
 } from "lucide-react";
 
 import {
+  FOLLOW_UP_ACTION,
+  isFollowUpClosingAction,
+} from "../../../constants/followUpActions";
+
+import {
   LOST_REASON_OPTIONS,
 } from "../../../constants/lostReasons";
 
-import { getTodayISO } from "../../../helpers/contactPresentation";
+import {
+  getTodayISO,
+} from "../../../helpers/contactPresentation";
 
 /* =========================================================
  * CONFIGURAÇÕES
  * =======================================================*/
 
 const ACTION_CONFIG = {
-  enroll: {
+  [FOLLOW_UP_ACTION.ENROLL]: {
     eyebrow: "Conversão",
     description:
       "Registre a matrícula deste contato.",
@@ -27,7 +34,7 @@ const ACTION_CONFIG = {
       "Ex.: Família confirmou a matrícula...",
   },
 
-  reschedule: {
+  [FOLLOW_UP_ACTION.RESCHEDULE]: {
     eyebrow: "Novo retorno",
     description:
       "Escolha quando este contato deve voltar para sua fila.",
@@ -36,7 +43,7 @@ const ACTION_CONFIG = {
       "Ex.: Mãe pediu para chamar novamente após o dia 30...",
   },
 
-  lose: {
+  [FOLLOW_UP_ACTION.LOSE]: {
     eyebrow: "Encerrar oportunidade",
     description:
       "Registre por que este contato não converteu.",
@@ -45,7 +52,7 @@ const ACTION_CONFIG = {
       "Ex.: Família informou que o horário não atende...",
   },
 
-  close_waiting_list: {
+  [FOLLOW_UP_ACTION.CLOSE_WAITING_LIST]: {
     eyebrow: "Encerrar interesse",
     description:
       "Registre por que a família não deseja mais aguardar.",
@@ -77,13 +84,20 @@ export default function FollowUpActionModal({
 
   const config =
     ACTION_CONFIG[type] ||
-    ACTION_CONFIG.lose;
+    ACTION_CONFIG[FOLLOW_UP_ACTION.LOSE];
+
+  const isClosingAction =
+    isFollowUpClosingAction(type);
+
+  /* =======================================================
+   * SUBMIT
+   * =====================================================*/
 
   function handleSubmit(event) {
     event.preventDefault();
 
     if (
-      type === "reschedule" &&
+      type === FOLLOW_UP_ACTION.RESCHEDULE &&
       !followUpDate
     ) {
       alert(
@@ -94,8 +108,7 @@ export default function FollowUpActionModal({
     }
 
     if (
-      (type === "lose" ||
-        type === "close_waiting_list") &&
+      isClosingAction &&
       !lostReason
     ) {
       alert(
@@ -115,7 +128,9 @@ export default function FollowUpActionModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
-        {/* HEADER */}
+        {/* =================================================
+         * HEADER
+         * =============================================== */}
 
         <div className="flex items-start justify-between border-b border-neutral-100 p-6">
           <div>
@@ -142,13 +157,17 @@ export default function FollowUpActionModal({
           </button>
         </div>
 
-        {/* FORM */}
+        {/* =================================================
+         * FORM
+         * =============================================== */}
 
         <form
           onSubmit={handleSubmit}
           className="p-6"
         >
-          {type === "enroll" && (
+          {/* MATRÍCULA */}
+
+          {type === FOLLOW_UP_ACTION.ENROLL && (
             <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
               <div className="flex gap-3">
                 <CircleCheckBig
@@ -171,7 +190,10 @@ export default function FollowUpActionModal({
             </div>
           )}
 
-          {type === "reschedule" && (
+          {/* REAGENDAMENTO */}
+
+          {type ===
+            FOLLOW_UP_ACTION.RESCHEDULE && (
             <div>
               <label className="text-sm font-semibold text-neutral-900">
                 Nova data do retorno
@@ -203,9 +225,9 @@ export default function FollowUpActionModal({
             </div>
           )}
 
-          {(type === "lose" ||
-            type ===
-              "close_waiting_list") && (
+          {/* ENCERRAMENTO */}
+
+          {isClosingAction && (
             <div>
               <label className="text-sm font-semibold text-neutral-900">
                 Motivo
@@ -251,7 +273,9 @@ export default function FollowUpActionModal({
             </div>
           )}
 
-          {/* OBSERVAÇÃO */}
+          {/* =================================================
+           * OBSERVAÇÃO
+           * =============================================== */}
 
           <div className="mt-6">
             <label className="text-sm font-semibold text-neutral-900">
@@ -268,9 +292,7 @@ export default function FollowUpActionModal({
                 setNotes(event.target.value)
               }
               rows={4}
-              placeholder={
-                config.placeholder
-              }
+              placeholder={config.placeholder}
               className="
                 mt-2
                 w-full
@@ -288,7 +310,9 @@ export default function FollowUpActionModal({
             />
           </div>
 
-          {/* AÇÕES */}
+          {/* =================================================
+           * AÇÕES
+           * =============================================== */}
 
           <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
@@ -315,4 +339,3 @@ export default function FollowUpActionModal({
     </div>
   );
 }
-
