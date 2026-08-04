@@ -16,6 +16,10 @@ import FollowUpCard from "../components/followUps/FollowUpCard";
 import WaitingListCard from "../components/followUps/WaitingListCard";
 import FollowUpActionModal from "../components/followUps/FollowUpActionModal";
 import { getTodayISO } from "../../helpers/contactPresentation";
+import {
+  FOLLOW_UP_FILTER,
+  FOLLOW_UP_FILTER_OPTIONS,
+} from "../../constants/followUpFilters";
 
 import {
   getFollowUpCenter,
@@ -25,29 +29,6 @@ import {
   closeWaitingListContact,
 } from "../../services/contacts";
 
-const FILTERS = [
-  {
-    value: "today",
-    label: "Hoje",
-  },
-  {
-    value: "overdue",
-    label: "Atrasados",
-  },
-  {
-    value: "upcoming",
-    label: "Próximos",
-  },
-  {
-    value: "all",
-    label: "Todos",
-  },
-  {
-    value: "waiting_list",
-    label: "Lista de interesse",
-  },
-];
-
 export default function FollowUps() {
   const [followUps, setFollowUps] = useState([]);
   const [waitingList, setWaitingList] = useState([]);
@@ -55,8 +36,7 @@ export default function FollowUps() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [activeFilter, setActiveFilter] = useState("today");
-
+  const [activeFilter, setActiveFilter] = useState(FOLLOW_UP_FILTER.TODAY);
   const [actionContact, setActionContact] = useState(null);
 
   const [actionType, setActionType] = useState(null);
@@ -222,23 +202,23 @@ export default function FollowUps() {
    */
 
   const filteredFollowUps = useMemo(() => {
-    if (activeFilter === "waiting_list") {
+    if (activeFilter === FOLLOW_UP_FILTER.WAITING_LIST) {
       return [];
     }
 
     let result = [...followUps];
 
-    if (activeFilter === "today") {
+    if (activeFilter === FOLLOW_UP_FILTER.TODAY) {
       result = result.filter((item) => item.follow_up_date === today);
     }
 
-    if (activeFilter === "overdue") {
+    if (activeFilter === FOLLOW_UP_FILTER.OVERDUE) {
       result = result.filter(
         (item) => item.follow_up_date && item.follow_up_date < today,
       );
     }
 
-    if (activeFilter === "upcoming") {
+    if (activeFilter === FOLLOW_UP_FILTER.UPCOMING) {
       result = result.filter(
         (item) => item.follow_up_date && item.follow_up_date > today,
       );
@@ -346,7 +326,7 @@ export default function FollowUps() {
           p-3
         "
       >
-        {FILTERS.map((filter) => {
+        {FOLLOW_UP_FILTER_OPTIONS.map((filter) => {
           const active = activeFilter === filter.value;
 
           return (
@@ -355,18 +335,18 @@ export default function FollowUps() {
               type="button"
               onClick={() => setActiveFilter(filter.value)}
               className={`
-                rounded-xl
-                px-4
-                py-2.5
-                text-sm
-                font-semibold
-                transition
-                ${
-                  active
-                    ? "bg-neutral-900 text-white"
-                    : "text-neutral-600 hover:bg-neutral-100"
-                }
-              `}
+        rounded-xl
+        px-4
+        py-2.5
+        text-sm
+        font-semibold
+        transition
+        ${
+          active
+            ? "bg-neutral-900 text-white"
+            : "text-neutral-600 hover:bg-neutral-100"
+        }
+      `}
             >
               {filter.label}
             </button>
@@ -404,7 +384,7 @@ export default function FollowUps() {
 
       {/* RETORNOS */}
 
-      {!loading && !error && activeFilter !== "waiting_list" && (
+      {!loading && !error && activeFilter !== FOLLOW_UP_FILTER.WAITING_LIST && (
         <>
           {filteredFollowUps.length === 0 ? (
             <EmptyState type={activeFilter} />
@@ -425,10 +405,10 @@ export default function FollowUps() {
 
       {/* LISTA DE INTERESSE */}
 
-      {!loading && !error && activeFilter === "waiting_list" && (
+      {!loading && !error && activeFilter === FOLLOW_UP_FILTER.WAITING_LIST && (
         <>
           {waitingList.length === 0 ? (
-            <EmptyState type="waiting_list" />
+            <EmptyState type={FOLLOW_UP_FILTER.WAITING_LIST} />
           ) : (
             <div className="space-y-4">
               {waitingList.map((item) => (
@@ -461,7 +441,6 @@ export default function FollowUps() {
     </div>
   );
 }
-
 
 /*
  * CARD DE INDICADOR
@@ -517,38 +496,46 @@ function StatCard({ title, value, subtitle, icon: Icon, danger = false }) {
 
 function EmptyState({ type }) {
   const content = {
-    today: {
-      title: "Nenhum retorno para hoje",
-      description: "Sua agenda de contatos está livre hoje.",
-      icon: PhoneCall,
-    },
+  [FOLLOW_UP_FILTER.TODAY]: {
+    title: "Nenhum retorno para hoje",
+    description:
+      "Sua agenda de contatos está livre hoje.",
+    icon: PhoneCall,
+  },
 
-    overdue: {
-      title: "Nenhum retorno atrasado",
-      description: "Todos os acompanhamentos estão em dia.",
-      icon: CircleCheckBig,
-    },
+  [FOLLOW_UP_FILTER.OVERDUE]: {
+    title: "Nenhum retorno atrasado",
+    description:
+      "Todos os acompanhamentos estão em dia.",
+    icon: CircleCheckBig,
+  },
 
-    upcoming: {
-      title: "Nenhum próximo retorno",
-      description: "Não existem contatos agendados para os próximos dias.",
-      icon: CalendarClock,
-    },
+  [FOLLOW_UP_FILTER.UPCOMING]: {
+    title: "Nenhum próximo retorno",
+    description:
+      "Não existem contatos agendados para os próximos dias.",
+    icon: CalendarClock,
+  },
 
-    all: {
-      title: "Nenhum retorno pendente",
-      description: "Não existem oportunidades aguardando acompanhamento.",
-      icon: UserRound,
-    },
+  [FOLLOW_UP_FILTER.ALL]: {
+    title: "Nenhum retorno pendente",
+    description:
+      "Não existem oportunidades aguardando acompanhamento.",
+    icon: UserRound,
+  },
 
-    waiting_list: {
-      title: "Lista de interesse vazia",
-      description: "Nenhuma família está aguardando vaga ou abertura de turma.",
-      icon: ListPlus,
-    },
-  };
+  [FOLLOW_UP_FILTER.WAITING_LIST]: {
+    title: "Lista de interesse vazia",
+    description:
+      "Nenhuma família está aguardando vaga ou abertura de turma.",
+    icon: ListPlus,
+  },
+};
 
-  const selected = content[type] || content.all;
+const selected =
+  content[type] ||
+  content[FOLLOW_UP_FILTER.ALL];
+
 
   const Icon = selected.icon;
 
@@ -564,5 +551,3 @@ function EmptyState({ type }) {
     </div>
   );
 }
-
- 
