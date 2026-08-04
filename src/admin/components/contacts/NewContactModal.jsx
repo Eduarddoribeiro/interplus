@@ -15,6 +15,7 @@ import {
 import { supabase } from "../../../lib/supabase";
 import { createContact } from "../../../services/contacts";
 import { WAITING_LIST_REASONS } from "../../../constants/waitingListReasons";
+import { PREFERRED_SHIFT_OPTIONS } from "../../../constants/preferredShift";
 
 const SOURCES = [
   { value: "whatsapp", label: "WhatsApp" },
@@ -82,6 +83,8 @@ const [previousClub, setPreviousClub] = useState("");
   const [waitingReason, setWaitingReason] = useState("");
 
   const [waitingNotes, setWaitingNotes] = useState("");
+
+  const [preferredShift, setPreferredShift] = useState("");
 
   const [internalNotes, setInternalNotes] = useState("");
 
@@ -299,6 +302,8 @@ const [previousClub, setPreviousClub] = useState("");
 
         category_id: category?.id || null,
 
+        preferred_shift: preferredShift || null,
+
         internal_notes: internalNotes.trim() || null,
       };
 
@@ -397,6 +402,7 @@ const [previousClub, setPreviousClub] = useState("");
 
     setWaitingReason("");
     setWaitingNotes("");
+    setPreferredShift("");
 
     setInternalNotes("");
 
@@ -916,6 +922,26 @@ const [previousClub, setPreviousClub] = useState("");
     {reason.label}
   </option>
 ))}
+                      </select>
+                    </Field>
+                  </div>
+
+                  <div className="mt-5">
+                    <Field label="Turno preferido">
+                      <select
+                        value={preferredShift}
+                        onChange={(event) =>
+                          setPreferredShift(event.target.value)
+                        }
+                        className={inputClass}
+                      >
+                        <option value="">Não informado</option>
+
+                        {PREFERRED_SHIFT_OPTIONS.map((shift) => (
+                          <option key={shift.value} value={shift.value}>
+                            {shift.label}
+                          </option>
+                        ))}
                       </select>
                     </Field>
                   </div>
