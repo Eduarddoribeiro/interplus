@@ -46,6 +46,18 @@ export function filterWaitingList(
       return false;
     }
 
+    /* DIA PREFERIDO */
+
+    if (
+      filters.preferredDay !==
+        WAITING_LIST_FILTER.ALL &&
+      !contact.preferred_days?.includes(
+        filters.preferredDay,
+      )
+    ) {
+      return false;
+    }
+
     /* QUALIFICAÇÃO */
 
     if (

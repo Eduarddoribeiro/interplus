@@ -1,7 +1,7 @@
 begin;
 
 create or replace function public.contacts_preferred_days_are_unique(
-  values text[]
+  p_days text[]
 )
 returns boolean
 language sql
@@ -9,9 +9,9 @@ immutable
 strict
 parallel safe
 as $$
-  select cardinality(values) = (
+  select cardinality(p_days) = (
     select count(distinct day)
-    from unnest(values) as days(day)
+    from unnest(p_days) as days(day)
   );
 $$;
 
@@ -36,5 +36,9 @@ alter table public.contacts
       ]::text[]
     )
   );
+
+create index contacts_preferred_days_idx
+  on public.contacts
+  using gin (preferred_days);
 
 commit;

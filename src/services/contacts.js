@@ -124,6 +124,7 @@ const SESSION_WITH_CONTACT = `
     category_id,
     interest_category_id,
     preferred_shift,
+    preferred_days,
     qualification_status,
     follow_up_date,
     follow_up_started_at,
@@ -416,27 +417,28 @@ export async function updateContact(contactId, updates) {
     throw new Error("Dados inválidos.");
   }
 
-const allowedFields = [
-  "child_name",
-  "birth_date",
-  "responsible_name",
-  "phone",
-  "email",
-  "source",
-  "entry_channel",
-  "neighborhood",
-  "trained_elsewhere",
-  "previous_club",
+  const allowedFields = [
+    "child_name",
+    "birth_date",
+    "responsible_name",
+    "phone",
+    "email",
+    "source",
+    "entry_channel",
+    "neighborhood",
+    "trained_elsewhere",
+    "previous_club",
 
-  "category_id",
-  "interest_category_id",
-  "preferred_shift",
-  "qualification_status",
+    "category_id",
+    "interest_category_id",
+    "preferred_shift",
+    "preferred_days",
+    "qualification_status",
 
-  "observations",
-  "internal_notes",
-  "first_contact_at",
-];
+    "observations",
+    "internal_notes",
+    "first_contact_at",
+  ];
 
   const payload = {};
 
@@ -729,6 +731,13 @@ export async function createContact(contact) {
     !contactPayload.waiting_list_at
   ) {
     contactPayload.waiting_list_at = nowISO();
+  }
+
+  if (
+    !Array.isArray(contactPayload.preferred_days) ||
+    contactPayload.preferred_days.length === 0
+  ) {
+    contactPayload.preferred_days = null;
   }
 
   const { data, error } = await supabase
@@ -1109,8 +1118,17 @@ export async function getWaitingList() {
 
   return data || [];
 }
+export async function addToWaitingList(
+  contactId,
+  {
+    reason,
+    notes = "",
 
-export async function addToWaitingList(contactId, { reason, notes = "" }) {
+    categoryId = null,
+    preferredShift = null,
+    preferredDays = [],
+  },
+) {
   if (!contactId) {
     throw new Error("Contato não informado.");
   }
@@ -1121,10 +1139,27 @@ export async function addToWaitingList(contactId, { reason, notes = "" }) {
 
   const current = await getContactById(contactId);
 
-  const updates = buildWaitingListUpdate(current, {
-    reason,
-    notes,
-  });
+ const updates = {
+    ...buildWaitingListUpdate(current,{
+        reason,
+        notes,
+
+        interestCategoryId: categoryId,
+        preferredShift,
+        preferredDays,
+    }),
+
+    interest_category_id:
+        categoryId || null,
+
+    preferred_shift:
+        preferredShift || null,
+
+    preferred_days:
+        preferredDays?.length
+            ? preferredDays
+            : null,
+};
 
   const { data, error } = await supabase
     .from("contacts")

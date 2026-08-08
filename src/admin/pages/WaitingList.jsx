@@ -8,6 +8,8 @@ import WaitingListDashboard from "../components/waitingList/WaitingListDashboard
 import WaitingListSection from "../components/waitingList/WaitingListSection";
 import ContactActionModal from "../components/followUps/ContactActionModal";
 import WaitingListQualificationModal from "../components/followUps/WaitingListQualificationModal";
+import WaitingListSummary from "../components/waitingList/WaitingListSummary";
+
 
 import {
   addContactInternalNote,
@@ -18,7 +20,10 @@ import {
 import { getWaitingListPriority } from "../../helpers/waitingListPriority";
 import { filterWaitingList } from "../../helpers/waitingListFilters";
 import { getInterestCategory } from "../../helpers/waitingListRules";
-import { INITIAL_WAITING_LIST_FILTERS } from "../../constants/waitingListFilters";
+import {
+  INITIAL_WAITING_LIST_FILTERS,
+  WAITING_LIST_FILTER,
+} from "../../constants/waitingListFilters";
 import { CONTACT_STATUS } from "../../constants/contactStatus";
 import { FOLLOW_UP_ACTION } from "../../constants/followUpActions";
 
@@ -26,9 +31,7 @@ export default function WaitingList() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
 
-  const [filters, setFilters] = useState(
-    INITIAL_WAITING_LIST_FILTERS,
-  );
+  const [filters, setFilters] = useState(INITIAL_WAITING_LIST_FILTERS);
 
   const [actionContact, setActionContact] = useState(null);
   const [actionType, setActionType] = useState(null);
@@ -51,10 +54,7 @@ export default function WaitingList() {
 
       setItems(data.waitingList || []);
     } catch (error) {
-      console.error(
-        "Erro ao carregar lista de interesse:",
-        error,
-      );
+      console.error("Erro ao carregar lista de interesse:", error);
     } finally {
       setLoading(false);
     }
@@ -76,10 +76,7 @@ export default function WaitingList() {
     });
 
     return Array.from(map.values()).sort((a, b) =>
-      (a.name || "").localeCompare(
-        b.name || "",
-        "pt-BR",
-      ),
+      (a.name || "").localeCompare(b.name || "", "pt-BR"),
     );
   }, [items]);
 
@@ -92,6 +89,46 @@ export default function WaitingList() {
     [items, filters],
   );
 
+  function handleDashboardFilter(type, value) {
+    setFilters((current) => {
+      switch (type) {
+        case "qualification":
+          return {
+            ...current,
+            qualification:
+              current.qualification === value ? WAITING_LIST_FILTER.ALL : value,
+          };
+
+        case "category":
+          return {
+            ...current,
+            categoryId:
+              String(current.categoryId) === String(value)
+                ? WAITING_LIST_FILTER.ALL
+                : String(value),
+          };
+
+        case "shift":
+          return {
+            ...current,
+            preferredShift:
+              current.preferredShift === value
+                ? WAITING_LIST_FILTER.ALL
+                : value,
+          };
+
+        case "day":
+          return {
+            ...current,
+            preferredDay:
+              current.preferredDay === value ? WAITING_LIST_FILTER.ALL : value,
+          };
+
+        default:
+          return current;
+      }
+    });
+  }
   /* =========================================================
    * AGRUPAMENTO COMERCIAL
    * =======================================================*/
@@ -112,9 +149,7 @@ export default function WaitingList() {
       groups.get(group.key).items.push(item);
     });
 
-    return Array.from(groups.values()).sort(
-      (a, b) => a.order - b.order,
-    );
+    return Array.from(groups.values()).sort((a, b) => a.order - b.order);
   }, [filteredItems]);
 
   /* =========================================================
@@ -184,9 +219,7 @@ export default function WaitingList() {
     } catch (error) {
       console.error("Erro ao salvar qualificação:", error);
 
-      alert(
-        error?.message || "Não foi possível salvar a qualificação.",
-      );
+      alert(error?.message || "Não foi possível salvar a qualificação.");
     } finally {
       setSaving(false);
     }
@@ -198,13 +231,10 @@ export default function WaitingList() {
     try {
       setSaving(true);
 
-      const updatedContact = await closeWaitingListContact(
-        actionContact.id,
-        {
-          lostReason: payload.lostReason,
-          notes: payload.notes,
-        },
-      );
+      const updatedContact = await closeWaitingListContact(actionContact.id, {
+        lostReason: payload.lostReason,
+        notes: payload.notes,
+      });
 
       updateWaitingListItem(updatedContact);
       setActionContact(null);
@@ -212,9 +242,7 @@ export default function WaitingList() {
     } catch (error) {
       console.error("Erro ao encerrar lista de interesse:", error);
 
-      alert(
-        error?.message || "Não foi possível encerrar o contato.",
-      );
+      alert(error?.message || "Não foi possível encerrar o contato.");
     } finally {
       setSaving(false);
     }
@@ -228,15 +256,13 @@ export default function WaitingList() {
     <div className="space-y-8">
       <WaitingListHeader total={items.length} />
 
-      <WaitingListDashboard items={items} />
+<WaitingListSummary items={items} />
 
       <WaitingListFilters
         categories={categories}
         filters={filters}
         onChange={setFilters}
-        onClear={() =>
-          setFilters({ ...INITIAL_WAITING_LIST_FILTERS })
-        }
+        onClear={() => setFilters({ ...INITIAL_WAITING_LIST_FILTERS })}
       />
 
       {loading ? (

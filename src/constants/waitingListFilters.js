@@ -15,5 +15,6 @@ export const WAITING_LIST_FILTER = {
 export const INITIAL_WAITING_LIST_FILTERS = {
   categoryId: WAITING_LIST_FILTER.ALL,
   preferredShift: WAITING_LIST_FILTER.ALL,
+  preferredDay: WAITING_LIST_FILTER.ALL,
   qualification: WAITING_LIST_FILTER.ALL,
 };

@@ -110,25 +110,81 @@ export function buildEnrollmentUpdate(
  * LISTA DE INTERESSE
  * =======================================================*/
 
+/* =========================================================
+ * LISTA DE INTERESSE
+ * =======================================================*/
+
 export function buildWaitingListUpdate(
   current,
   {
     reason,
     notes = "",
+
+    interestCategoryId = null,
+    preferredShift = null,
+    preferredDays = [],
   }
 ) {
   const updates = {
     status: CONTACT_STATUS.WAITING_LIST,
 
+    /* -------------------------
+     * Dados da Lista
+     * -----------------------*/
+
     waiting_list_reason: reason,
+
     waiting_list_notes: cleanOptionalText(notes),
-    waiting_list_at: nowISO(),
+
+    /*
+     * Mantém a data original caso
+     * o contato já estivesse na lista.
+     */
+    waiting_list_at:
+      current.waiting_list_at || nowISO(),
+
+    /*
+     * Categoria de interesse
+     * (não altera a categoria técnica)
+     */
+    interest_category_id:
+      interestCategoryId || null,
+
+    preferred_shift:
+      preferredShift || null,
+
+    preferred_days:
+      preferredDays?.length
+        ? preferredDays
+        : null,
+
+    /* -------------------------
+     * Sai completamente do
+     * fluxo de Follow-up
+     * -----------------------*/
 
     follow_up_date: null,
 
     follow_up_started_at: null,
+
     follow_up_attempts: 0,
+
     last_follow_up_at: null,
+
+    /* -------------------------
+     * Remove qualquer
+     * experimental ativa
+     * -----------------------*/
+
+    experimental_date: null,
+
+    experimental_time: null,
+
+    experimental_result: null,
+
+    /* -------------------------
+     * Limpa encerramento
+     * -----------------------*/
 
     lost_reason: null,
 

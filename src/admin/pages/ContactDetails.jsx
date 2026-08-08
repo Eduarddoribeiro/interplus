@@ -337,10 +337,14 @@ export default function ContactDetails() {
     notes: "",
   });
 
-  const [waitingForm, setWaitingForm] = useState({
-    reason: "waiting_schedule",
-    notes: "",
-  });
+const [waitingForm, setWaitingForm] = useState({
+  reason: "waiting_schedule",
+  notes: "",
+
+  categoryId: "",
+  preferredShift: "",
+  preferredDays: [],
+});
 
   const [experimentalForm, setExperimentalForm] = useState({
     categoryId: "",
@@ -478,12 +482,22 @@ export default function ContactDetails() {
 
   function openWaitingListModal() {
     setWaitingForm({
-      reason:
-        contact?.waiting_list_reason ||
-        "waiting_schedule",
-      notes: contact?.waiting_list_notes || "",
-    });
+  reason:
+    contact?.waiting_list_reason ||
+    "waiting_schedule",
 
+  notes:
+    contact?.waiting_list_notes || "",
+
+  categoryId:
+    contact?.category_id || "",
+
+  preferredShift:
+    contact?.preferred_shift || "",
+
+  preferredDays:
+    contact?.preferred_days || [],
+});
     setModal("waiting_list");
   }
 
@@ -639,10 +653,19 @@ export default function ContactDetails() {
 
     await executeAction(
       () =>
-        addToWaitingList(id, {
-          reason: waitingForm.reason,
-          notes: waitingForm.notes,
-        }),
+        addToWaitingList(id,{
+    reason: waitingForm.reason,
+
+    notes: waitingForm.notes,
+
+    categoryId: waitingForm.categoryId,
+
+    preferredShift:
+        waitingForm.preferredShift,
+
+    preferredDays:
+        waitingForm.preferredDays,
+}),
       "Contato adicionado à lista de interesse."
     );
   }
@@ -941,11 +964,71 @@ export default function ContactDetails() {
                 }
               />
 
-              <Field
-                label="Categoria"
-                value={contact.category?.name}
-              />
+             <Field label="Categoria">
+    <select
+        value={waitingForm.categoryId}
+        onChange={(e)=>
+            setWaitingForm(current=>({
+                ...current,
+                categoryId:e.target.value,
+            }))
+        }
+    >
 
+        <option value="">
+            Não definida
+        </option>
+
+        {categories.map(category=>(
+            <option
+                key={category.id}
+                value={category.id}
+            >
+                {category.name}
+            </option>
+        ))}
+
+    </select>
+</Field>
+<Field label="Turno preferido">
+
+<select
+    value={waitingForm.preferredShift}
+    onChange={(e)=>
+        setWaitingForm(current=>({
+            ...current,
+            preferredShift:e.target.value,
+        }))
+    }
+>
+
+<option value="">
+Não informado
+</option>
+
+{PREFERRED_SHIFT_OPTIONS.map(shift=>(
+<option
+key={shift.value}
+value={shift.value}
+>
+
+{shift.label}
+
+</option>
+))}
+
+</select>
+
+</Field>
+<DaySelector
+    value={waitingForm.preferredDays}
+    onChange={(days)=>
+        setWaitingForm(current=>({
+            ...current,
+            preferredDays:days,
+        }))
+    }
+/>
               <Field
                 label="Responsável"
                 value={contact.responsible_name}

@@ -16,6 +16,7 @@ import { supabase } from "../../../lib/supabase";
 import { createContact } from "../../../services/contacts";
 import { WAITING_LIST_REASONS } from "../../../constants/waitingListReasons";
 import { PREFERRED_SHIFT_OPTIONS } from "../../../constants/preferredShift";
+import DaySelector from "../common/DaySelector";
 
 const SOURCES = [
   { value: "whatsapp", label: "WhatsApp" },
@@ -34,8 +35,6 @@ const SOURCES = [
   { value: "google", label: "Google" },
   { value: "other", label: "Outro" },
 ];
-
- 
 
 const DESTINATIONS = [
   {
@@ -66,7 +65,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
 
   const [source, setSource] = useState("whatsapp");
   const [trainedElsewhere, setTrainedElsewhere] = useState(false);
-const [previousClub, setPreviousClub] = useState("");
+  const [previousClub, setPreviousClub] = useState("");
 
   const [firstContactAt, setFirstContactAt] = useState(getTodayISO());
 
@@ -85,6 +84,8 @@ const [previousClub, setPreviousClub] = useState("");
   const [waitingNotes, setWaitingNotes] = useState("");
 
   const [preferredShift, setPreferredShift] = useState("");
+
+  const [preferredDays, setPreferredDays] = useState([]);
 
   const [internalNotes, setInternalNotes] = useState("");
 
@@ -304,6 +305,8 @@ const [previousClub, setPreviousClub] = useState("");
 
         preferred_shift: preferredShift || null,
 
+        preferred_days: preferredDays,
+
         internal_notes: internalNotes.trim() || null,
       };
 
@@ -396,6 +399,9 @@ const [previousClub, setPreviousClub] = useState("");
 
     setCategory(null);
     setCategoryLoading(false);
+
+    setPreferredShift("");
+    setPreferredDays([]);
 
     setExperimentalDate("");
     setExperimentalTime("");
@@ -918,10 +924,10 @@ const [previousClub, setPreviousClub] = useState("");
                         <option value="">Selecione</option>
 
                         {WAITING_LIST_REASONS.map((reason) => (
-  <option key={reason.value} value={reason.value}>
-    {reason.label}
-  </option>
-))}
+                          <option key={reason.value} value={reason.value}>
+                            {reason.label}
+                          </option>
+                        ))}
                       </select>
                     </Field>
                   </div>
@@ -944,6 +950,13 @@ const [previousClub, setPreviousClub] = useState("");
                         ))}
                       </select>
                     </Field>
+
+                    <div className="mt-5">
+  <DaySelector
+    value={preferredDays}
+    onChange={setPreferredDays}
+  />
+</div>
                   </div>
 
                   <div className="mt-5">
