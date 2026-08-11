@@ -13,7 +13,9 @@ import {
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
+
 import { getContacts } from "../../services/contacts";
+import { sendWhatsAppMessage } from "../../services/whatsapp";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -821,32 +823,29 @@ export default function Contacts() {
                     {/* AÇÕES */}
 
                     <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        disabled={!contact.phone}
-                        onClick={() => openWhatsApp(contact.phone)}
-                        className="
-                            flex
-                            items-center
-                            gap-2
-                            rounded-xl
-                            border
-                            border-neutral-200
-                            bg-white
-                            px-4
-                            py-2.5
-                            text-sm
-                            font-semibold
-                            text-neutral-700
-                            transition
-                            hover:bg-neutral-50
-                            disabled:cursor-not-allowed
-                            disabled:opacity-40
-                          "
-                      >
-                        <MessageCircle size={17} />
-                        WhatsApp
-                      </button>
+                   <button
+  type="button"
+  onClick={async () => {
+    try {
+      const response = await sendWhatsAppMessage({
+        phone: contact.phone,
+        message: "Olá! Esta é uma mensagem de teste 🚀",
+      });
+
+      console.log(response);
+
+      alert("Mensagem enviada!");
+    } catch (err) {
+      console.error(err);
+
+      alert("Erro ao enviar mensagem.");
+    }
+  }}
+  className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold"
+>
+  <MessageCircle size={17} />
+  Enviar WhatsApp
+</button>
 
                       <button
                         type="button"
