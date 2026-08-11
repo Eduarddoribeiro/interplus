@@ -1244,23 +1244,25 @@ function ExperimentalCard({
   onScheduleFollowUp,
   onCloseOpportunity,
 }) {
-  const contact = item.contact || {};
+const contact = item.contact || {};
 
-  const isPending =
-    item.status ===
-    "pending_confirmation";
+const isPending =
+  item.status === "pending_confirmation";
 
-  const isConfirmed =
-    item.status === "confirmed";
+const isConfirmed =
+  item.status === "confirmed";
 
-  const isAttended =
-    item.status === "attended";
+const isAttended =
+  item.status === "attended";
 
-  const isNoShow =
-    item.status === "no_show";
+const isNoShow =
+  item.status === "no_show";
 
-  const isCancelled =
-    item.status === "cancelled";
+const isCancelled =
+  item.status === "cancelled";
+
+const isReschedule =
+  isPending || isConfirmed;
 
   const canRegisterAttendance =
     item.experimental_date <= today;
@@ -1374,6 +1376,17 @@ function ExperimentalCard({
               </a>
             )}
 
+            {isReschedule && (
+  <button
+    type="button"
+    onClick={onReschedule}
+    className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 sm:w-auto"
+  >
+    <CalendarPlus size={17} />
+    Remarcar experimental
+  </button>
+)}
+
           {isPending && (
             <button
               type="button"
@@ -1471,6 +1484,7 @@ function ExperimentalCard({
               onCloseOpportunity={
                 onCloseOpportunity
               }
+              
             />
           )}
 
@@ -2023,6 +2037,8 @@ function NoShowActionButtons({
         </a>
       )}
 
+      
+
       <button
         type="button"
         onClick={onReschedule}
@@ -2218,14 +2234,13 @@ function ExperimentalResultModal({
       onClose={onClose}
       disableClose={saving}
     >
-      <ModalHeader
-        eyebrow="Resultado da experimental"
-        title={contact.child_name}
-        description="Registre a decisão comercial da família."
-        onClose={onClose}
-        saving={saving}
-      />
-
+    <ModalHeader
+  eyebrow="Resultado da experimental"
+  title={contact.child_name}
+  description="Registre o resultado comercial após a aula experimental."
+  onClose={onClose}
+  saving={saving}
+/>
       <form
         onSubmit={handleSubmit}
         className="p-6"
@@ -2334,6 +2349,8 @@ function RescheduleExperimentalModal({
   onClose,
   onSave,
 }) {
+
+  
   const contact =
     session.contact || {};
 
@@ -2497,6 +2514,8 @@ function NoShowFollowUpModal({
   const contact =
     session.contact || {};
 
+    const isNoShow = session.status === "no_show";
+
   const [
     followUpDate,
     setFollowUpDate,
@@ -2540,23 +2559,34 @@ function NoShowFollowUpModal({
         onSubmit={handleSubmit}
         className="p-6"
       >
-        <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
-          <p className="font-semibold text-neutral-900">
-            Não compareceu à
-            experimental
-          </p>
+        {isNoShow ? (
+  <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+    <p className="text-xs font-bold uppercase tracking-wide text-red-600">
+      Tentativa anterior
+    </p>
 
-          <p className="mt-1 text-sm text-neutral-500">
-            {formatShortDate(
-              session.experimental_date
-            )}
-          </p>
+    <p className="mt-2 font-semibold text-neutral-900">
+      {formatShortDate(session.experimental_date)}
+      {session.experimental_time
+        ? ` às ${formatTime(session.experimental_time)}`
+        : ""}
+    </p>
 
-          <p className="mt-2 text-xs text-neutral-400">
-            A falta continuará registrada
-            no histórico.
-          </p>
-        </div>
+    <p className="mt-1 text-sm text-red-700">
+      Não compareceu
+    </p>
+  </div>
+) : (
+  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+    <p className="font-semibold text-blue-900">
+      Remarcando experimental
+    </p>
+
+    <p className="mt-1 text-sm text-blue-700">
+      A aula será movida para uma nova data.
+    </p>
+  </div>
+)}
 
         <FormDate
           label="Data do próximo contato"
@@ -2596,6 +2626,7 @@ function CloseNoShowOpportunityModal({
 }) {
   const contact =
     session.contact || {};
+
 
   const [
     lostReason,

@@ -1340,40 +1340,53 @@ export async function scheduleExperimentalFromWaitingList(
   if (current.status !== CONTACT_STATUS.WAITING_LIST) {
     throw new Error("Este contato não está na lista de interesse.");
   }
+const active = await getLatestExperimentalSession(contactId);
 
-  const active = await getLatestExperimentalSession(contactId);
+const category = await ensureExperimentalAvailability(
+  categoryId,
+  experimentalDate,
+);
 
-  const hasActiveExperimental =
-    active &&
-    [
-      EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
-      EXPERIMENTAL_STATUS.CONFIRMED,
-    ].includes(active.status);
+const time = experimentalTime || category?.start_time || null;
 
-  if (hasActiveExperimental) {
-    throw new Error("Este contato já possui uma aula experimental agendada.");
-  }
+let session;
 
-  const category = await ensureExperimentalAvailability(
-    categoryId,
-    experimentalDate,
-  );
+if (
+  active &&
+  [
+    EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+    EXPERIMENTAL_STATUS.CONFIRMED,
+  ].includes(active.status)
+) {
+  const { data, error } = await supabase
+    .from("experimental_sessions")
+    .update({
+      category_id: categoryId,
+      experimental_date: experimentalDate,
+      experimental_time: time,
+      coach_notes: cleanOptionalText(coachNotes),
+      notes: cleanOptionalText(notes) || active.notes,
+      ...withUpdatedAt(),
+    })
+    .eq("id", active.id)
+    .select(SESSION_WITH_CONTACT)
+    .single();
 
-  const time = experimentalTime || category?.start_time || null;
+  if (error) throw error;
 
-  const session = await createExperimentalSession({
+  session = data;
+} else {
+  session = await createExperimentalSession({
     contactId,
     categoryId,
     experimentalDate,
     experimentalTime: time,
-
     status: EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
-
-    notes: "Experimental agendada a partir da lista de interesse.",
-
+    notes: notes || "Nova experimental agendada.",
     coachNotes,
   });
-
+}
+  
   const updates = {
     status: CONTACT_STATUS.PENDING_CONFIRMATION,
 
@@ -1400,9 +1413,17 @@ export async function scheduleExperimentalFromWaitingList(
 
   if (error) {
     const { error: rollbackError } = await supabase
-      .from("experimental_sessions")
-      .delete()
-      .eq("id", session.id);
+      if (session?.id && (!active ||
+    ![
+      EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+      EXPERIMENTAL_STATUS.CONFIRMED,
+    ].includes(active.status))) {
+
+  await supabase
+    .from("experimental_sessions")
+    .delete()
+    .eq("id", session.id);
+}
 
     if (rollbackError) {
       console.error("Erro ao desfazer criação da experimental:", rollbackError);
