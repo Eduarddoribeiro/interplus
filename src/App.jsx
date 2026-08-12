@@ -15,6 +15,7 @@ import Reports from "./admin/pages/Reports";
 import Settings from "./admin/pages/Settings";
 import ContactDetails from "./admin/pages/ContactDetails";
 import WaitingList from "./admin/pages/WaitingList";
+import Inbox from "./admin/pages/Inbox";
 
 export default function App() {
   return (
@@ -41,6 +42,8 @@ export default function App() {
           }
         >
           <Route index element={<Dashboard />} />
+
+          <Route path="/admin/inbox" element={<Inbox />} />
 
           <Route path="contacts" element={<Contacts />} />
 

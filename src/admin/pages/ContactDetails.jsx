@@ -32,6 +32,7 @@ import {
   updateContact,
   updateExperimentalSessionStatus,
 } from "../../services/contacts";
+import Chat from "../components/chat/Chat";
 
 import { WAITING_LIST_REASONS } from "../../constants/waitingListReasons";
 import { supabase } from "../../lib/supabase";
@@ -928,7 +929,7 @@ const [waitingForm, setWaitingForm] = useState({
 
       {/* GRID PRINCIPAL */}
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
         <div className="space-y-6">
           {/* DADOS DO ALUNO */}
 
@@ -964,71 +965,7 @@ const [waitingForm, setWaitingForm] = useState({
                 }
               />
 
-             <Field label="Categoria">
-    <select
-        value={waitingForm.categoryId}
-        onChange={(e)=>
-            setWaitingForm(current=>({
-                ...current,
-                categoryId:e.target.value,
-            }))
-        }
-    >
 
-        <option value="">
-            Não definida
-        </option>
-
-        {categories.map(category=>(
-            <option
-                key={category.id}
-                value={category.id}
-            >
-                {category.name}
-            </option>
-        ))}
-
-    </select>
-</Field>
-<Field label="Turno preferido">
-
-<select
-    value={waitingForm.preferredShift}
-    onChange={(e)=>
-        setWaitingForm(current=>({
-            ...current,
-            preferredShift:e.target.value,
-        }))
-    }
->
-
-<option value="">
-Não informado
-</option>
-
-{PREFERRED_SHIFT_OPTIONS.map(shift=>(
-<option
-key={shift.value}
-value={shift.value}
->
-
-{shift.label}
-
-</option>
-))}
-
-</select>
-
-</Field>
-<DaySelector
-    value={waitingForm.preferredDays}
-    onChange={(days)=>
-        setWaitingForm(current=>({
-            ...current,
-            preferredDays:days,
-        }))
-    }
-/>
               <Field
                 label="Responsável"
                 value={contact.responsible_name}
@@ -1313,7 +1250,11 @@ value={shift.value}
 
         {/* PAINEL DE AÇÕES */}
 
-        <aside className="space-y-4">
+       <aside className="flex h-[calc(100vh-170px)] flex-col gap-4">
+
+                  <div className="flex-1">
+    <Chat contact={contact}/>
+</div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm xl:sticky xl:top-6">
             <div className="mb-4">
               <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
@@ -1390,7 +1331,9 @@ value={shift.value}
               </div>
             </div>
           </div>
+          
         </aside>
+
       </div>
 
       {/* ===================================================
