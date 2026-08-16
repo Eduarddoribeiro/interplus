@@ -32,7 +32,6 @@ import {
   updateContact,
   updateExperimentalSessionStatus,
 } from "../../services/contacts";
-import Chat from "../components/chat/Chat";
 
 import { WAITING_LIST_REASONS } from "../../constants/waitingListReasons";
 import { supabase } from "../../lib/supabase";
@@ -1253,7 +1252,7 @@ const [waitingForm, setWaitingForm] = useState({
        <aside className="flex h-[calc(100vh-170px)] flex-col gap-4">
 
                   <div className="flex-1">
-    <Chat contact={contact}/>
+    
 </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm xl:sticky xl:top-6">
             <div className="mb-4">

@@ -2,15 +2,23 @@ import ChatHeader from "./ChatHeader";
 import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
 
-export default function ChatWindow() {
+export default function ChatWindow({
+  conversation,
+}) {
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white">
 
-      <ChatHeader />
+      <ChatHeader
+        conversation={conversation}
+      />
 
-      <ChatMessages />
+      <ChatMessages
+        conversation={conversation}
+      />
 
-      <ChatInput />
+      <ChatInput
+        conversation={conversation}
+      />
 
     </section>
   );

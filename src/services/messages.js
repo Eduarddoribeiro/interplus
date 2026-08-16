@@ -1,42 +1,34 @@
-import { supabase } from "../lib/supabase";
+const API_URL =
+  import.meta.env.VITE_API_URL ??
+  "http://localhost:3001";
 
-export async function saveOutgoingMessage({
-  contactId,
-  message,
-  whatsappMessageId = null,
-  senderPhone = null,
-  senderName = null,
-  instanceName = import.meta.env.VITE_EVOLUTION_INSTANCE,
-}) {
-  const { data, error } = await supabase
-    .from("messages")
-    .insert({
-      contact_id: contactId,
-      direction: "outgoing",
-      message,
-      message_type: "text",
-      status: "sent",
-      whatsapp_message_id: whatsappMessageId,
-      sender_phone: senderPhone,
-      sender_name: senderName,
-      instance_name: instanceName,
-    })
-    .select()
-    .single();
+/**
+ * Lista mensagens de uma conversa
+ */
+export async function getMessages(jid) {
 
-  if (error) throw error;
+  const response = await fetch(
+    `${API_URL}/api/messages/${encodeURIComponent(jid)}`
+  );
 
-  return data;
+  if (!response.ok) {
+    throw new Error(
+      "Erro ao carregar mensagens."
+    );
+  }
+
+  return await response.json();
+
 }
 
-export async function getMessages(contactId) {
-  const { data, error } = await supabase
-    .from("messages")
-    .select("*")
-    .eq("contact_id", contactId)
-    .order("created_at", { ascending: true });
+/**
+ * Envia mensagem
+ */
+export async function sendMessage({
+  conversationId,
+  message,
+}) {
 
-  if (error) throw error;
+  // vamos implementar depois
 
-  return data ?? [];
 }
