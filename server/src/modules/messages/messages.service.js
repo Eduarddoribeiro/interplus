@@ -1,5 +1,7 @@
 import * as repository from "./messages.repository.js";
-import { findMessages } from "../evolution/evolution.service.js";
+import { findMessages, sendTextMessage } from "../evolution/evolution.service.js";
+
+
 
 export async function saveIncomingMessage({
   contact,
@@ -76,4 +78,8 @@ export async function getMessages(jid) {
 
   }));
 
+}
+
+export async function sendMessage({ jid, message }) {
+  return await sendTextMessage(jid, message);
 }

@@ -49,3 +49,27 @@ export async function findMessages(jid) {
 
   return await response.json();
 }
+
+export async function sendTextMessage(jid, text) {
+  const response = await fetch(
+    `${BASE_URL}/message/sendText/${INSTANCE}`,
+    {
+      method: "POST",
+      headers: {
+        apikey: API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        number: jid,
+        text,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error);
+  }
+
+  return await response.json();
+}

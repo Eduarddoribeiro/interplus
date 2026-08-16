@@ -8,4 +8,6 @@ router.get(
   controller.getMessages
 );
 
+router.post("/send", controller.sendMessage);
+
 export default router;

@@ -23,3 +23,23 @@ export async function getMessages(req, res) {
   }
 
 }
+
+export async function sendMessage(req, res) {
+  try {
+    const { jid, message } = req.body;
+
+    const result = await service.sendMessage({
+      jid,
+      message,
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+}
