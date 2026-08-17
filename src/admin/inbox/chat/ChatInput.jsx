@@ -3,60 +3,60 @@ import { Send } from "lucide-react";
 
 import { sendMessage } from "../../../services/messages";
 
-export default function ChatInput({
-  conversation,
-}) {
+export default function ChatInput({ conversation, onMessageSent }) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
-async function handleSend() {
+  async function handleSend() {
+    console.log("1 - Clique");
 
-  console.log("1 - Clique");
+    if (!message.trim()) {
+      console.log("2 - Mensagem vazia");
+      return;
+    }
 
-  if (!message.trim()) {
-    console.log("2 - Mensagem vazia");
-    return;
-  }
+    if (!conversation?.jid) {
+      console.log("3 - Sem conversa", conversation);
+      return;
+    }
 
-  if (!conversation?.jid) {
-    console.log("3 - Sem conversa", conversation);
-    return;
-  }
-
-  console.log("4 - Vai enviar");
-  console.log({
-    jid: conversation.jid,
-    message,
-  });
-
-  try {
-
-    setSending(true);
-
-    console.log("5 - Antes do fetch");
-
-    const result = await sendMessage({
+    console.log("4 - Vai enviar");
+    console.log({
       jid: conversation.jid,
       message,
     });
 
-    console.log("6 - Resposta", result);
+    try {
+      setSending(true);
 
-    setMessage("");
+      console.log("5 - Antes do fetch");
 
-  } catch (err) {
+    const result = await sendMessage({
+  jid: conversation.jid,
+  message,
+});
 
-    console.error("ERRO:", err);
+console.log("6 - Resposta", result);
 
-  } finally {
+setMessage("");
 
-    console.log("7 - Finalizou");
+onMessageSent?.();
 
-    setSending(false);
+      setMessage("");
 
+      onMessageSent?.();
+
+      console.log("6 - Resposta", result);
+
+      setMessage("");
+    } catch (err) {
+      console.error("ERRO:", err);
+    } finally {
+      console.log("7 - Finalizou");
+
+      setSending(false);
+    }
   }
-
-}
 
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -67,9 +67,7 @@ async function handleSend() {
 
   return (
     <footer className="border-t border-neutral-200 bg-white p-4">
-
       <div className="flex gap-3">
-
         <input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -86,9 +84,7 @@ async function handleSend() {
         >
           <Send size={18} />
         </button>
-
       </div>
-
     </footer>
   );
 }

@@ -26,6 +26,7 @@ export default function ChatHeader({
     categoryName,
     age,
     status,
+    profilePicUrl
   } = conversation;
 
   const displayName =
@@ -42,25 +43,39 @@ export default function ChatHeader({
 
         <div className="relative">
 
-          <div
-            className="
-              flex
-              h-14
-              w-14
-              items-center
-              justify-center
-              rounded-full
-              bg-gradient-to-br
-              from-red-600
-              to-red-700
-              text-lg
-              font-bold
-              text-white
-              shadow-sm
-            "
-          >
-            {getInitials(displayName)}
-          </div>
+          {profilePicUrl ? (
+  <img
+    src={profilePicUrl}
+    alt={displayName}
+    className="
+      h-14
+      w-14
+      rounded-full
+      object-cover
+      shadow-sm
+    "
+  />
+) : (
+  <div
+    className="
+      flex
+      h-14
+      w-14
+      items-center
+      justify-center
+      rounded-full
+      bg-gradient-to-br
+      from-red-600
+      to-red-700
+      text-lg
+      font-bold
+      text-white
+      shadow-sm
+    "
+  >
+    {getInitials(displayName)}
+  </div>
+)}
 
           <span
             className="

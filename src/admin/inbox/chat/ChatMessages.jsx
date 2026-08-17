@@ -30,6 +30,7 @@ function formatDate(date) {
 
 export default function ChatMessages({
   conversation,
+  reloadKey,
 }) {
 
     console.count("RENDER ChatMessages");
@@ -41,9 +42,6 @@ export default function ChatMessages({
 
 useEffect(() => {
 
-
-
-
   if (!conversation?.jid) {
     setMessages([]);
     return;
@@ -51,7 +49,7 @@ useEffect(() => {
 
   loadMessages();
 
-}, [conversation?.jid]);
+}, [conversation?.jid, reloadKey]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({
