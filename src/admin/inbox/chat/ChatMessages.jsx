@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 
 import { getMessages } from "../../../services/messages";
 import { formatMessageTime } from "../../../helpers/chatHelpers";
+import { socket } from "../../../services/socket"
 
 import MessageBubble from "./MessageBubble";
 
@@ -57,6 +58,8 @@ useEffect(() => {
     });
   }, [messages]);
 
+  
+
 async function loadMessages() {
   try {
     setLoading(true);
@@ -70,6 +73,30 @@ async function loadMessages() {
     setLoading(false);
   }
 }
+
+useEffect(() => {
+
+  function handleNewMessage(data) {
+
+    console.log("📩 Nova mensagem", data);
+
+    if (data.jid !== conversation?.jid) {
+      return;
+    }
+
+    loadMessages();
+
+  }
+
+  socket.on("new-message", handleNewMessage);
+
+  return () => {
+    socket.off("new-message", handleNewMessage);
+  };
+
+}, [conversation?.jid]);
+
+
 
   if (!conversation) {
     return (

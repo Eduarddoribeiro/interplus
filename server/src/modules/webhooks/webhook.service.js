@@ -4,6 +4,7 @@ import {
 } from "../contacts/contacts.service.js";
 
 import { saveIncomingMessage } from "../messages/messages.service.js";
+import { getIO } from "../../socket.js";
 
 export async function processEvolutionWebhook(payload) {
 
@@ -53,14 +54,20 @@ export async function processEvolutionWebhook(payload) {
     messageId,
   });
 
-  const contact =
-    await findOrCreateContact({
-      jid,
-      phone,
-      pushName: responsibleName,
-      instance: payload.instance,
-    });
+  const contact = await findOrCreateContact({
+  jid,
+  phone,
+  pushName: responsibleName,
+  instance: payload.instance,
+});
 
+if (!contact) {
+  return;
+}
+
+    
+
+ const savedMessage =
   await saveIncomingMessage({
     contact,
     payload,
@@ -71,6 +78,20 @@ export async function processEvolutionWebhook(payload) {
     contact.id,
     timestamp.toISOString()
   );
+
+const io = getIO();
+
+console.log("📡 Emitindo new-message", {
+  jid,
+  socketCount: io.engine.clientsCount,
+});
+
+io.emit("new-message", {
+  jid,
+  message: savedMessage.message,
+  created_at: savedMessage.created_at,
+  direction: savedMessage.direction,
+});
 
   console.log("");
 

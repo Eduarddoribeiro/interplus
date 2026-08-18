@@ -1,88 +1,108 @@
 import { findChats } from "../evolution/evolution.service.js";
 import { getAll } from "../contacts/contacts.repository.js";
 
-export async function getInbox() {
+function normalizePhone(value) {
+  return value
+    ?.replace("@s.whatsapp.net", "")
+    ?.replace("@lid", "")
+    ?.replace(/\D/g, "");
+}
 
+function getResponsibleName(contact, chat) {
+  const name = contact?.responsible_name?.trim();
+
+  if (name && name !== ".") {
+    return name;
+  }
+
+  return chat.pushName ?? "Sem nome";
+}
+
+export async function getInbox() {
   const [chats, contacts] = await Promise.all([
     findChats(),
     getAll(),
   ]);
+console.table(
+  chats.slice(0, 10).map(chat => ({
+    pushName: chat.pushName,
+    updatedAt: chat.updatedAt,
+    messageTimestamp: chat.lastMessage?.messageTimestamp,
+    remoteJid: chat.remoteJid,
+  }))
+);
+  const orderedChats = chats.sort(
+    (a, b) =>
+      (b.lastMessage?.messageTimestamp ?? 0) -
+      (a.lastMessage?.messageTimestamp ?? 0)
+  );
 
-  const limitedChats = chats.slice(0, 50);
+  const limitedChats = orderedChats.slice(0, 50);
 
   const contactsMap = new Map();
 
   for (const contact of contacts) {
-    contactsMap.set(contact.phone, contact);
+    contactsMap.set(
+      normalizePhone(contact.phone),
+      contact
+    );
   }
 
   const conversations = limitedChats.map((chat) => {
-
-    const phone =
-      chat.lastMessage?.key?.remoteJidAlt
-        ?.replace("@s.whatsapp.net", "");
-
-    const contact =
-      contactsMap.get(phone);
+   const phone = normalizePhone(
+  chat.lastMessage?.key?.remoteJidAlt ??
+  chat.lastMessage?.key?.remoteJid
+);
+    const contact = contactsMap.get(phone);
+ 
 
     return {
+      id: contact?.id ?? chat.remoteJid,
 
-      id:
-        contact?.id ??
-        chat.remoteJid,
-
-      jid:
-        chat.remoteJid,
+      jid: chat.remoteJid,
 
       phone,
 
-      profilePicUrl:
-        chat.profilePicUrl,
+      profilePicUrl: chat.profilePicUrl,
 
-      childName:
-        contact?.child_name,
+      childName: contact?.child_name,
 
-      responsibleName:
-        contact?.responsible_name ??
-        chat.pushName,
+      responsibleName: getResponsibleName(
+        contact,
+        chat
+      ),
 
-      status:
-        contact?.status ??
-        "new",
+      status: contact?.status ?? "new",
 
-      unreadCount:
-        chat.unreadCount ?? 0,
+      unreadCount: chat.unreadCount ?? 0,
 
-      lastMessage:
-        getLastMessage(chat),
+      lastMessage: getLastMessage(chat),
 
       lastMessageAt:
-        chat.updatedAt,
+        chat.lastMessage?.messageTimestamp
+          ? new Date(
+              chat.lastMessage.messageTimestamp *
+                1000
+            ).toISOString()
+          : chat.updatedAt,
 
       categoryName:
         contact?.category?.name ?? null,
 
-      birthDate:
-        contact?.birth_date,
+      birthDate: contact?.birth_date,
 
       source:
         contact?.source ?? "WhatsApp",
 
-      unit:
-        contact?.unit,
-
+      unit: contact?.unit,
     };
-
   });
 
   return conversations;
-
 }
 
 function getLastMessage(chat) {
-
-  const message =
-    chat.lastMessage?.message;
+  const message = chat.lastMessage?.message;
 
   if (!message) {
     return "";
@@ -121,5 +141,4 @@ function getLastMessage(chat) {
   }
 
   return chat.lastMessage?.messageType ?? "";
-
 }

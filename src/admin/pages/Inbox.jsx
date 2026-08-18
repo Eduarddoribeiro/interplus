@@ -5,6 +5,7 @@ import { getInboxConversations } from "../../services/inbox";
 import ConversationList from "../inbox/conversation-list/ConversationList";
 import ChatWindow from "../inbox/chat/ChatWindow";
 import LeadSidebar from "../inbox/sidebar/LeadSidebar";
+import { socket } from "../../services/socket";
 
 export default function Inbox() {
 
@@ -18,7 +19,48 @@ export default function Inbox() {
 
   useEffect(() => {
     loadInbox();
+
+     console.log("Socket:", socket.id);
   }, []);
+
+  useEffect(() => {
+  function handleNewMessage(data) {
+    console.log("📩 Atualizando inbox", data);
+
+    setConversations((current) => {
+      const index = current.findIndex(
+        (c) => c.jid === data.jid
+      );
+
+      // conversa ainda não está na lista
+      if (index === -1) {
+        loadInbox();
+        return current;
+      }
+
+      const updated = [...current];
+
+      const conversation = {
+        ...updated[index],
+        lastMessage: data.message,
+        lastMessageAt: data.created_at,
+        unreadCount:
+          (updated[index].unreadCount ?? 0) + 1,
+      };
+
+      updated.splice(index, 1);
+      updated.unshift(conversation);
+
+      return updated;
+    });
+  }
+
+  socket.on("new-message", handleNewMessage);
+
+  return () => {
+    socket.off("new-message", handleNewMessage);
+  };
+}, []);
 
   async function loadInbox() {
     try {

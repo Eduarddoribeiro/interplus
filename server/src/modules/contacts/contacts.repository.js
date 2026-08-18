@@ -5,11 +5,50 @@ export async function findByWhatsappJid(jid) {
     .from("contacts")
     .select("*")
     .eq("whatsapp_jid", jid)
-    .maybeSingle();
+    .limit(1);
 
   if (error) throw error;
 
-  return data;
+  return data?.[0] ?? null;
+}
+
+export async function findByPhone(phone) {
+  const { data, error } = await supabase
+    .from("contacts")
+    .select(`
+      *,
+      category:categories!contacts_category_id_fkey(
+        id,
+        name
+      )
+    `)
+    .eq("phone", phone)
+    .order("created_at", {
+      ascending: true,
+    })
+    .limit(1);
+
+  if (error) throw error;
+
+  return data?.[0] ?? null;
+}
+
+export async function attachWhatsappData(
+  contactId,
+  jid,
+  instance,
+  pushName
+) {
+  const { error } = await supabase
+    .from("contacts")
+    .update({
+      whatsapp_jid: jid,
+      whatsapp_instance: instance,
+      whatsapp_push_name: pushName,
+    })
+    .eq("id", contactId);
+
+  if (error) throw error;
 }
 
 export async function create(contact) {
@@ -39,7 +78,7 @@ export async function updateInboxData(
   if (error) throw error;
 }
 
-export async function findByPhone(phone) {
+export async function getAll() {
   const { data, error } = await supabase
     .from("contacts")
     .select(`
@@ -48,29 +87,9 @@ export async function findByPhone(phone) {
         id,
         name
       )
-    `)
-    .eq("phone", phone)
-    .maybeSingle();
-
-  if (error) throw error;
-
-  return data;
-}
-export async function getAll() {
-
-  const { data, error } =
-    await supabase
-      .from("contacts")
-      .select(`
-        *,
-        category:categories!contacts_category_id_fkey(
-          id,
-          name
-        )
-      `);
+    `);
 
   if (error) throw error;
 
   return data ?? [];
-
 }
