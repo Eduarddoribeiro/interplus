@@ -67,8 +67,7 @@ export async function sendTextMessage(jid, text) {
   );
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error);
+    throw new Error(await response.text());
   }
 
   return await response.json();

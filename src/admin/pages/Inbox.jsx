@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { getInboxConversations } from "../../services/inbox";
+import { getInboxConversations, markConversationAsRead} from "../../services/inbox";
 
 import ConversationList from "../inbox/conversation-list/ConversationList";
 import ChatWindow from "../inbox/chat/ChatWindow";
@@ -41,12 +41,14 @@ export default function Inbox() {
       const updated = [...current];
 
       const conversation = {
-        ...updated[index],
-        lastMessage: data.message,
-        lastMessageAt: data.created_at,
-        unreadCount:
-          (updated[index].unreadCount ?? 0) + 1,
-      };
+  ...updated[index],
+  lastMessage: data.message,
+  lastMessageAt: data.created_at,
+  unreadCount:
+    selectedConversation?.jid === data.jid
+      ? 0
+      : (updated[index].unreadCount ?? 0) + 1,
+};
 
       updated.splice(index, 1);
       updated.unshift(conversation);
@@ -57,10 +59,12 @@ export default function Inbox() {
 
   socket.on("new-message", handleNewMessage);
 
+
+
   return () => {
     socket.off("new-message", handleNewMessage);
   };
-}, []);
+}, [selectedConversation]);
 
   async function loadInbox() {
     try {
@@ -71,9 +75,11 @@ export default function Inbox() {
 
       setConversations(data);
 
-      if (data.length > 0) {
-        setSelectedConversation(data[0]);
-      }
+setConversations(data);
+
+if (!selectedConversation && data.length > 0) {
+  setSelectedConversation(data[0]);
+}
 
     } catch (err) {
       console.error(err);
@@ -82,19 +88,43 @@ export default function Inbox() {
     }
   }
 
+async function handleSelectConversation(conversation) {
+  console.log(conversation);
+
+  setSelectedConversation(conversation);
+
+  if (conversation.unreadCount > 0) {
+    try {
+      await markConversationAsRead(conversation.id);
+
+      setConversations((current) =>
+        current.map((c) =>
+          c.id === conversation.id
+            ? {
+                ...c,
+                unreadCount: 0,
+              }
+            : c
+        )
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+
+
   return (
     <div className="h-[calc(100vh-90px)]">
 
       <div className="grid h-full grid-cols-[340px_minmax(0,1fr)_420px] gap-6">
 
         <ConversationList
-          loading={loading}
-          conversations={conversations}
-          selectedConversation={selectedConversation}
-          onSelectConversation={
-            setSelectedConversation
-          }
-        />
+  loading={loading}
+  conversations={conversations}
+  selectedConversation={selectedConversation}
+  onSelectConversation={handleSelectConversation}
+/>
 
         <ChatWindow
           conversation={selectedConversation}

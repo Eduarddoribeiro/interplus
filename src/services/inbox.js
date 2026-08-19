@@ -17,3 +17,19 @@ export async function getInboxConversations() {
   return await response.json();
 
 }
+
+
+export async function markConversationAsRead(id) {
+  const response = await fetch(
+    `${API_URL}/api/contacts/${id}/read`,
+    {
+      method: "PATCH",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Erro ao marcar conversa como lida."
+    );
+  }
+}

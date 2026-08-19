@@ -54,6 +54,12 @@ console.table(
   chat.lastMessage?.key?.remoteJid
 );
     const contact = contactsMap.get(phone);
+    console.table({
+  phone,
+  found: !!contact,
+  contactId: contact?.id,
+  chatJid: chat.remoteJid,
+});
  
 
     return {

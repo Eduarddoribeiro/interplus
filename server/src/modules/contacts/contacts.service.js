@@ -67,3 +67,7 @@ export async function touchConversation(
     timestamp
   );
 }
+
+export async function markAsRead(contactId) {
+  return repository.markAsRead(contactId);
+}

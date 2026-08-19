@@ -33,14 +33,10 @@ export default function ChatInput({ conversation, onMessageSent }) {
 
     const result = await sendMessage({
   jid: conversation.jid,
+  contactId: conversation.id,
   message,
 });
 
-console.log("6 - Resposta", result);
-
-setMessage("");
-
-onMessageSent?.();
 
       setMessage("");
 

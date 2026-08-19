@@ -93,3 +93,14 @@ export async function getAll() {
 
   return data ?? [];
 }
+
+export async function markAsRead(contactId) {
+  const { error } = await supabase
+    .from("contacts")
+    .update({
+      unread_count: 0,
+    })
+    .eq("id", contactId);
+
+  if (error) throw error;
+}

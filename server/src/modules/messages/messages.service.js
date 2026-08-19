@@ -1,7 +1,10 @@
 import * as repository from "./messages.repository.js";
-import { findMessages, sendTextMessage } from "../evolution/evolution.service.js";
+import {
+  findMessages,
+  sendTextMessage,
+} from "../evolution/evolution.service.js";
 
-
+import { getIO } from "../../socket.js";
 
 export async function saveIncomingMessage({
   contact,
@@ -27,22 +30,17 @@ export async function saveIncomingMessage({
 }
 
 export async function getMessages(jid) {
-
-  const response =
-    await findMessages(jid);
+  const response = await findMessages(jid);
 
   const messages =
-  (response.messages?.records ?? [])
-    .sort(
-      (a, b) =>
-        a.messageTimestamp - b.messageTimestamp
-    );
-
-  console.log("Quantidade:", messages.length);
-  console.log(response.messages);
+    (response.messages?.records ?? [])
+      .sort(
+        (a, b) =>
+          a.messageTimestamp -
+          b.messageTimestamp
+      );
 
   return messages.map((item) => ({
-
     id: item.id,
 
     direction:
@@ -67,7 +65,9 @@ export async function getMessages(jid) {
     ).toISOString(),
 
     status:
-      item.MessageUpdate?.at(-1)?.status?.toLowerCase() ??
+      item.MessageUpdate
+        ?.at(-1)
+        ?.status?.toLowerCase() ??
       "sent",
 
     message_type:
@@ -75,11 +75,66 @@ export async function getMessages(jid) {
 
     whatsapp_message_id:
       item.key?.id,
-
   }));
-
 }
 
-export async function sendMessage({ jid, message }) {
-  return await sendTextMessage(jid, message);
+export async function sendMessage({
+  jid,
+  message,
+  contactId,
+}) {
+  // Envia para a Evolution
+  const response =
+    await sendTextMessage(
+      jid,
+      message
+    );
+
+  console.log(
+    "📤 Evolution:",
+    response
+  );
+
+  // Salva no banco
+  const savedMessage =
+    await repository.create({
+      contact_id: contactId,
+      direction: "outgoing",
+      message,
+      message_type: "text",
+      status: "sent",
+
+      whatsapp_message_id:
+        response?.key?.id ??
+        response?.message?.key?.id ??
+        null,
+
+      sender_phone: null,
+      sender_name: null,
+
+      instance_name:
+        process.env.EVOLUTION_INSTANCE,
+
+      created_at:
+        new Date().toISOString(),
+    });
+
+  // Aguarda a Evolution persistir
+  await new Promise((resolve) =>
+    setTimeout(resolve, 300)
+  );
+
+  // Atualiza todos os clientes
+  const io = getIO();
+
+  io.emit("new-message", {
+    jid,
+    message: savedMessage.message,
+    created_at:
+      savedMessage.created_at,
+    direction:
+      savedMessage.direction,
+  });
+
+  return savedMessage;
 }
