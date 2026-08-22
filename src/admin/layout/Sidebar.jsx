@@ -5,7 +5,7 @@ import {
   PhoneCall,
   ListChecks,
   BarChart3,
-  Settings,
+  ShieldCheck,
   LogOut,
   Inbox
 } from "lucide-react";
@@ -49,9 +49,9 @@ const menu = [
     to: '/admin/reports'
   },
   {
-    label: 'Configurações',
-    icon: Settings,
-    to: '/admin/settings'
+    label: 'Administração',
+    icon: ShieldCheck,
+    to: '/admin/administration'
   }
 ]
 
