@@ -1,21 +1,35 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getCategoryByBirthDate } from "../../../services/categories";
-
-const weekdayLabel = {
-  Monday: "Segunda-feira",
-  Tuesday: "Terça-feira",
-  Wednesday: "Quarta-feira",
-  Thursday: "Quinta-feira",
-  Friday: "Sexta-feira",
-  Saturday: "Sábado",
-  Sunday: "Domingo",
-};
+import { getActiveModalities } from "../../../services/administration/modalities";
 
 export default function AthleteForm({
   form,
   updateField,
   onNext,
 }) {
+  const [modalities, setModalities] = useState([]);
+  const [loadingModalities, setLoadingModalities] = useState(true);
+
+  useEffect(() => {
+    async function loadModalities() {
+      try {
+        setLoadingModalities(true);
+
+        const data = await getActiveModalities();
+
+        setModalities(data);
+      } catch (err) {
+        console.error("Erro ao buscar modalidades:", err);
+
+        setModalities([]);
+      } finally {
+        setLoadingModalities(false);
+      }
+    }
+
+    loadModalities();
+  }, []);
+
   useEffect(() => {
     async function loadCategory() {
       if (!form.birth_date) {
@@ -60,8 +74,20 @@ export default function AthleteForm({
 
   const category = form.category;
 
-  const formatTime = (time) => time?.slice(0, 5);
+  function handleModalityChange(e) {
+    const modalityId = e.target.value;
 
+    if (!modalityId) {
+      updateField("modality", null);
+      return;
+    }
+
+    const modality = modalities.find(
+      (item) => String(item.id) === modalityId
+    );
+
+    updateField("modality", modality ?? null);
+  }
 
   return (
     <div className="space-y-8">
@@ -73,8 +99,8 @@ export default function AthleteForm({
         </h2>
 
         <p className="mt-2 text-neutral-500">
-          Informe os dados do atleta para encontrarmos automaticamente a
-          categoria correta.
+          Informe os dados do atleta, escolha a modalidade desejada e
+          encontraremos automaticamente a categoria correta.
         </p>
       </div>
 
@@ -96,6 +122,32 @@ export default function AthleteForm({
             className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-red-600 focus:ring-2 focus:ring-red-600/10"
             placeholder="Nome completo"
           />
+        </div>
+
+        {/* MODALIDADE */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-neutral-900">
+            Modalidade
+          </label>
+
+          <select
+            value={form.modality?.id ?? ""}
+            onChange={handleModalityChange}
+            disabled={loadingModalities}
+            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 outline-none transition focus:border-red-600 focus:ring-2 focus:ring-red-600/10 disabled:bg-neutral-100 disabled:text-neutral-400"
+          >
+            <option value="">
+              {loadingModalities
+                ? "Carregando modalidades..."
+                : "Selecione..."}
+            </option>
+
+            {modalities.map((modality) => (
+              <option key={modality.id} value={modality.id}>
+                {modality.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* NASCIMENTO */}
@@ -147,42 +199,12 @@ export default function AthleteForm({
 
           </div>
 
-          {/* TREINO */}
-          <div className="border-t border-neutral-200 px-5 sm:px-6">
-
-            <div className="flex items-center justify-between gap-5 py-4">
-
-              <p className="text-sm text-neutral-500">
-                Dia do treino
-              </p>
-
-              <p className="text-right text-sm font-semibold text-neutral-900 sm:text-base">
-                {weekdayLabel[category.weekday] ?? category.weekday}
-              </p>
-
-            </div>
-
-            <div className="flex items-center justify-between gap-5 border-t border-neutral-100 py-4">
-
-              <p className="text-sm text-neutral-500">
-                Horário
-              </p>
-
-              <p className="text-right text-sm font-semibold text-neutral-900 sm:text-base">
-                {formatTime(category.start_time)} às{" "}
-                {formatTime(category.end_time)}
-              </p>
-
-            </div>
-
-          </div>
-
           {/* PRÓXIMO PASSO */}
           <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-4 sm:px-6">
 
             <p className="text-sm leading-relaxed text-neutral-600">
-              No próximo passo você poderá escolher uma das datas disponíveis
-              para realizar a aula experimental.
+              No próximo passo você poderá escolher a unidade, a turma e o
+              horário disponíveis para a aula experimental.
             </p>
 
           </div>
@@ -198,6 +220,7 @@ export default function AthleteForm({
           disabled={
             !form.child_name ||
             !form.birth_date ||
+            !form.modality ||
             !category
           }
           onClick={onNext}

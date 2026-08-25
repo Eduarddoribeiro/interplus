@@ -1,4 +1,4 @@
-import { WEEKDAY_LABEL } from "../../../utils/generateAvailableDates";
+import { WEEKDAY_LABELS } from "../../../constants/weekdays";
 
 const SOURCE_LABEL = {
   instagram: "Instagram",
@@ -44,20 +44,22 @@ export default function ReviewCard({
     });
   }
 
-  const isWaitingList =
-    form.category?.trial_status === "waiting_list";
-
   return (
     <div className="space-y-6">
 
-      {/* Cabeçalho */}
+            {/* Cabeçalho */}
       <div>
         <h2 className="text-3xl font-bold text-neutral-900">
-          Revise sua solicitação
+          {form.interest_reason
+            ? "Revise seus dados"
+            : "Revise sua solicitação"}
         </h2>
 
         <p className="mt-2 max-w-2xl text-neutral-500">
-Confira se todas as informações estão corretas antes de confirmar sua solicitação.        </p>
+          {form.interest_reason
+            ? "Confira se todas as informações estão corretas antes de entrar na lista de interesse."
+            : "Confira se todas as informações estão corretas antes de confirmar sua solicitação."}
+        </p>
       </div>
 
       {/* ATLETA */}
@@ -71,6 +73,11 @@ Confira se todas as informações estão corretas antes de confirmar sua solicit
         <Info
           label="Nascimento"
           value={formatBirthDate(form.birth_date)}
+        />
+
+        <Info
+          label="Modalidade"
+          value={form.modality?.name}
         />
 
         <Info
@@ -103,44 +110,62 @@ Confira se todas as informações estão corretas antes de confirmar sua solicit
 
       </Section>
 
-      {/* AULA EXPERIMENTAL */}
-      {!isWaitingList && (
+            {/* AULA EXPERIMENTAL / LISTA DE INTERESSE */}
+      {form.interest_reason ? (
+        <Section title="Lista de Interesse">
+
+          <Info
+            label="Unidade"
+            value={form.unit?.name}
+          />
+
+          <Info
+            label="Turma de interesse"
+            value={form.training_group?.name}
+          />
+
+          <Info
+            label="Turno de preferência"
+            value={
+              {
+                morning: "Manhã",
+                afternoon: "Tarde",
+                evening: "Noite",
+                any: "Indiferente",
+              }[form.preferred_shift] || "-"
+            }
+          />
+
+        </Section>
+      ) : (
         <Section title="Aula Experimental">
+
+          <Info
+            label="Unidade"
+            value={form.unit?.name}
+          />
+
+          <Info
+            label="Turma"
+            value={form.training_group?.name}
+          />
+
+          <Info
+            label="Horário"
+            value={
+              form.schedule
+                ? `${WEEKDAY_LABELS[form.schedule.weekday]} • ${formatTime(
+                    form.schedule.start_time
+                  )} às ${formatTime(form.schedule.end_time)}`
+                : "-"
+            }
+          />
 
           <Info
             label="Data"
             value={formatExperimentalDate(
               form.experimental_date
             )}
-          />
-
-          <Info
-  label="Horário"
-  value={
-    form.category
-      ? `${WEEKDAY_LABEL[form.category.weekday]} • ${formatTime(
-          form.category.start_time
-        )} às ${formatTime(form.category.end_time)}`
-      : "-"
-  }
-/>
-
-        </Section>
-      )}
-
-      {/* LISTA DE INTERESSE */}
-      {isWaitingList && (
-        <Section title="Turma">
-
-          <Info
-            label="Categoria"
-            value={form.category?.name}
-          />
-
-          <Info
-            label="Situação"
-            value="Nova turma em formação"
-            highlight
           />
 
         </Section>
@@ -185,25 +210,39 @@ Confira se todas as informações estão corretas antes de confirmar sua solicit
       </Section>
 
       {/* OBSERVAÇÕES */}
-      {form.coach_notes && (
-  <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6">
+      {form.interest_reason
+        ? form.observations && (
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6">
 
-    <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-400">
-      Informações importantes para o professor
-    </p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-400">
+                Observações
+              </p>
 
-    <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-neutral-700">
-      {form.coach_notes}
-    </p>
+              <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-neutral-700">
+                {form.observations}
+              </p>
 
-  </div>
-)}
+            </div>
+          )
+        : form.coach_notes && (
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6">
 
-   <div className="rounded-2xl border border-neutral-200 bg-neutral-100 p-5">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-400">
+                Informações importantes para o professor
+              </p>
+
+              <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-neutral-700">
+                {form.coach_notes}
+              </p>
+
+            </div>
+          )}
+
+    <div className="rounded-2xl border border-neutral-200 bg-neutral-100 p-5">
 
   <p className="text-sm leading-relaxed text-neutral-600">
-    {isWaitingList
-      ? "Seu interesse será registrado e nossa equipe entrará em contato assim que houver uma nova turma disponível para esta categoria."
+    {form.interest_reason
+      ? "Após finalizar, você entrará em nossa lista de interesse e avisaremos pelo WhatsApp assim que houver disponibilidade."
       : "Após finalizar, nossa equipe receberá sua solicitação e entrará em contato pelo WhatsApp para confirmar a aula experimental."}
   </p>
 
@@ -225,8 +264,8 @@ Confira se todas as informações estão corretas antes de confirmar sua solicit
           onClick={onFinish}
           className="w-full rounded-xl bg-red-600 px-8 py-3 font-semibold text-white transition hover:bg-red-700 sm:w-auto"
         >
-          {isWaitingList
-            ? "Registrar interesse"
+          {form.interest_reason
+            ? "Entrar na lista de interesse"
             : "Confirmar solicitação"}
         </button>
 

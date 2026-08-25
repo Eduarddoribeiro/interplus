@@ -1,129 +1,94 @@
-import { useEffect, useState } from "react";
+import { Pencil, Power, Trash2 } from "lucide-react";
 
-import { Pencil } from "lucide-react";
+import CrudTable from "../components/CrudTable";
+import StatusBadge from "../components/StatusBadge";
 
-import { getCategories } from "../../../../services/categories";
+function formatDate(value) {
+  if (!value) return "-";
 
-export default function CategoriesTable() {
+  return new Date(value).toLocaleDateString("pt-BR", {
+    timeZone: "UTC",
+  });
+}
 
-  const [categories, setCategories] = useState([]);
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function load() {
-    try {
-      const data = await getCategories();
-
-      setCategories(data);
-
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
+export default function CategoriesTable({
+  categories,
+  loading,
+  onEdit,
+  onToggle,
+  onDelete,
+}) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white">
+    <CrudTable
+      columns={[
+        "Categoria",
+        "Faixa etária",
+        "Quantidade de turmas",
+        "Status",
+        "Ações",
+      ]}
+      emptyMessage={
+        loading
+          ? "Carregando..."
+          : "Nenhuma categoria cadastrada."
+      }
+    >
+      {categories.map((category) => (
+        <tr
+          key={category.id}
+          className="border-b border-neutral-100 last:border-0"
+        >
+          <td className="px-6 py-4 font-medium">
+            {category.name}
+          </td>
 
-      <table className="w-full">
+          <td className="px-6 py-4">
+            {formatDate(category.min_birth_date)} até{" "}
+            {formatDate(category.max_birth_date)}
+          </td>
 
-        <thead className="bg-neutral-50">
+          <td className="px-6 py-4">
+            {category.training_groups_count === 1
+              ? "1 turma"
+              : `${category.training_groups_count} turmas`}
+          </td>
 
-          <tr>
+          <td className="px-6 py-4">
+            <StatusBadge active={category.active} />
+          </td>
 
-            <th className="px-6 py-4 text-left">
-              Categoria
-            </th>
+          <td className="px-6 py-4">
+            <div className="flex justify-end gap-2">
 
-            <th className="px-6 py-4 text-left">
-              Dia
-            </th>
+              <button
+                onClick={() => onEdit(category)}
+                className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
+              >
+                <Pencil size={16} />
+                Editar
+              </button>
 
-            <th className="px-6 py-4 text-left">
-              Horário
-            </th>
+              <button
+                onClick={() => onToggle(category)}
+                className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
+              >
+                <Power size={16} />
+                {category.active ? "Desativar" : "Reativar"}
+              </button>
 
-            <th className="px-6 py-4 text-center">
-              Experimentais
-            </th>
+              <button
+                onClick={() => onDelete(category)}
+                className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              >
+                <Trash2 size={16} />
+                Excluir
+              </button>
 
-            <th className="px-6 py-4 text-center">
-              Status
-            </th>
+            </div>
+          </td>
 
-            <th className="px-6 py-4 text-right">
-            </th>
-
-          </tr>
-
-        </thead>
-
-        <tbody>
-
-          {categories.map((category) => (
-
-            <tr
-              key={category.id}
-              className="border-t"
-            >
-
-              <td className="px-6 py-5 font-medium">
-                {category.name}
-              </td>
-
-              <td className="px-6 py-5">
-                {category.weekday}
-              </td>
-
-              <td className="px-6 py-5">
-                {category.start_time} - {category.end_time}
-              </td>
-
-              <td className="px-6 py-5 text-center">
-                {category.experimental_limit}
-              </td>
-
-              <td className="px-6 py-5 text-center">
-
-                <span
-                  className={`
-                    rounded-full
-                    px-3
-                    py-1
-                    text-xs
-                    font-semibold
-
-                    ${
-                      category.trial_status === "open"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }
-                  `}
-                >
-                  {category.trial_status}
-                </span>
-
-              </td>
-
-              <td className="px-6 py-5 text-right">
-
-                <button
-                  className="rounded-xl p-2 transition hover:bg-neutral-100"
-                >
-                  <Pencil size={18} />
-                </button>
-
-              </td>
-
-            </tr>
-
-          ))}
-
-        </tbody>
-
-      </table>
-
-    </div>
+        </tr>
+      ))}
+    </CrudTable>
   );
 }

@@ -1,53 +1,50 @@
-const WEEKDAY_MAP = {
-  "Domingo": 0,
-  "Segunda-feira": 1,
-  "Terça-feira": 2,
-  "Quarta-feira": 3,
-  "Quinta-feira": 4,
-  "Sexta-feira": 5,
-  "Sábado": 6,
-};
+import { WEEKDAY_LABELS } from "../constants/weekdays";
 
-export function generateAvailableDates(weekday, daysAhead = 30) {
-  if (!weekday) return [];
+/**
+ * Calcula a próxima ocorrência (a partir de hoje) de um dia da
+ * semana específico.
+ *
+ * O parâmetro `weekday` segue o mesmo padrão numérico utilizado em
+ * training_group_schedules.weekday e em constants/weekdays.js:
+ * 1 = Segunda-feira ... 7 = Domingo.
+ *
+ * Retorna { iso, date, label } ou null quando não for possível
+ * calcular (weekday ausente ou inválido).
+ */
+export function getNextOccurrence(weekday, daysAhead = 60) {
+  const numericWeekday = Number(weekday);
 
-  const targetDay = WEEKDAY_MAP[weekday];
+  if (!numericWeekday || numericWeekday < 1 || numericWeekday > 7) {
+    return null;
+  }
 
-  if (targetDay === undefined) return [];
+  // constants/weekdays.js usa 1=Segunda...7=Domingo.
+  // Date.prototype.getDay() usa 0=Domingo...6=Sábado.
+  const jsTargetDay = numericWeekday % 7;
 
-  const sessions = [];
   const today = new Date();
 
   for (let i = 0; i <= daysAhead; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
 
-    if (date.getDay() !== targetDay) continue;
+    if (date.getDay() !== jsTargetDay) continue;
 
     const iso = date.toISOString().split("T")[0];
 
-    sessions.push({
-      id: iso,
-      date,
+    return {
       iso,
+      date,
       label: date.toLocaleDateString("pt-BR", {
         weekday: "long",
         day: "2-digit",
         month: "long",
         year: "numeric",
       }),
-    });
+    };
   }
 
-  return sessions;
+  return null;
 }
 
-export const WEEKDAY_LABEL = {
-  "Domingo": "Domingo",
-  "Segunda-feira": "Segunda-feira",
-  "Terça-feira": "Terça-feira",
-  "Quarta-feira": "Quarta-feira",
-  "Quinta-feira": "Quinta-feira",
-  "Sexta-feira": "Sexta-feira",
-  "Sábado": "Sábado",
-};
+export { WEEKDAY_LABELS };

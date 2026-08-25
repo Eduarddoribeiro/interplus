@@ -1,14 +1,14 @@
 export default function ProgressBar({ current, total }) {
-  const steps = [
+   const steps = [
     "Atleta",
-    "Data",
+    "Turma",
     "Responsável",
     "Revisão",
   ];
 
   const mobileSteps = [
     "Atleta",
-    "Data",
+    "Turma",
     "Respons.",
     "Revisão",
   ];

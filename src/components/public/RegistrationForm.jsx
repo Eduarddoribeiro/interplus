@@ -7,12 +7,20 @@ import ScheduleSelector from "./components/ScheduleSelector";
 import ResponsibleForm from "./components/ResponsibleForm";
 import ReviewCard from "./components/ReviewCard";
 import SuccessScreen from "./components/SuccessScreen";
+
 import { createContact } from "../../services/contacts";
+import { CONTACT_STATUS } from "../../constants/contactStatus";
 
 const INITIAL_FORM = {
   child_name: "",
   birth_date: "",
+
+  modality: null,
   category: null,
+
+  unit: null,
+  training_group: null,
+  schedule: null,
 
   experimental_date: "",
   experimental_time: "",
@@ -29,7 +37,11 @@ const INITIAL_FORM = {
   coach_notes: "",
 
   source: "instagram",
-  
+
+  // Lista de Interesse (Cenário 1 e 2)
+  interest_reason: null,
+  preferred_shift: "any",
+  observations: "",
 };
 
 export default function RegistrationForm() {
@@ -43,11 +55,47 @@ export default function RegistrationForm() {
       [field]: value,
     }));
   }
+  function handleJoinInterestList() {
+    setStep(3);
+  }
 
-  async function handleFinish() {
+   async function handleFinish() {
+    const isInterestList = !!form.interest_reason;
+
     try {
-      const isWaitingList =
-        form.category?.trial_status === "waiting_list";
+      if (isInterestList) {
+        await createContact({
+          child_name: form.child_name,
+          birth_date: form.birth_date,
+
+          responsible_name: form.responsible_name,
+          phone: form.phone,
+          email: form.email,
+          neighborhood: form.neighborhood,
+
+          entry_channel: "public_form",
+
+          modality_id: form.modality?.id,
+
+          interest_category_id: form.category?.id,
+
+          unit_id: form.unit?.id || null,
+          training_group_id: form.training_group?.id || null,
+
+          preferred_shift: form.preferred_shift || null,
+          observations: form.observations
+            ? form.observations
+            : null,
+
+          status: CONTACT_STATUS.WAITING_LIST,
+          waiting_list_reason: form.interest_reason,
+
+          unit: form.unit?.name || "Viamão",
+        });
+
+        setSuccess("waiting_list");
+        return;
+      }
 
       await createContact({
         child_name: form.child_name,
@@ -57,7 +105,6 @@ export default function RegistrationForm() {
         phone: form.phone,
         email: form.email,
         neighborhood: form.neighborhood,
-
 
         entry_channel: "public_form",
 
@@ -71,41 +118,30 @@ export default function RegistrationForm() {
 
         coach_notes: form.coach_notes,
 
+        modality_id: form.modality?.id,
+
         category_id: form.category?.id,
 
-        experimental_date: isWaitingList
-          ? null
-          : form.experimental_date,
+        experimental_date: form.experimental_date,
 
-        experimental_time: isWaitingList
-          ? null
-          : form.experimental_time,
+        experimental_time: form.experimental_time,
 
-        status: isWaitingList
-          ? "waiting_list"
-          : "pending_confirmation",
+        training_group_id: form.training_group?.id,
 
-        unit: "Viamão",
+        training_group_schedule_id: form.schedule?.id,
+
+        status: CONTACT_STATUS.PENDING_CONFIRMATION,
+
+        unit: form.unit?.name || "Viamão",
       });
 
-      setSuccess(
-        isWaitingList
-          ? "waiting_list"
-          : "scheduled"
-      );
+      setSuccess("scheduled");
     } catch (error) {
       console.error("Erro completo:", error);
-console.log("Mensagem:", error?.message);
-console.log("Detalhes:", error?.details);
-console.log("Hint:", error?.hint);
-console.log("Code:", error?.code);
 
-alert(
-  `${error?.message || "Erro desconhecido"}\n\n` +
-  `${error?.details || ""}`
-);
       alert(
-        "Não foi possível enviar sua solicitação. Tente novamente."
+        `${error?.message || "Erro desconhecido"}\n\n` +
+        `${error?.details || ""}`
       );
     }
   }
@@ -136,9 +172,10 @@ alert(
           </h2>
 
           <p className="mt-4 max-w-2xl text-white/70">
-            Informe os dados do atleta, escolha uma data disponível para a
-            aula experimental e finalize sua solicitação. Nossa equipe
-            confirmará o agendamento pelo WhatsApp.
+            Informe os dados do atleta, escolha a modalidade, a turma e o
+            horário disponíveis para a aula experimental e finalize sua
+            solicitação. Nossa equipe confirmará o agendamento pelo
+            WhatsApp.
           </p>
 
           <div className="mt-10">
@@ -166,12 +203,13 @@ alert(
             />
           )}
 
-          {step === 2 && (
+                  {step === 2 && (
             <ScheduleSelector
               form={form}
               updateField={updateField}
               onBack={() => setStep(1)}
               onNext={() => setStep(3)}
+              onInterestList={handleJoinInterestList}
             />
           )}
 

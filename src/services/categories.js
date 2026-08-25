@@ -17,12 +17,18 @@ export async function getCategoryByBirthDate(birthDate) {
 export async function getCategories() {
   const { data, error } = await supabase
     .from("categories")
-    .select("*")
+    .select(`
+      *,
+      training_groups(count)
+    `)
     .order("order_index");
 
   if (error) throw error;
 
-  return data ?? [];
+  return (data ?? []).map((category) => ({
+    ...category,
+    training_groups_count: category.training_groups?.[0]?.count ?? 0,
+  }));
 }
 
 export async function getActiveCategories() {
@@ -73,4 +79,13 @@ export async function toggleCategory(id, active) {
   if (error) throw error;
 
   return data;
+}
+
+export async function deleteCategory(id) {
+  const { error } = await supabase
+    .from("categories")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw error;
 }

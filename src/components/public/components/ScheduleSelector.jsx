@@ -1,86 +1,168 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  generateAvailableDates,
-  WEEKDAY_LABEL,
-} from "../../../utils/generateAvailableDates";
+import { useEffect, useState } from "react";
 
-import { getAvailableSessions } from "../../../services/schedule";
+import { WEEKDAY_LABELS } from "../../../constants/weekdays";
+ 
+
+import {
+  getTrainingGroupsForPublic,
+  getAvailableSchedules,
+} from "../../../services/publicRegistration";
 
 export default function ScheduleSelector({
   form,
   updateField,
   onBack,
   onNext,
+  onInterestList,
 }) {
+  const modality = form.modality;
   const category = form.category;
+
   const formatTime = (time) => time?.slice(0, 5);
 
-  const isWaitingList = category?.trial_status === "waiting_list";
+  const [loadingGroups, setLoadingGroups] = useState(true);
+  const [allGroups, setAllGroups] = useState([]);
 
-  const isClosed = category?.trial_status === "closed";
+  const [loadingSchedules, setLoadingSchedules] = useState(false);
+  const [schedules, setSchedules] = useState([]);
 
-  const [selectedDate, setSelectedDate] = useState(form.experimental_date);
-
-  const [availableSessions, setAvailableSessions] = useState([]);
-
-  const [loading, setLoading] = useState(true);
-
-  const generatedSessions = useMemo(() => {
-    return generateAvailableDates(category?.weekday);
-  }, [category]);
-
+  /* =========================================================
+   * 1. TURMAS (Modalidade + Categoria)
+   * =======================================================*/
   useEffect(() => {
-    async function loadSessions() {
-      if (!category) return;
-
-      if (isWaitingList || isClosed) {
-        setLoading(false);
+    async function loadGroups() {
+      if (!modality?.id || !category?.id) {
+        setAllGroups([]);
+        setLoadingGroups(false);
         return;
       }
 
       try {
-        setLoading(true);
+        setLoadingGroups(true);
 
-        const contacts = await getAvailableSessions(category);
+        const data = await getTrainingGroupsForPublic(
+          modality.id,
+          category.id
+        );
 
-        const occupation = {};
+        setAllGroups(data);
 
-        contacts.forEach((item) => {
-          if (!item.experimental_date) return;
-
-          occupation[item.experimental_date] = Number(item.booked) || 0;
-        });
-
-        const filtered = generatedSessions.filter((session) => {
-          const booked = occupation[session.iso] || 0;
-
-          return booked < category.experimental_limit;
-        });
-
-        setAvailableSessions(filtered);
+        // Reseta seleções dependentes ao mudar modalidade/categoria
+        updateField("unit", null);
+        updateField("training_group", null);
+        updateField("schedule", null);
       } catch (error) {
-        console.error(error);
+        console.error("Erro ao buscar turmas:", error);
+
+        setAllGroups([]);
       } finally {
-        setLoading(false);
+        setLoadingGroups(false);
       }
     }
 
-    loadSessions();
-  }, [category, generatedSessions, isWaitingList, isClosed]);
+    loadGroups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modality?.id, category?.id]);
 
-  function handleSelect(session) {
-    setSelectedDate(session.iso);
+  /* =========================================================
+   * UNIDADES DISPONÍVEIS (derivadas das turmas encontradas)
+   * =======================================================*/
+  const units = [];
+  const seenUnitIds = new Set();
 
-    updateField("experimental_date", session.iso);
+  allGroups.forEach((group) => {
+    if (group.unit && !seenUnitIds.has(group.unit.id)) {
+      seenUnitIds.add(group.unit.id);
+      units.push(group.unit);
+    }
+  });
 
-    updateField("experimental_time", category.start_time);
+  /* =========================================================
+   * 2. UNIDADE — seleciona automaticamente quando só há uma
+   * =======================================================*/
+  useEffect(() => {
+    if (loadingGroups) return;
+
+    if (units.length === 1 && !form.unit) {
+      updateField("unit", units[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingGroups, units.length]);
+
+  const groupsForUnit = form.unit
+    ? allGroups.filter((group) => group.unit?.id === form.unit.id)
+    : [];
+
+  /* =========================================================
+   * 2.1 TURMA — seleciona automaticamente quando só há uma
+   *      disponível para a unidade escolhida (mesmo padrão da
+   *      etapa de Unidade).
+   * =======================================================*/
+  useEffect(() => {
+    if (loadingGroups) return;
+    if (!form.unit) return;
+
+    if (groupsForUnit.length === 1 && !form.training_group) {
+      updateField("training_group", groupsForUnit[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingGroups, form.unit?.id, groupsForUnit.length]);
+
+  /* =========================================================
+   * 3. HORÁRIOS DISPONÍVEIS DA TURMA SELECIONADA
+   * =======================================================*/
+  useEffect(() => {
+    async function loadSchedules() {
+      if (!form.training_group?.id) {
+        setSchedules([]);
+        return;
+      }
+
+      try {
+        setLoadingSchedules(true);
+
+        const data = await getAvailableSchedules(form.training_group.id);
+
+        setSchedules(data);
+      } catch (error) {
+        console.error("Erro ao buscar horários:", error);
+
+        setSchedules([]);
+      } finally {
+        setLoadingSchedules(false);
+      }
+    }
+
+    loadSchedules();
+  }, [form.training_group?.id]);
+
+  function handleSelectUnit(unit) {
+    updateField("unit", unit);
+    updateField("training_group", null);
+    updateField("schedule", null);
   }
 
-  if (!category) {
+  function handleSelectGroup(group) {
+    updateField("training_group", group);
+    updateField("schedule", null);
+  }
+
+   function handleSelectSchedule(schedule) {
+    updateField("schedule", schedule);
+    updateField("experimental_date", schedule.next_date ?? "");
+    updateField("experimental_time", schedule.start_time);
+  }
+
+    function handleJoinInterestList(reason) {
+    updateField("interest_reason", reason);
+    onInterestList();
+  }
+
+  if (!modality || !category) {
     return (
       <div className="space-y-6">
         <p className="font-semibold text-red-600">
-          Não foi possível identificar a categoria.
+          Não foi possível identificar a modalidade e a categoria.
         </p>
 
         <button onClick={onBack} className="rounded-xl border px-6 py-3">
@@ -90,167 +172,198 @@ export default function ScheduleSelector({
     );
   }
 
-  if (loading && !isWaitingList && !isClosed) {
+  if (loadingGroups) {
     return (
-      <div className="py-20 text-center">Carregando datas disponíveis...</div>
+      <div className="py-20 text-center">Carregando turmas disponíveis...</div>
     );
   }
+
+  const noGroupsAtAll = allGroups.length === 0;
+
+  const showUnitPicker = !noGroupsAtAll && units.length > 1;
+
+  const showGroupPicker =
+    !noGroupsAtAll && !!form.unit && groupsForUnit.length > 1;
+
+  const showNoGroupsForUnit =
+    !noGroupsAtAll && !!form.unit && groupsForUnit.length === 0;
+
+  const canShowSchedules = !noGroupsAtAll && !!form.training_group;
+  const canContinue = !!form.schedule;
+
   return (
     <div className="space-y-8">
       {/* Cabeçalho */}
       <div>
         <h2 className="text-3xl font-bold text-neutral-900">
-          {isWaitingList
-            ? "Turma em formação"
-            : "Escolha a data da aula experimental"}
+          Escolha a turma e o horário
         </h2>
 
         <p className="mt-2 text-neutral-500">
-          {isWaitingList
-            ? "Cadastre seu interesse e nossa equipe avisará quando a nova turma iniciar."
-            : "Selecione uma das próximas datas disponíveis para esta categoria."}
+          Selecione a turma e o horário disponíveis para a aula experimental.
         </p>
       </div>
 
-      {/* Categoria */}
+      {/* Modalidade / Categoria */}
       <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
         <span className="text-xs font-semibold uppercase tracking-[0.20em] text-red-600">
-          Categoria
+          {modality.name}
         </span>
 
         <h3 className="mt-2 text-4xl font-bold text-neutral-900">
           {category.name}
         </h3>
-
-        <div className="mt-6 flex items-center gap-3 text-neutral-600">
-          <span className="font-medium">{WEEKDAY_LABEL[category.weekday]}</span>
-
-          <span className="h-1.5 w-1.5 rounded-full bg-neutral-400" />
-
-          <span>
-            {formatTime(category.start_time)} às {formatTime(category.end_time)}
-          </span>
-        </div>
-
-        {!isWaitingList && !isClosed && (
-          <p className="mt-5 text-sm text-neutral-500">
-            Escolha abaixo uma das datas disponíveis para realizar a aula
-            experimental.
-          </p>
-        )}
       </div>
 
-      {/* Waiting List */}
-      {isWaitingList ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+           {/* Sem turmas para a combinação — Cenário 1 */}
+      {noGroupsAtAll && (
+        <div className="rounded-2xl border border-red-100 bg-red-50 p-6">
           <h3 className="text-xl font-bold text-neutral-900">
-            Nova turma em formação
-          </h3>
-
-          <p className="mt-4 text-neutral-700">
-            Estamos organizando uma nova turma para esta categoria.
-          </p>
-
-          <p className="mt-3 text-neutral-700">
-            Cadastre seu interesse e nossa equipe entrará em contato assim que
-            houver disponibilidade para a primeira aula experimental.
-          </p>
-
-          <div className="mt-5 rounded-xl border border-amber-200 bg-white p-4">
-            <p className="font-medium text-neutral-800">
-              Seu interesse ficará registrado.
-            </p>
-
-            <p className="mt-2 text-sm text-neutral-500">
-              Você será um dos primeiros avisados quando a turma abrir.
-            </p>
-          </div>
-        </div>
-      ) : isClosed ? (
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-100 p-6">
-          <h3 className="text-xl font-bold text-neutral-900">
-            Categoria indisponível
+            Ainda não temos turma para esta categoria
           </h3>
 
           <p className="mt-3 text-neutral-600">
-            No momento esta categoria não está recebendo novos alunos.
-          </p>
-        </div>
-      ) : availableSessions.length === 0 ? (
-        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-6">
-          <h3 className="text-xl font-bold text-neutral-900">
-            Todas as vagas foram preenchidas
-          </h3>
-
-          <p className="mt-3 text-neutral-600">
-            No momento não há datas disponíveis para esta categoria.
+            No momento não há turmas de {modality.name} abertas para a
+            categoria {category.name}. Deixe seus dados e avisaremos assim
+            que uma nova turma for aberta.
           </p>
 
-          <p className="mt-2 text-neutral-500">
-            Novas vagas serão disponibilizadas em breve.
-          </p>
+          <button
+            type="button"
+            onClick={() => handleJoinInterestList("future_class")}
+            className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700"
+          >
+            Entrar na lista de interesse
+          </button>
         </div>
-      ) : (
+      )}
+
+      {/* Unidade — exibida apenas quando houver mais de uma opção */}
+      {showUnitPicker && (
         <div className="space-y-3">
-          {availableSessions.map((session) => {
-            const selected = selectedDate === session.iso;
+          <p className="text-sm font-semibold text-neutral-900">Unidade</p>
 
-            const date = new Date(`${session.iso}T00:00:00`);
-
-            const day = date.toLocaleDateString("pt-BR", {
-              day: "2-digit",
-            });
-
-            const month = date
-              .toLocaleDateString("pt-BR", {
-                month: "short",
-              })
-              .replace(".", "")
-              .toUpperCase();
-
-            const weekday = date.toLocaleDateString("pt-BR", {
-              weekday: "long",
-            });
-
-            const formattedWeekday =
-              weekday.charAt(0).toUpperCase() + weekday.slice(1);
+          {units.map((unit) => {
+            const selected = form.unit?.id === unit.id;
 
             return (
               <button
-                key={session.id}
+                key={unit.id}
                 type="button"
-                onClick={() => handleSelect(session)}
-                className={`w-full rounded-2xl border p-5 transition-all ${
+                onClick={() => handleSelectUnit(unit)}
+                className={`w-full rounded-2xl border p-5 text-left transition-all ${
                   selected
                     ? "border-red-600 bg-red-50 shadow-sm"
                     : "border-neutral-200 bg-white hover:border-red-300 hover:shadow-sm"
                 }`}
               >
-                <div className="flex items-center gap-5">
-                  <div className="w-16 text-center">
-                    <p className="text-3xl font-bold text-neutral-900">{day}</p>
-
-                    <p className="text-xs font-semibold uppercase tracking-[0.20em] text-neutral-500">
-                      {month}
-                    </p>
-                  </div>
-
-                  <div className="h-12 w-px bg-neutral-200" />
-
-                  <div className="flex-1 text-left">
-                    <p className="font-semibold text-neutral-900">
-                      {formattedWeekday}
-                    </p>
-
-                    <p className="mt-1 text-sm text-neutral-500">
-                      {formatTime(category.start_time)} às{" "}
-                      {formatTime(category.end_time)}
-                    </p>
-                  </div>
-                </div>
+                <p className="font-semibold text-neutral-900">{unit.name}</p>
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* Turma — exibida apenas quando houver mais de uma opção */}
+      {showNoGroupsForUnit && (
+        <div className="rounded-2xl border border-neutral-200 bg-neutral-100 p-6">
+          <p className="text-neutral-600">
+            Nenhuma turma ativa encontrada para esta unidade.
+          </p>
+        </div>
+      )}
+
+      {showGroupPicker && (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-neutral-900">Turma</p>
+
+          {groupsForUnit.map((group) => {
+            const selected = form.training_group?.id === group.id;
+
+            return (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => handleSelectGroup(group)}
+                className={`w-full rounded-2xl border p-5 text-left transition-all ${
+                  selected
+                    ? "border-red-600 bg-red-50 shadow-sm"
+                    : "border-neutral-200 bg-white hover:border-red-300 hover:shadow-sm"
+                }`}
+              >
+                <p className="font-semibold text-neutral-900">
+                  {group.name}
+                </p>
+
+                {group.coach?.name && (
+                  <p className="mt-1 text-sm text-neutral-500">
+                    Professor(a): {group.coach.name}
+                  </p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Horário */}
+      {canShowSchedules && (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-neutral-900">Horário</p>
+
+          {loadingSchedules ? (
+            <div className="py-10 text-center text-neutral-500">
+              Carregando horários...
+            </div>
+                    ) : schedules.length === 0 ? (
+            <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-6">
+              <h3 className="text-xl font-bold text-neutral-900">
+                Todas as vagas estão preenchidas
+              </h3>
+
+              <p className="mt-3 text-neutral-600">
+                A turma {form.training_group?.name} está com todos os
+                horários de experimental lotados no momento. Deixe seus
+                dados e avisaremos assim que surgir uma vaga.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => handleJoinInterestList("no_vacancy")}
+                className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700"
+              >
+                Entrar na lista de interesse
+              </button>
+            </div>
+          ) : (
+            schedules.map((schedule) => {
+              const selected = form.schedule?.id === schedule.id;
+
+              return (
+                <button
+                  key={schedule.id}
+                  type="button"
+                  onClick={() => handleSelectSchedule(schedule)}
+                  className={`w-full rounded-2xl border p-5 text-left transition-all ${
+                    selected
+                      ? "border-red-600 bg-red-50 shadow-sm"
+                      : "border-neutral-200 bg-white hover:border-red-300 hover:shadow-sm"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="font-semibold text-neutral-900">
+                      {WEEKDAY_LABELS[schedule.weekday]}
+                    </p>
+
+                    <p className="text-sm text-neutral-600">
+                      {formatTime(schedule.start_time)} às{" "}
+                      {formatTime(schedule.end_time)}
+                    </p>
+                  </div>
+                </button>
+              );
+            })
+          )}
         </div>
       )}
 
@@ -266,14 +379,11 @@ export default function ScheduleSelector({
 
         <button
           type="button"
-          disabled={
-            (!selectedDate && !isWaitingList) ||
-            (!isWaitingList && availableSessions.length === 0)
-          }
+          disabled={!canContinue}
           onClick={onNext}
           className="rounded-xl bg-red-600 px-8 py-3 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isWaitingList ? "Registrar Interesse" : "Continuar"}
+          Continuar
         </button>
       </div>
     </div>

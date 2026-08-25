@@ -124,8 +124,9 @@ export default function ResponsibleForm({
         </h2>
 
         <p className="mt-2 text-neutral-500">
-          Preencha os dados para confirmarmos a aula experimental
-          pelo WhatsApp.
+          {form.interest_reason
+            ? "Preencha os dados para entrarmos em contato assim que houver disponibilidade."
+            : "Preencha os dados para confirmarmos a aula experimental pelo WhatsApp."}
         </p>
 
         <p className="mt-3 text-xs text-neutral-400">
@@ -242,40 +243,42 @@ export default function ResponsibleForm({
 
       </section>
 
-      <div className="border-t border-neutral-200" />
+           <div className="border-t border-neutral-200" />
 
-      {/* INFORMAÇÕES DO ATLETA */}
+      {form.interest_reason ? (
 
-      <section className="space-y-6">
+        /* PREFERÊNCIAS — LISTA DE INTERESSE */
+        <section className="space-y-6">
 
-        <h3 className="text-lg font-bold text-neutral-900">
-          Informações do atleta
-        </h3>
+          <h3 className="text-lg font-bold text-neutral-900">
+            Preferências
+          </h3>
 
-        <div className="grid gap-6 md:grid-cols-2">
+          <p className="text-sm text-neutral-500">
+            Essas informações nos ajudam a avisar você assim que a turma
+            certa estiver disponível.
+          </p>
 
           <div>
 
             <label className="mb-2 block text-sm font-semibold text-neutral-800">
-              Como conheceu a escola?
+              Turno de preferência
             </label>
 
             <select
-              value={form.source}
+              value={form.preferred_shift}
               onChange={(e) =>
-                handleSource(e.target.value)
+                updateField(
+                  "preferred_shift",
+                  e.target.value
+                )
               }
               className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
             >
-              <option value="instagram">Instagram</option>
-              <option value="facebook">Facebook</option>
-              <option value="google">Google</option>
-              <option value="whatsapp">WhatsApp</option>
-              <option value="event">Evento</option>
-              <option value="walk_in">
-                Passou em frente / viu a escola
-              </option>
-              <option value="other">Outro</option>
+              <option value="morning">Manhã</option>
+              <option value="afternoon">Tarde</option>
+              <option value="evening">Noite</option>
+              <option value="any">Indiferente</option>
             </select>
 
           </div>
@@ -283,140 +286,211 @@ export default function ResponsibleForm({
           <div>
 
             <label className="mb-2 block text-sm font-semibold text-neutral-800">
-              O atleta já treinou em outra escola de futebol?
+              Observações
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
-
-              <button
-                type="button"
-                onClick={() =>
-                  handleTrainedElsewhere(false)
-                }
-                className={`rounded-xl border px-4 py-3 font-semibold transition ${
-                  !form.trained_elsewhere
-                    ? "border-red-600 bg-red-50 text-red-700"
-                    : "border-neutral-300"
-                }`}
-              >
-                Não
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  handleTrainedElsewhere(true)
-                }
-                className={`rounded-xl border px-4 py-3 font-semibold transition ${
-                  form.trained_elsewhere
-                    ? "border-red-600 bg-red-50 text-red-700"
-                    : "border-neutral-300"
-                }`}
-              >
-                Sim
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        
-        {form.trained_elsewhere && (
-          <div>
-
-            <label className="mb-2 block text-sm font-semibold text-neutral-800">
-              Onde treinou anteriormente?
-            </label>
-
-            <input
-              type="text"
-              value={form.previous_club}
+            <textarea
+              rows={4}
+              value={form.observations}
               onChange={(e) =>
                 updateField(
-                  "previous_club",
+                  "observations",
                   e.target.value
                 )
               }
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-              placeholder="Nome da escola de futebol ou clube"
+              className="min-h-[110px] w-full resize-y rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+              placeholder="Alguma informação que possa nos ajudar? Campo opcional."
             />
 
+            <p className="mt-2 text-xs text-neutral-500">
+              Campo opcional.
+            </p>
+
           </div>
-        )}
 
-        <div>
+        </section>
 
-          <label className="mb-2 block text-sm font-semibold text-neutral-800">
-            Posição preferida
-          </label>
+      ) : (
 
-          <select
-            value={form.preferred_position}
-            onChange={(e) =>
-              updateField(
-                "preferred_position",
-                e.target.value
-              )
-            }
-            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-          >
-            {POSITION_OPTIONS.map((position) => (
-              <option
-                key={position.value}
-                value={position.value}
+        <>
+
+          {/* INFORMAÇÕES DO ATLETA */}
+
+          <section className="space-y-6">
+
+            <h3 className="text-lg font-bold text-neutral-900">
+              Informações do atleta
+            </h3>
+
+            <div className="grid gap-6 md:grid-cols-2">
+
+              <div>
+
+                <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                  Como conheceu a escola?
+                </label>
+
+                <select
+                  value={form.source}
+                  onChange={(e) =>
+                    handleSource(e.target.value)
+                  }
+                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+                >
+                  <option value="instagram">Instagram</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="google">Google</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="event">Evento</option>
+                  <option value="walk_in">
+                    Passou em frente / viu a escola
+                  </option>
+                  <option value="other">Outro</option>
+                </select>
+
+              </div>
+
+              <div>
+
+                <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                  O atleta já treinou em outra escola de futebol?
+                </label>
+
+                <div className="grid grid-cols-2 gap-3">
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleTrainedElsewhere(false)
+                    }
+                    className={`rounded-xl border px-4 py-3 font-semibold transition ${
+                      !form.trained_elsewhere
+                        ? "border-red-600 bg-red-50 text-red-700"
+                        : "border-neutral-300"
+                    }`}
+                  >
+                    Não
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleTrainedElsewhere(true)
+                    }
+                    className={`rounded-xl border px-4 py-3 font-semibold transition ${
+                      form.trained_elsewhere
+                        ? "border-red-600 bg-red-50 text-red-700"
+                        : "border-neutral-300"
+                    }`}
+                  >
+                    Sim
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {form.trained_elsewhere && (
+              <div>
+
+                <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                  Onde treinou anteriormente?
+                </label>
+
+                <input
+                  type="text"
+                  value={form.previous_club}
+                  onChange={(e) =>
+                    updateField(
+                      "previous_club",
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+                  placeholder="Nome da escola de futebol ou clube"
+                />
+
+              </div>
+            )}
+
+            <div>
+
+              <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                Posição preferida
+              </label>
+
+              <select
+                value={form.preferred_position}
+                onChange={(e) =>
+                  updateField(
+                    "preferred_position",
+                    e.target.value
+                  )
+                }
+                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
               >
-                {position.label}
-              </option>
-            ))}
-          </select>
+                {POSITION_OPTIONS.map((position) => (
+                  <option
+                    key={position.value}
+                    value={position.value}
+                  >
+                    {position.label}
+                  </option>
+                ))}
+              </select>
 
-        </div>
+            </div>
 
-      </section>
+          </section>
 
-      <div className="border-t border-neutral-200" />
+          <div className="border-t border-neutral-200" />
 
-      {/* INFORMAÇÕES PARA O PROFESSOR */}
+          {/* INFORMAÇÕES PARA O PROFESSOR */}
 
-      <section className="space-y-6">
+          <section className="space-y-6">
 
-        <h3 className="text-lg font-bold text-neutral-900">
-          Informações importantes para o professor
-        </h3>
+            <h3 className="text-lg font-bold text-neutral-900">
+              Informações importantes para o professor
+            </h3>
 
-        <p className="text-sm text-neutral-500">
-          Estas informações ajudam nossa equipe a oferecer um treino mais
-          seguro e adequado ao atleta.
-        </p>
+            <p className="text-sm text-neutral-500">
+              Estas informações ajudam nossa equipe a oferecer um treino mais
+              seguro e adequado ao atleta.
+            </p>
 
-        <div>
+            <div>
 
-          <label className="mb-2 block text-sm font-semibold text-neutral-800">
-            Há alguma informação importante que o professor deva saber?
-          </label>
+              <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                Há alguma informação importante que o professor deva saber?
+              </label>
 
-          <textarea
-            rows={5}
-            value={form.coach_notes}
-            onChange={(e) =>
-              updateField(
-                "coach_notes",
-                e.target.value
-              )
-            }
-            className="min-h-[130px] w-full resize-y rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-            placeholder="Ex.: asma, restrição médica, lesão recente, uso de medicamento, TDAH, TEA ou qualquer outra informação importante."
-          />
+              <textarea
+                rows={5}
+                value={form.coach_notes}
+                onChange={(e) =>
+                  updateField(
+                    "coach_notes",
+                    e.target.value
+                  )
+                }
+                className="min-h-[130px] w-full resize-y rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+                placeholder="Ex.: asma, restrição médica, lesão recente, uso de medicamento, TDAH, TEA ou qualquer outra informação importante."
+              />
 
-          <p className="mt-2 text-xs text-neutral-500">
-            Campo opcional.
-          </p>
+              <p className="mt-2 text-xs text-neutral-500">
+                Campo opcional.
+              </p>
 
-        </div>
+            </div>
 
-      </section>
+          </section>
+
+        </>
+
+      )}
 
       {/* NAVEGAÇÃO */}
 
