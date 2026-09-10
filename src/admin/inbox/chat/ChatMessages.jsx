@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { Loader2 } from "lucide-react";
 
 import { getMessages } from "../../../services/messages";
@@ -29,17 +35,39 @@ function formatDate(date) {
   });
 }
 
-export default function ChatMessages({
-  conversation,
-  reloadKey,
-}) {
-
-    console.count("RENDER ChatMessages");
+const ChatMessages = forwardRef(function ChatMessages(
+  {
+    conversation,
+  },
+  ref
+) {
 
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const bottomRef = useRef(null);
+
+  function addMessage(newMessage) {
+    setMessages((current) => {
+      const alreadyExists = current.some(
+        (existing) =>
+          existing.id === newMessage.id ||
+          (newMessage.whatsapp_message_id &&
+            existing.whatsapp_message_id ===
+              newMessage.whatsapp_message_id)
+      );
+
+      if (alreadyExists) {
+        return current;
+      }
+
+      return [...current, newMessage];
+    });
+  }
+
+  useImperativeHandle(ref, () => ({
+    addMessage,
+  }));
 
 useEffect(() => {
 
@@ -50,7 +78,7 @@ useEffect(() => {
 
   loadMessages();
 
-}, [conversation?.jid, reloadKey]);
+}, [conversation?.jid]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({
@@ -78,13 +106,11 @@ useEffect(() => {
 
   function handleNewMessage(data) {
 
-    console.log("📩 Nova mensagem", data);
-
     if (data.jid !== conversation?.jid) {
       return;
     }
 
-    loadMessages();
+    addMessage(data);
 
   }
 
@@ -207,4 +233,6 @@ useEffect(() => {
 
     </div>
   );
-}
+});
+
+export default ChatMessages;

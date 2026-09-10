@@ -7,14 +7,11 @@ import { saveIncomingMessage } from "../messages/messages.service.js";
 import { getIO } from "../../socket.js";
 
 export async function processEvolutionWebhook(payload) {
-
   if (payload.event !== "messages.upsert") {
     return;
   }
 
   const message = payload.data;
-
-  
 
   const jid = message.key.remoteJid;
 
@@ -35,7 +32,7 @@ export async function processEvolutionWebhook(payload) {
       ? "outgoing"
       : "incoming";
 
-  // Por enquanto só processamos mensagens recebidas
+  // Só processa mensagens recebidas
   if (direction === "outgoing") {
     return;
   }
@@ -46,6 +43,15 @@ export async function processEvolutionWebhook(payload) {
     message.messageTimestamp * 1000
   );
 
+  // ===== LOGS DE DIAGNÓSTICO =====
+  console.log("");
+  console.log("========== WEBHOOK RECEBIDO ==========");
+  console.log("RAW JID:", jid);
+  console.log("PHONE:", phone);
+  console.log("PHONE LENGTH:", phone?.length);
+  console.log("INSTANCE:", payload.instance);
+  console.log("PUSH NAME:", responsibleName);
+
   console.table({
     jid,
     phone,
@@ -55,46 +61,46 @@ export async function processEvolutionWebhook(payload) {
   });
 
   const contact = await findOrCreateContact({
-  jid,
-  phone,
-  pushName: responsibleName,
-  instance: payload.instance,
-});
-
-if (!contact) {
-  return;
-}
-
-    
-
- const savedMessage =
-  await saveIncomingMessage({
-    contact,
-    payload,
-    text,
+    jid,
+    phone,
+    pushName: responsibleName,
+    instance: payload.instance,
   });
+
+  console.log("CONTATO ENCONTRADO/CRIADO:");
+  console.table(contact);
+
+  if (!contact) {
+    return;
+  }
+
+  const savedMessage =
+    await saveIncomingMessage({
+      contact,
+      payload,
+      text,
+    });
 
   await touchConversation(
     contact.id,
     timestamp.toISOString()
   );
 
-const io = getIO();
+  const io = getIO();
 
-console.log("📡 Emitindo new-message", {
-  jid,
-  socketCount: io.engine.clientsCount,
-});
+  console.log("📡 Emitindo new-message", {
+    jid,
+    socketCount: io.engine.clientsCount,
+  });
 
-io.emit("new-message", {
-  jid,
-  message: savedMessage.message,
-  created_at: savedMessage.created_at,
-  direction: savedMessage.direction,
-});
+  io.emit("new-message", {
+    jid,
+    message: savedMessage.message,
+    created_at: savedMessage.created_at,
+    direction: savedMessage.direction,
+  });
 
   console.log("");
-
   console.log("========== NOVA MENSAGEM ==========");
 
   console.table({

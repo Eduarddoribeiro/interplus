@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef } from "react";
 
 import ChatHeader from "./ChatHeader";
 import ChatMessages from "./ChatMessages";
@@ -8,10 +8,10 @@ export default function ChatWindow({
   conversation,
 }) {
 
-  const [reloadKey, setReloadKey] = useState(0);
+  const chatMessagesRef = useRef(null);
 
-  function reloadMessages() {
-    setReloadKey((v) => v + 1);
+  function handleMessageSent(newMessage) {
+    chatMessagesRef.current?.addMessage(newMessage);
   }
 
   return (
@@ -22,13 +22,13 @@ export default function ChatWindow({
       />
 
       <ChatMessages
+        ref={chatMessagesRef}
         conversation={conversation}
-        reloadKey={reloadKey}
       />
 
       <ChatInput
         conversation={conversation}
-        onMessageSent={reloadMessages}
+        onMessageSent={handleMessageSent}
       />
 
     </section>

@@ -6,50 +6,40 @@ import { sendMessage } from "../../../services/messages";
 export default function ChatInput({ conversation, onMessageSent }) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
 
   async function handleSend() {
-    console.log("1 - Clique");
+    if (sending) {
+      return;
+    }
 
     if (!message.trim()) {
-      console.log("2 - Mensagem vazia");
       return;
     }
 
     if (!conversation?.jid) {
-      console.log("3 - Sem conversa", conversation);
       return;
     }
 
-    console.log("4 - Vai enviar");
-    console.log({
-      jid: conversation.jid,
-      message,
-    });
+    const textToSend = message;
 
     try {
       setSending(true);
+      setError(null);
 
-      console.log("5 - Antes do fetch");
-
-    const result = await sendMessage({
-  jid: conversation.jid,
-  contactId: conversation.id,
-  message,
-});
-
+      const sentMessage = await sendMessage({
+        jid: conversation.jid,
+        contactId: conversation.id,
+        message: textToSend,
+      });
 
       setMessage("");
 
-      onMessageSent?.();
-
-      console.log("6 - Resposta", result);
-
-      setMessage("");
+      onMessageSent?.(sentMessage);
     } catch (err) {
-      console.error("ERRO:", err);
+      console.error("Erro ao enviar mensagem:", err);
+      setError("Não foi possível enviar a mensagem. Tente novamente.");
     } finally {
-      console.log("7 - Finalizou");
-
       setSending(false);
     }
   }
@@ -63,6 +53,9 @@ export default function ChatInput({ conversation, onMessageSent }) {
 
   return (
     <footer className="border-t border-neutral-200 bg-white p-4">
+      {error && (
+        <p className="mb-2 text-xs text-red-600">{error}</p>
+      )}
       <div className="flex gap-3">
         <input
           value={message}

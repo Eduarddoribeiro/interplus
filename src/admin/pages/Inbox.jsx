@@ -1,86 +1,95 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { getInboxConversations, markConversationAsRead} from "../../services/inbox";
+import {
+  getInboxConversations,
+  markConversationAsRead,
+} from "../../services/inbox";
 
 import ConversationList from "../inbox/conversation-list/ConversationList";
 import ChatWindow from "../inbox/chat/ChatWindow";
 import LeadSidebar from "../inbox/sidebar/LeadSidebar";
+
 import { socket } from "../../services/socket";
 
 export default function Inbox() {
-
   console.count("RENDER Inbox");
+
   const [loading, setLoading] = useState(true);
-
   const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
 
-  const [selectedConversation, setSelectedConversation] =
-    useState(null);
+  const selectedConversationRef = useRef(null);
+
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
 
   useEffect(() => {
     loadInbox();
 
-     console.log("Socket:", socket.id);
+    console.log("Socket conectado:", socket.id);
   }, []);
 
   useEffect(() => {
-  function handleNewMessage(data) {
-    console.log("📩 Atualizando inbox", data);
+    function handleNewMessage(data) {
+      console.log("📩 Atualizando inbox", data);
 
-    setConversations((current) => {
-      const index = current.findIndex(
-        (c) => c.jid === data.jid
-      );
+      let foundConversation = false;
 
-      // conversa ainda não está na lista
-      if (index === -1) {
+      setConversations((current) => {
+        const index = current.findIndex(
+          (conversation) => conversation.jid === data.jid
+        );
+
+        if (index === -1) {
+          return current;
+        }
+
+        foundConversation = true;
+
+        const updated = [...current];
+
+        const conversation = {
+          ...updated[index],
+          lastMessage: data.message,
+          lastMessageAt: data.created_at,
+          unreadCount:
+            selectedConversationRef.current?.jid === data.jid
+              ? 0
+              : (updated[index].unreadCount ?? 0) + 1,
+        };
+
+        updated.splice(index, 1);
+        updated.unshift(conversation);
+
+        return updated;
+      });
+
+      if (!foundConversation) {
         loadInbox();
-        return current;
       }
+    }
 
-      const updated = [...current];
+    socket.on("new-message", handleNewMessage);
 
-      const conversation = {
-  ...updated[index],
-  lastMessage: data.message,
-  lastMessageAt: data.created_at,
-  unreadCount:
-    selectedConversation?.jid === data.jid
-      ? 0
-      : (updated[index].unreadCount ?? 0) + 1,
-};
-
-      updated.splice(index, 1);
-      updated.unshift(conversation);
-
-      return updated;
-    });
-  }
-
-  socket.on("new-message", handleNewMessage);
-
-
-
-  return () => {
-    socket.off("new-message", handleNewMessage);
-  };
-}, [selectedConversation]);
+    return () => {
+      socket.off("new-message", handleNewMessage);
+    };
+  }, []);
 
   async function loadInbox() {
     try {
       setLoading(true);
 
-      const data =
-        await getInboxConversations();
+      const data = await getInboxConversations();
 
       setConversations(data);
 
-setConversations(data);
+      setSelectedConversation((current) => {
+        if (current) return current;
 
-if (!selectedConversation && data.length > 0) {
-  setSelectedConversation(data[0]);
-}
-
+        return data.length ? data[0] : null;
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -88,12 +97,13 @@ if (!selectedConversation && data.length > 0) {
     }
   }
 
-async function handleSelectConversation(conversation) {
-  console.log(conversation);
+  async function handleSelectConversation(conversation) {
+    setSelectedConversation(conversation);
 
-  setSelectedConversation(conversation);
+    if (!conversation.unreadCount) {
+      return;
+    }
 
-  if (conversation.unreadCount > 0) {
     try {
       await markConversationAsRead(conversation.id);
 
@@ -111,20 +121,16 @@ async function handleSelectConversation(conversation) {
       console.error(err);
     }
   }
-}
-
 
   return (
     <div className="h-[calc(100vh-90px)]">
-
       <div className="grid h-full grid-cols-[340px_minmax(0,1fr)_420px] gap-6">
-
         <ConversationList
-  loading={loading}
-  conversations={conversations}
-  selectedConversation={selectedConversation}
-  onSelectConversation={handleSelectConversation}
-/>
+          loading={loading}
+          conversations={conversations}
+          selectedConversation={selectedConversation}
+          onSelectConversation={handleSelectConversation}
+        />
 
         <ChatWindow
           conversation={selectedConversation}
@@ -133,9 +139,7 @@ async function handleSelectConversation(conversation) {
         <LeadSidebar
           conversation={selectedConversation}
         />
-
       </div>
-
     </div>
   );
 }

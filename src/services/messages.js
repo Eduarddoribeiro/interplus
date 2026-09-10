@@ -22,6 +22,7 @@ export async function getMessages(jid) {
  */
 export async function sendMessage({
   jid,
+  contactId,
   message,
 }) {
   const response = await fetch(
@@ -33,6 +34,7 @@ export async function sendMessage({
       },
       body: JSON.stringify({
         jid,
+        contactId,
         message,
       }),
     }

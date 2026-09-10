@@ -119,22 +119,23 @@ export async function sendMessage({
         new Date().toISOString(),
     });
 
-  // Aguarda a Evolution persistir
-  await new Promise((resolve) =>
-    setTimeout(resolve, 300)
-  );
-
-  // Atualiza todos os clientes
-  const io = getIO();
-
-  io.emit("new-message", {
+  // Monta o payload completo já com os dados que gravamos no Supabase,
+  // sem depender do tempo de indexação da Evolution para refletir esta mensagem.
+  const messagePayload = {
+    id: savedMessage.id,
     jid,
     message: savedMessage.message,
-    created_at:
-      savedMessage.created_at,
-    direction:
-      savedMessage.direction,
-  });
+    created_at: savedMessage.created_at,
+    direction: savedMessage.direction,
+    status: savedMessage.status,
+    message_type: savedMessage.message_type,
+    whatsapp_message_id: savedMessage.whatsapp_message_id,
+  };
 
-  return savedMessage;
+  // Atualiza todos os clientes conectados (inclusive quem enviou)
+  const io = getIO();
+
+  io.emit("new-message", messagePayload);
+
+  return messagePayload;
 }
