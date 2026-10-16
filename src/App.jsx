@@ -14,7 +14,6 @@ import FollowUps from "./admin/pages/FollowUps";
 import Reports from "./admin/pages/Reports";
 import ContactDetails from "./admin/pages/ContactDetails";
 import WaitingList from "./admin/pages/WaitingList";
-import Inbox from "./admin/pages/Inbox";
 
 import Administration from "./admin/pages/Administration";
 
@@ -61,11 +60,6 @@ export default function App() {
           <Route
             index
             element={<Dashboard />}
-          />
-
-          <Route
-            path="inbox"
-            element={<Inbox />}
           />
 
           <Route

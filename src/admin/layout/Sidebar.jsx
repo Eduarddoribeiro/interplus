@@ -6,8 +6,7 @@ import {
   ListChecks,
   BarChart3,
   ShieldCheck,
-  LogOut,
-  Inbox
+  LogOut
 } from "lucide-react";
 import { NavLink } from 'react-router-dom'
 
@@ -22,11 +21,6 @@ const menu = [
     icon: Users,
     to: '/admin/contacts'
   },
-  {
-  label: "Conversas",
-  icon: Inbox,
-  to: "/admin/inbox",
-},
   {
     label: 'Experimentais',
     icon: CalendarDays,

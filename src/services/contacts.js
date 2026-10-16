@@ -4,7 +4,6 @@ import { CONTACT_STATUS } from "../constants/contactStatus";
 import { LOST_REASON } from "../constants/lostReasons";
 import { ENROLLMENT_STATUS } from "../constants/enrollmentStatus";
 import { EXPERIMENTAL_STATUS } from "../constants/experimentalStatus";
-import { sendWhatsAppMessage } from "../services/whatsapp";
 
 import {
   appendInternalNote,
