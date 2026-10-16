@@ -1,5 +1,28 @@
 import { useState } from "react";
 
+const POSITION_OPTIONS = [
+  {
+    value: "",
+    label: "Ainda não possui posição definida",
+  },
+  {
+    value: "goalkeeper",
+    label: "Goleiro",
+  },
+  {
+    value: "fixo",
+    label: "Fixo",
+  },
+  {
+    value: "ala",
+    label: "Ala",
+  },
+  {
+    value: "pivo",
+    label: "Pivô",
+  },
+];
+
 export default function ResponsibleForm({
   form,
   updateField,
@@ -83,21 +106,27 @@ export default function ResponsibleForm({
     }
   }
 
+ function handleSource(value) {
+  updateField("source", value);
+}
+
   const canContinue =
     form.responsible_name.trim().length > 0 &&
     form.phone.replace(/\D/g, "").length === 11;
 
   return (
     <div className="space-y-8">
-      {/* Cabeçalho */}
+
+      {/* CABEÇALHO */}
       <div>
         <h2 className="text-3xl font-bold text-neutral-900">
           Dados do Responsável
         </h2>
 
         <p className="mt-2 text-neutral-500">
-          Preencha os dados do responsável para confirmarmos a aula
-          experimental pelo WhatsApp.
+          {form.interest_reason
+            ? "Preencha os dados para entrarmos em contato assim que houver disponibilidade."
+            : "Preencha os dados para confirmarmos a aula experimental pelo WhatsApp."}
         </p>
 
         <p className="mt-3 text-xs text-neutral-400">
@@ -105,212 +134,368 @@ export default function ResponsibleForm({
         </p>
       </div>
 
-      {/* Nome + WhatsApp */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-neutral-800">
-            Nome do responsável *
-          </label>
+      {/* DADOS DO RESPONSÁVEL */}
+      <section className="space-y-6">
 
-          <input
-            type="text"
-            autoComplete="name"
-            value={form.responsible_name}
-            onChange={(e) =>
-              handleResponsibleName(e.target.value)
-            }
-            className={`w-full rounded-xl border bg-white px-4 py-3 outline-none transition ${
-              errors.responsible_name
-                ? "border-red-500 focus:border-red-600"
-                : "border-neutral-300 focus:border-red-600"
-            }`}
-            placeholder="Nome completo"
-          />
+        <h3 className="text-lg font-bold text-neutral-900">
+          Dados do responsável
+        </h3>
 
-          {errors.responsible_name && (
-            <p className="mt-2 text-sm text-red-600">
-              {errors.responsible_name}
-            </p>
-          )}
-        </div>
+        <div className="grid gap-6 md:grid-cols-2">
 
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-neutral-800">
-            WhatsApp *
-          </label>
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              Nome do responsável *
+            </label>
 
-          <input
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={form.phone}
-            onChange={(e) =>
-              handlePhone(e.target.value)
-            }
-            className={`w-full rounded-xl border bg-white px-4 py-3 outline-none transition ${
-              errors.phone
-                ? "border-red-500 focus:border-red-600"
-                : "border-neutral-300 focus:border-red-600"
-            }`}
-            placeholder="(51) 99999-9999"
-          />
-
-          {errors.phone && (
-            <p className="mt-2 text-sm text-red-600">
-              {errors.phone}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* E-mail + Bairro */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-neutral-800">
-            E-mail
-          </label>
-
-          <input
-            type="email"
-            autoComplete="email"
-            value={form.email}
-            onChange={(e) =>
-              updateField("email", e.target.value)
-            }
-            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-            placeholder="email@exemplo.com"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-neutral-800">
-            Bairro
-          </label>
-
-          <input
-            type="text"
-            autoComplete="address-level3"
-            value={form.neighborhood}
-            onChange={(e) =>
-              updateField(
-                "neighborhood",
-                e.target.value
-              )
-            }
-            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-            placeholder="Seu bairro"
-          />
-        </div>
-      </div>
-
-      {/* Origem + Histórico */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-neutral-800">
-            Como conheceu a escola?
-          </label>
-
-          <select
-            value={form.source}
-            onChange={(e) =>
-              updateField("source", e.target.value)
-            }
-            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-          >
-            <option value="Instagram">Instagram</option>
-            <option value="Facebook">Facebook</option>
-            <option value="Google">Google</option>
-            <option value="WhatsApp">WhatsApp</option>
-            <option value="Indicação">Indicação</option>
-            <option value="Evento">Evento</option>
-            <option value="Passou em frente">
-              Passou em frente
-            </option>
-            <option value="Outro">Outro</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-neutral-800">
-            O atleta já treinou em outra escola?
-          </label>
-
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                handleTrainedElsewhere(false)
+            <input
+              type="text"
+              autoComplete="name"
+              value={form.responsible_name}
+              onChange={(e) =>
+                handleResponsibleName(e.target.value)
               }
-              className={`rounded-xl border px-4 py-3 font-semibold transition ${
-                !form.trained_elsewhere
-                  ? "border-red-600 bg-red-50 text-red-700"
-                  : "border-neutral-300 bg-white text-neutral-600 hover:border-neutral-400"
+              className={`w-full rounded-xl border bg-white px-4 py-3 outline-none transition ${
+                errors.responsible_name
+                  ? "border-red-500"
+                  : "border-neutral-300 focus:border-red-600"
               }`}
-            >
-              Não
-            </button>
+              placeholder="Nome completo"
+            />
 
-            <button
-              type="button"
-              onClick={() =>
-                handleTrainedElsewhere(true)
-              }
-              className={`rounded-xl border px-4 py-3 font-semibold transition ${
-                form.trained_elsewhere
-                  ? "border-red-600 bg-red-50 text-red-700"
-                  : "border-neutral-300 bg-white text-neutral-600 hover:border-neutral-400"
-              }`}
-            >
-              Sim
-            </button>
+            {errors.responsible_name && (
+              <p className="mt-2 text-sm text-red-600">
+                {errors.responsible_name}
+              </p>
+            )}
           </div>
-        </div>
-      </div>
 
-      {/* Clube anterior */}
-      {form.trained_elsewhere && (
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-neutral-800">
-            Qual escola ou clube?
-          </label>
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              WhatsApp *
+            </label>
 
-          <input
-            type="text"
-            value={form.previous_club}
-            onChange={(e) =>
-              updateField(
-                "previous_club",
-                e.target.value
-              )
-            }
-            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-            placeholder="Nome da escola ou clube"
-          />
+            <input
+              type="tel"
+              autoComplete="tel"
+              inputMode="tel"
+              value={form.phone}
+              onChange={(e) =>
+                handlePhone(e.target.value)
+              }
+              className={`w-full rounded-xl border bg-white px-4 py-3 outline-none transition ${
+                errors.phone
+                  ? "border-red-500"
+                  : "border-neutral-300 focus:border-red-600"
+              }`}
+              placeholder="(51) 99999-9999"
+            />
+
+            {errors.phone && (
+              <p className="mt-2 text-sm text-red-600">
+                {errors.phone}
+              </p>
+            )}
+          </div>
+
         </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              E-mail
+            </label>
+
+            <input
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) =>
+                updateField("email", e.target.value)
+              }
+              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+              placeholder="email@exemplo.com"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              Bairro
+            </label>
+
+            <input
+              type="text"
+              autoComplete="address-level3"
+              value={form.neighborhood}
+              onChange={(e) =>
+                updateField(
+                  "neighborhood",
+                  e.target.value
+                )
+              }
+              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+              placeholder="Seu bairro"
+            />
+          </div>
+
+        </div>
+
+      </section>
+
+           <div className="border-t border-neutral-200" />
+
+      {form.interest_reason ? (
+
+        /* PREFERÊNCIAS — LISTA DE INTERESSE */
+        <section className="space-y-6">
+
+          <h3 className="text-lg font-bold text-neutral-900">
+            Preferências
+          </h3>
+
+          <p className="text-sm text-neutral-500">
+            Essas informações nos ajudam a avisar você assim que a turma
+            certa estiver disponível.
+          </p>
+
+          <div>
+
+            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              Turno de preferência
+            </label>
+
+            <select
+              value={form.preferred_shift}
+              onChange={(e) =>
+                updateField(
+                  "preferred_shift",
+                  e.target.value
+                )
+              }
+              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+            >
+              <option value="morning">Manhã</option>
+              <option value="afternoon">Tarde</option>
+              <option value="evening">Noite</option>
+              <option value="any">Indiferente</option>
+            </select>
+
+          </div>
+
+          <div>
+
+            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              Observações
+            </label>
+
+            <textarea
+              rows={4}
+              value={form.observations}
+              onChange={(e) =>
+                updateField(
+                  "observations",
+                  e.target.value
+                )
+              }
+              className="min-h-[110px] w-full resize-y rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+              placeholder="Alguma informação que possa nos ajudar? Campo opcional."
+            />
+
+            <p className="mt-2 text-xs text-neutral-500">
+              Campo opcional.
+            </p>
+
+          </div>
+
+        </section>
+
+      ) : (
+
+        <>
+
+          {/* INFORMAÇÕES DO ATLETA */}
+
+          <section className="space-y-6">
+
+            <h3 className="text-lg font-bold text-neutral-900">
+              Informações do atleta
+            </h3>
+
+            <div className="grid gap-6 md:grid-cols-2">
+
+              <div>
+
+                <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                  Como conheceu a escola?
+                </label>
+
+                <select
+                  value={form.source}
+                  onChange={(e) =>
+                    handleSource(e.target.value)
+                  }
+                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+                >
+                  <option value="instagram">Instagram</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="google">Google</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="event">Evento</option>
+                  <option value="walk_in">
+                    Passou em frente / viu a escola
+                  </option>
+                  <option value="other">Outro</option>
+                </select>
+
+              </div>
+
+              <div>
+
+                <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                  O atleta já treinou em outra escola de futebol?
+                </label>
+
+                <div className="grid grid-cols-2 gap-3">
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleTrainedElsewhere(false)
+                    }
+                    className={`rounded-xl border px-4 py-3 font-semibold transition ${
+                      !form.trained_elsewhere
+                        ? "border-red-600 bg-red-50 text-red-700"
+                        : "border-neutral-300"
+                    }`}
+                  >
+                    Não
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleTrainedElsewhere(true)
+                    }
+                    className={`rounded-xl border px-4 py-3 font-semibold transition ${
+                      form.trained_elsewhere
+                        ? "border-red-600 bg-red-50 text-red-700"
+                        : "border-neutral-300"
+                    }`}
+                  >
+                    Sim
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {form.trained_elsewhere && (
+              <div>
+
+                <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                  Onde treinou anteriormente?
+                </label>
+
+                <input
+                  type="text"
+                  value={form.previous_club}
+                  onChange={(e) =>
+                    updateField(
+                      "previous_club",
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+                  placeholder="Nome da escola de futebol ou clube"
+                />
+
+              </div>
+            )}
+
+            <div>
+
+              <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                Posição preferida
+              </label>
+
+              <select
+                value={form.preferred_position}
+                onChange={(e) =>
+                  updateField(
+                    "preferred_position",
+                    e.target.value
+                  )
+                }
+                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+              >
+                {POSITION_OPTIONS.map((position) => (
+                  <option
+                    key={position.value}
+                    value={position.value}
+                  >
+                    {position.label}
+                  </option>
+                ))}
+              </select>
+
+            </div>
+
+          </section>
+
+          <div className="border-t border-neutral-200" />
+
+          {/* INFORMAÇÕES PARA O PROFESSOR */}
+
+          <section className="space-y-6">
+
+            <h3 className="text-lg font-bold text-neutral-900">
+              Informações importantes para o professor
+            </h3>
+
+            <p className="text-sm text-neutral-500">
+              Estas informações ajudam nossa equipe a oferecer um treino mais
+              seguro e adequado ao atleta.
+            </p>
+
+            <div>
+
+              <label className="mb-2 block text-sm font-semibold text-neutral-800">
+                Há alguma informação importante que o professor deva saber?
+              </label>
+
+              <textarea
+                rows={5}
+                value={form.coach_notes}
+                onChange={(e) =>
+                  updateField(
+                    "coach_notes",
+                    e.target.value
+                  )
+                }
+                className="min-h-[130px] w-full resize-y rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+                placeholder="Ex.: asma, restrição médica, lesão recente, uso de medicamento, TDAH, TEA ou qualquer outra informação importante."
+              />
+
+              <p className="mt-2 text-xs text-neutral-500">
+                Campo opcional.
+              </p>
+
+            </div>
+
+          </section>
+
+        </>
+
       )}
 
-      {/* Observações */}
-      <div>
-        <label className="mb-2 block text-sm font-semibold text-neutral-800">
-          Observações
-        </label>
+      {/* NAVEGAÇÃO */}
 
-        <textarea
-          rows={3}
-          value={form.observations}
-          onChange={(e) =>
-            updateField(
-              "observations",
-              e.target.value
-            )
-          }
-          className="min-h-[100px] w-full resize-y rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-          placeholder="Alguma informação importante?"
-        />
-      </div>
-
-      {/* Navegação */}
       <div className="flex items-center justify-between border-t border-neutral-200 pt-6">
+
         <button
           type="button"
           onClick={onBack}
@@ -327,7 +512,9 @@ export default function ResponsibleForm({
         >
           Continuar
         </button>
+
       </div>
+
     </div>
   );
 }

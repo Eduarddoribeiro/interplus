@@ -1,0 +1,2790 @@
+import {
+  MoreVertical,
+  Phone,
+  Search,
+  Video,
+} from "lucide-react";
+
+import {
+  CONTACT_STATUS_LABEL,
+  CONTACT_STATUS_COLORS,
+} from "../../../constants/contactStatus";
+
+import {
+  getInitials,
+} from "../../../helpers/chatHelpers";
+
+export default function ChatHeader({
+  conversation,
+}) {
+  if (!conversation) return null;
+
+  const {
+    childName,
+    responsibleName,
+    phone,
+    categoryName,
+    age,
+    status,
+    profilePicUrl
+  } = conversation;
+
+  const displayName =
+    childName ??
+    responsibleName ??
+    "Sem nome";
+
+  return (
+    <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-5">
+
+      {/* Esquerda */}
+
+      <div className="flex items-center gap-4">
+
+        <div className="relative">
+
+          {profilePicUrl ? (
+  <img
+    src={profilePicUrl}
+    alt={displayName}
+    className="
+      h-14
+      w-14
+      rounded-full
+      object-cover
+      shadow-sm
+    "
+  />
+) : (
+  <div
+    className="
+      flex
+      h-14
+      w-14
+      items-center
+      justify-center
+      rounded-full
+      bg-gradient-to-br
+      from-red-600
+      to-red-700
+      text-lg
+      font-bold
+      text-white
+      shadow-sm
+    "
+  >
+    {getInitials(displayName)}
+  </div>
+)}
+
+          <span
+            className="
+              absolute
+              bottom-0
+              right-0
+              h-3.5
+              w-3.5
+              rounded-full
+              border-2
+              border-white
+              bg-emerald-500
+            "
+          />
+
+        </div>
+
+        <div>
+
+          <h2 className="text-lg font-bold text-neutral-900">
+            {displayName}
+          </h2>
+
+          <p className="text-sm text-neutral-500">
+            {responsibleName ?? "Responsável não informado"}
+          </p>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                CONTACT_STATUS_COLORS[status] ??
+                "bg-neutral-100 text-neutral-600"
+              }`}
+            >
+              {CONTACT_STATUS_LABEL[status] ??
+                status}
+            </span>
+
+            {categoryName && (
+              <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
+                {categoryName}
+              </span>
+            )}
+
+            {age && (
+              <span className="text-xs text-neutral-500">
+                {age} anos
+              </span>
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Direita */}
+
+      <div className="flex items-center gap-2">
+
+        <button className="rounded-xl border border-neutral-200 p-3 transition hover:bg-neutral-100">
+
+          <Search size={18} />
+
+        </button>
+
+        {phone && (
+          <a
+            href={`tel:${phone}`}
+            className="rounded-xl border border-neutral-200 p-3 transition hover:bg-neutral-100"
+          >
+            <Phone size={18} />
+          </a>
+        )}
+
+        <button className="rounded-xl border border-neutral-200 p-3 transition hover:bg-neutral-100">
+
+          <Video size={18} />
+
+        </button>
+
+        <button className="rounded-xl border border-neutral-200 p-3 transition hover:bg-neutral-100">
+
+          <MoreVertical size={18} />
+
+        </button>
+
+      </div>
+
+    </header>
+  );
+}import { useState } from "react";
+import { Send } from "lucide-react";
+
+import { sendMessage } from "../../../services/messages";
+
+export default function ChatInput({ conversation, onMessageSent }) {
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSend() {
+    if (sending) {
+      return;
+    }
+
+    if (!message.trim()) {
+      return;
+    }
+
+    if (!conversation?.jid) {
+      return;
+    }
+
+    const textToSend = message;
+
+    try {
+      setSending(true);
+      setError(null);
+
+      const sentMessage = await sendMessage({
+        jid: conversation.jid,
+        contactId: conversation.id,
+        message: textToSend,
+      });
+
+      setMessage("");
+
+      onMessageSent?.(sentMessage);
+    } catch (err) {
+      console.error("Erro ao enviar mensagem:", err);
+      setError("Não foi possível enviar a mensagem. Tente novamente.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }
+
+  return (
+    <footer className="border-t border-neutral-200 bg-white p-4">
+      {error && (
+        <p className="mb-2 text-xs text-red-600">{error}</p>
+      )}
+      <div className="flex gap-3">
+        <input
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={sending}
+          placeholder="Digite uma mensagem..."
+          className="flex-1 rounded-xl border border-neutral-200 px-4 py-3 outline-none"
+        />
+
+        <button
+          onClick={handleSend}
+          disabled={sending}
+          className="rounded-xl bg-red-600 px-5 text-white disabled:opacity-50"
+        >
+          <Send size={18} />
+        </button>
+      </div>
+    </footer>
+  );
+}
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
+import { Loader2 } from "lucide-react";
+
+import { getMessages } from "../../../services/messages";
+import { formatMessageTime } from "../../../helpers/chatHelpers";
+import { socket } from "../../../services/socket"
+
+import MessageBubble from "./MessageBubble";
+
+function formatDate(date) {
+  const d = new Date(date);
+
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (d.toDateString() === today.toDateString()) {
+    return "Hoje";
+  }
+
+  if (d.toDateString() === yesterday.toDateString()) {
+    return "Ontem";
+  }
+
+  return d.toLocaleDateString("pt-BR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+const ChatMessages = forwardRef(function ChatMessages(
+  {
+    conversation,
+  },
+  ref
+) {
+
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const bottomRef = useRef(null);
+
+  function addMessage(newMessage) {
+    setMessages((current) => {
+      const alreadyExists = current.some(
+        (existing) =>
+          existing.id === newMessage.id ||
+          (newMessage.whatsapp_message_id &&
+            existing.whatsapp_message_id ===
+              newMessage.whatsapp_message_id)
+      );
+
+      if (alreadyExists) {
+        return current;
+      }
+
+      return [...current, newMessage];
+    });
+  }
+
+  useImperativeHandle(ref, () => ({
+    addMessage,
+  }));
+
+useEffect(() => {
+
+  if (!conversation?.jid) {
+    setMessages([]);
+    return;
+  }
+
+  loadMessages();
+
+}, [conversation?.jid]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
+
+  
+
+async function loadMessages() {
+  try {
+    setLoading(true);
+
+    const data = await getMessages(conversation.jid);
+
+    setMessages(data);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+}
+
+useEffect(() => {
+
+  function handleNewMessage(data) {
+
+    if (data.jid !== conversation?.jid) {
+      return;
+    }
+
+    addMessage(data);
+
+  }
+
+  socket.on("new-message", handleNewMessage);
+
+  return () => {
+    socket.off("new-message", handleNewMessage);
+  };
+
+}, [conversation?.jid]);
+
+
+
+  if (!conversation) {
+    return (
+      <div className="flex flex-1 items-center justify-center bg-neutral-100">
+
+        <div className="text-center">
+
+          <div className="text-5xl">
+            💬
+          </div>
+
+          <h3 className="mt-4 font-semibold">
+            Selecione uma conversa
+          </h3>
+
+          <p className="mt-2 text-sm text-neutral-500">
+            Escolha uma conversa para começar o atendimento.
+          </p>
+
+        </div>
+
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center bg-neutral-100">
+
+        <Loader2
+          size={28}
+          className="animate-spin text-neutral-400"
+        />
+
+      </div>
+    );
+  }
+
+  if (messages.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center bg-neutral-100">
+
+        <div className="text-center">
+
+          <div className="text-5xl">
+            💬
+          </div>
+
+          <h3 className="mt-4 font-semibold">
+            Nenhuma mensagem
+          </h3>
+
+          <p className="mt-2 text-sm text-neutral-500">
+            Esta conversa ainda não possui mensagens.
+          </p>
+
+        </div>
+
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-neutral-100">
+
+      <div className="mx-auto max-w-5xl px-6 py-6">
+
+       {messages.map((message, index) => {
+
+  const currentDate = new Date(message.created_at)
+    .toDateString();
+
+  const previousDate =
+    index > 0
+      ? new Date(messages[index - 1].created_at)
+          .toDateString()
+      : null;
+
+  const showDate =
+    currentDate !== previousDate;
+
+  return (
+    <div key={message.id}>
+
+      {showDate && (
+  <div className="my-6 flex justify-center">
+    <span className="rounded-full bg-white border border-neutral-200 px-4 py-1 text-xs font-medium text-neutral-500 shadow-sm">
+      {formatDate(message.created_at)}
+    </span>
+  </div>
+)}
+
+      <MessageBubble
+        outgoing={message.direction === "outgoing"}
+        text={message.message}
+        status={message.status}
+        time={formatMessageTime(message.created_at)}
+      />
+
+    </div>
+  );
+
+})}
+
+        <div ref={bottomRef} />
+
+      </div>
+
+    </div>
+  );
+});
+
+export default ChatMessages;import { useRef } from "react";
+
+import ChatHeader from "./ChatHeader";
+import ChatMessages from "./ChatMessages";
+import ChatInput from "./ChatInput";
+
+export default function ChatWindow({
+  conversation,
+}) {
+
+  const chatMessagesRef = useRef(null);
+
+  function handleMessageSent(newMessage) {
+    chatMessagesRef.current?.addMessage(newMessage);
+  }
+
+  return (
+    <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+
+      <ChatHeader
+        conversation={conversation}
+      />
+
+      <ChatMessages
+        ref={chatMessagesRef}
+        conversation={conversation}
+      />
+
+      <ChatInput
+        conversation={conversation}
+        onMessageSent={handleMessageSent}
+      />
+
+    </section>
+  );
+}import { useEffect, useState } from "react";
+
+import { getInboxConversations, markConversationAsRead} from "../../services/inbox";
+
+import ConversationList from "../inbox/conversation-list/ConversationList";
+import ChatWindow from "../inbox/chat/ChatWindow";
+import LeadSidebar from "../inbox/sidebar/LeadSidebar";
+import { socket } from "../../services/socket";
+
+export default function Inbox() {
+
+  console.count("RENDER Inbox");
+  const [loading, setLoading] = useState(true);
+
+  const [conversations, setConversations] = useState([]);
+
+  const [selectedConversation, setSelectedConversation] =
+    useState(null);
+
+  useEffect(() => {
+    loadInbox();
+
+     console.log("Socket:", socket.id);
+  }, []);
+
+  useEffect(() => {
+  function handleNewMessage(data) {
+    console.log("📩 Atualizando inbox", data);
+
+    setConversations((current) => {
+      const index = current.findIndex(
+        (c) => c.jid === data.jid
+      );
+
+      // conversa ainda não está na lista
+      if (index === -1) {
+        loadInbox();
+        return current;
+      }
+
+      const updated = [...current];
+
+      const conversation = {
+  ...updated[index],
+  lastMessage: data.message,
+  lastMessageAt: data.created_at,
+  unreadCount:
+    selectedConversation?.jid === data.jid
+      ? 0
+      : (updated[index].unreadCount ?? 0) + 1,
+};
+
+      updated.splice(index, 1);
+      updated.unshift(conversation);
+
+      return updated;
+    });
+  }
+
+  socket.on("new-message", handleNewMessage);
+
+
+
+  return () => {
+    socket.off("new-message", handleNewMessage);
+  };
+}, [selectedConversation]);
+
+  async function loadInbox() {
+    try {
+      setLoading(true);
+
+      const data =
+        await getInboxConversations();
+
+      setConversations(data);
+
+setConversations(data);
+
+if (!selectedConversation && data.length > 0) {
+  setSelectedConversation(data[0]);
+}
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+async function handleSelectConversation(conversation) {
+  console.log(conversation);
+
+  setSelectedConversation(conversation);
+
+  if (conversation.unreadCount > 0) {
+    try {
+      await markConversationAsRead(conversation.id);
+
+      setConversations((current) =>
+        current.map((c) =>
+          c.id === conversation.id
+            ? {
+                ...c,
+                unreadCount: 0,
+              }
+            : c
+        )
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  }
+}
+
+
+  return (
+    <div className="h-[calc(100vh-90px)]">
+
+      <div className="grid h-full grid-cols-[340px_minmax(0,1fr)_420px] gap-6">
+
+        <ConversationList
+  loading={loading}
+  conversations={conversations}
+  selectedConversation={selectedConversation}
+  onSelectConversation={handleSelectConversation}
+/>
+
+        <ChatWindow
+          conversation={selectedConversation}
+        />
+
+        <LeadSidebar
+          conversation={selectedConversation}
+        />
+
+      </div>
+
+    </div>
+  );
+}// src/builders/contactBuilders.js
+
+import { CONTACT_STATUS } from "../constants/contactStatus";
+import { ENROLLMENT_STATUS } from "../constants/enrollmentStatus";
+
+import {
+  nowISO,
+  cleanOptionalText,
+  appendInternalNote,
+} from "../helpers/contactHelpers";
+
+import { withUpdatedAt } from "../helpers/contactUpdates";
+
+/* =========================================================
+ * FOLLOW UP
+ * =======================================================*/
+
+export function buildFollowUpUpdate(
+  current,
+  {
+    followUpDate,
+    notes = "",
+    firstTime = false,
+  }
+) {
+  const updates = {
+    status: CONTACT_STATUS.FOLLOW_UP,
+
+    follow_up_date: followUpDate,
+
+    lost_reason: null,
+
+    waiting_list_reason: null,
+    waiting_list_notes: null,
+    waiting_list_at: null,
+
+    ...withUpdatedAt(),
+  };
+
+  if (firstTime) {
+    updates.follow_up_started_at = nowISO();
+    updates.follow_up_attempts = 0;
+    updates.last_follow_up_at = null;
+  } else {
+    updates.follow_up_attempts =
+      (current.follow_up_attempts || 0) + 1;
+
+    updates.last_follow_up_at = nowISO();
+  }
+
+  if (notes.trim()) {
+    updates.internal_notes = appendInternalNote(
+      current.internal_notes,
+      notes
+    );
+  }
+
+  return updates;
+}
+
+/* =========================================================
+ * MATRÍCULA
+ * =======================================================*/
+
+export function buildEnrollmentUpdate(
+  current,
+  {
+    enrolledAt,
+    notes = "",
+  }
+) {
+  const updates = {
+    status: CONTACT_STATUS.ENROLLED,
+
+    experimental_result: CONTACT_STATUS.ENROLLED,
+
+    enrolled_at: enrolledAt,
+
+    enrollment_status: ENROLLMENT_STATUS.ACTIVE,
+
+    left_at: null,
+    left_reason: null,
+
+    follow_up_date: null,
+
+    follow_up_started_at: null,
+    follow_up_attempts: 0,
+    last_follow_up_at: null,
+
+    lost_reason: null,
+
+    waiting_list_reason: null,
+    waiting_list_notes: null,
+    waiting_list_at: null,
+
+    ...withUpdatedAt(),
+  };
+
+  if (notes.trim()) {
+    updates.internal_notes = appendInternalNote(
+      current.internal_notes,
+      notes
+    );
+  }
+
+  return updates;
+}
+
+/* =========================================================
+ * LISTA DE INTERESSE
+ * =======================================================*/
+
+/* =========================================================
+ * LISTA DE INTERESSE
+ * =======================================================*/
+
+export function buildWaitingListUpdate(
+  current,
+  {
+    reason,
+    notes = "",
+
+    interestCategoryId = null,
+    preferredShift = null,
+    preferredDays = [],
+  }
+) {
+  const updates = {
+    status: CONTACT_STATUS.WAITING_LIST,
+
+    /* -------------------------
+     * Dados da Lista
+     * -----------------------*/
+
+    waiting_list_reason: reason,
+
+    waiting_list_notes: cleanOptionalText(notes),
+
+    /*
+     * Mantém a data original caso
+     * o contato já estivesse na lista.
+     */
+    waiting_list_at:
+      current.waiting_list_at || nowISO(),
+
+    /*
+     * Categoria de interesse
+     * (não altera a categoria técnica)
+     */
+    interest_category_id:
+      interestCategoryId || null,
+
+    preferred_shift:
+      preferredShift || null,
+
+    preferred_days:
+      preferredDays?.length
+        ? preferredDays
+        : null,
+
+    /* -------------------------
+     * Sai completamente do
+     * fluxo de Follow-up
+     * -----------------------*/
+
+    follow_up_date: null,
+
+    follow_up_started_at: null,
+
+    follow_up_attempts: 0,
+
+    last_follow_up_at: null,
+
+    /* -------------------------
+     * Remove qualquer
+     * experimental ativa
+     * -----------------------*/
+
+    experimental_date: null,
+
+    experimental_time: null,
+
+    experimental_result: null,
+
+    /* -------------------------
+     * Limpa encerramento
+     * -----------------------*/
+
+    lost_reason: null,
+
+    ...withUpdatedAt(),
+  };
+
+  if (notes.trim()) {
+    updates.internal_notes = appendInternalNote(
+      current.internal_notes,
+      `Lista de interesse: ${notes}`
+    );
+  }
+
+  return updates;
+}
+
+/* =========================================================
+ * OPORTUNIDADE PERDIDA
+ * =======================================================*/
+
+export function buildLostUpdate(
+  current,
+  {
+    lostReason,
+    notes = "",
+    attended = false,
+  }
+) {
+  const updates = {
+    status: CONTACT_STATUS.LOST,
+
+    lost_reason: lostReason,
+
+    follow_up_date: null,
+
+    follow_up_started_at: null,
+    follow_up_attempts: 0,
+    last_follow_up_at: null,
+
+    waiting_list_reason: null,
+    waiting_list_notes: null,
+    waiting_list_at: null,
+
+    ...withUpdatedAt(),
+  };
+
+  if (attended) {
+    updates.experimental_result = CONTACT_STATUS.LOST;
+  }
+
+  if (notes.trim()) {
+    updates.internal_notes = appendInternalNote(
+      current.internal_notes,
+      `Oportunidade encerrada: ${notes}`
+    );
+  }
+
+  return updates;
+}
+
+/* =========================================================
+ * CANCELAMENTO
+ * =======================================================*/
+
+export function buildCancellationUpdate(
+  current,
+  {
+    reason,
+    leftAt,
+    notes = "",
+  }
+) {
+  return {
+    enrollment_status: ENROLLMENT_STATUS.CANCELLED,
+
+    left_at: leftAt,
+
+    left_reason: cleanOptionalText(reason),
+
+    internal_notes: appendInternalNote(
+      current.internal_notes,
+      notes
+        ? `Matrícula encerrada. Motivo: ${reason}. ${notes}`
+        : `Matrícula encerrada. Motivo: ${reason}.`
+    ),
+
+    ...withUpdatedAt(),
+  };
+}
+
+/* =========================================================
+ * REATIVAÇÃO
+ * =======================================================*/
+
+export function buildReactivationUpdate(
+  current,
+  notes = ""
+) {
+  return {
+    enrollment_status: ENROLLMENT_STATUS.ACTIVE,
+
+    left_at: null,
+    left_reason: null,
+
+    internal_notes: appendInternalNote(
+      current.internal_notes,
+      notes
+        ? `Matrícula reativada. ${notes}`
+        : "Matrícula reativada."
+    ),
+
+    ...withUpdatedAt(),
+  };
+}export const CONTACT_STATUS = {
+  NEW_CONTACT: "new_contact",
+  PENDING_CONFIRMATION: "pending_confirmation",
+  CONFIRMED: "confirmed",
+  ATTENDED: "attended",
+  NO_SHOW: "no_show",
+  CANCELLED: "cancelled",
+  FOLLOW_UP: "follow_up",
+  WAITING_LIST: "waiting_list",
+  ENROLLED: "enrolled",
+  LOST: "lost",
+};
+
+export const CONTACT_STATUS_LABEL = {
+  new_contact: "Novo contato",
+  pending_confirmation: "Aguardando confirmação",
+  confirmed: "Confirmado",
+  attended: "Compareceu",
+  no_show: "Não compareceu",
+  cancelled: "Cancelado",
+  follow_up: "Retorno pendente",
+  waiting_list: "Lista de interesse",
+  enrolled: "Matriculado",
+  lost: "Não convertido",
+};
+
+export const CONTACT_STATUS_COLORS = {
+  new_contact: "bg-emerald-100 text-emerald-700",
+  pending_confirmation: "bg-yellow-100 text-yellow-700",
+  confirmed: "bg-blue-100 text-blue-700",
+  attended: "bg-green-100 text-green-700",
+  no_show: "bg-red-100 text-red-700",
+  cancelled: "bg-neutral-200 text-neutral-700",
+  follow_up: "bg-amber-100 text-amber-700",
+  waiting_list: "bg-sky-100 text-sky-700",
+  enrolled: "bg-violet-100 text-violet-700",
+  lost: "bg-neutral-200 text-neutral-700",
+};/* =========================================================
+ * TEXTO
+ * =======================================================*/
+
+export function cleanOptionalText(value) {
+  if (typeof value !== "string") {
+    return value ?? null;
+  }
+
+  const text = value.trim();
+
+  return text || null;
+}
+
+/* =========================================================
+ * DATAS
+ * =======================================================*/
+
+export function nowISO() {
+  return new Date().toISOString();
+}
+
+export function todayBR() {
+  return new Intl.DateTimeFormat("pt-BR").format(
+    new Date()
+  );
+}
+
+/* =========================================================
+ * NOTAS INTERNAS
+ * =======================================================*/
+
+export function appendInternalNote(
+  currentNotes,
+  note
+) {
+  const cleanNote = cleanOptionalText(note);
+
+  if (!cleanNote) {
+    return currentNotes || null;
+  }
+
+  const line = `[${todayBR()}] ${cleanNote}`;
+
+  if (!currentNotes?.trim()) {
+    return line;
+  }
+
+  return `${currentNotes.trim()}\n\n${line}`;
+}
+
+/* =========================================================
+ * HELPERS DO SUPABASE
+ * =======================================================*/
+
+export function ensureUpdated(data) {
+  if (!data || data.length === 0) {
+    throw new Error(
+      "O Supabase não atualizou nenhuma linha."
+    );
+  }
+
+  return data[0];
+}/* =========================================================
+ * DATAS
+ * =======================================================*/
+
+/**
+ * Formata uma data no padrão YYYY-MM-DD para pt-BR.
+ *
+ * Usamos horário local explícito para evitar problemas
+ * de timezone transformando a data no dia anterior.
+ */
+export function formatContactDate(dateString) {
+  if (!dateString) {
+    return "-";
+  }
+
+  const date = new Date(
+    `${dateString}T00:00:00`,
+  );
+
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleDateString("pt-BR");
+}
+
+/**
+ * Formata timestamps vindos do banco.
+ *
+ * Exemplo:
+ * 2026-08-03T15:30:00Z
+ * →
+ * 03/08/2026
+ */
+export function formatContactDateTime(value) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleDateString("pt-BR");
+}
+
+/* =========================================================
+ * DIFERENÇA ENTRE DATAS
+ * =======================================================*/
+
+/**
+ * Calcula quantos dias existem entre duas datas
+ * no formato YYYY-MM-DD.
+ *
+ * Nunca retorna valor negativo.
+ */
+export function daysBetweenDates(from, to) {
+  if (!from || !to) {
+    return 0;
+  }
+
+  const start = new Date(
+    `${from}T12:00:00`,
+  );
+
+  const end = new Date(
+    `${to}T12:00:00`,
+  );
+
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime())
+  ) {
+    return 0;
+  }
+
+  const millisecondsPerDay =
+    1000 * 60 * 60 * 24;
+
+  const difference =
+    end.getTime() - start.getTime();
+
+  return Math.max(
+    0,
+    Math.floor(
+      difference / millisecondsPerDay,
+    ),
+  );
+}
+
+/* =========================================================
+ * TELEFONE
+ * =======================================================*/
+
+/**
+ * Mantém somente os números de um telefone.
+ */
+export function normalizePhone(phone) {
+  if (!phone) {
+    return "";
+  }
+
+  return String(phone).replace(/\D/g, "");
+}
+
+/**
+ * Converte o telefone para o padrão internacional
+ * utilizado pelo WhatsApp.
+ *
+ * Como a operação é brasileira, adicionamos 55
+ * quando o telefone ainda não possui DDI.
+ */
+export function getWhatsAppPhone(phone) {
+  const numbers = normalizePhone(phone);
+
+  if (!numbers) {
+    return null;
+  }
+
+  if (numbers.startsWith("55")) {
+    return numbers;
+  }
+
+  return `55${numbers}`;
+}
+
+/* =========================================================
+ * WHATSAPP
+ * =======================================================*/
+
+/**
+ * Cria o link para abrir uma conversa no WhatsApp.
+ */
+export function createWhatsAppUrl(phone) {
+  const whatsappPhone =
+    getWhatsAppPhone(phone);
+
+  if (!whatsappPhone) {
+    return null;
+  }
+
+  return `https://wa.me/${whatsappPhone}`;
+}
+
+export function getTodayISO() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}import { nowISO } from "./contactHelpers";
+
+/* =========================================================
+ * LIMPEZA DE CAMPOS
+ * =======================================================*/
+
+export function clearFollowUpFields() {
+  return {
+    follow_up_date: null,
+  };
+}
+
+export function clearWaitingListFields() {
+  return {
+    waiting_list_reason: null,
+    waiting_list_notes: null,
+    waiting_list_at: null,
+  };
+}
+
+export function clearLostFields() {
+  return {
+    lost_reason: null,
+  };
+}
+
+export function clearEnrollmentFields() {
+  return {
+    enrolled_at: null,
+    enrollment_status: null,
+    left_at: null,
+    left_reason: null,
+  };
+}
+
+export function clearExperimentalResult() {
+  return {
+    experimental_result: null,
+  };
+}
+
+/* =========================================================
+ * METADADOS
+ * =======================================================*/
+
+export function withUpdatedAt(data = {}) {
+  return {
+    ...data,
+    updated_at: nowISO(),
+  };
+}import { supabase } from "../lib/supabase";
+
+import { CONTACT_STATUS } from "../constants/contactStatus";
+import { LOST_REASON } from "../constants/lostReasons";
+import { ENROLLMENT_STATUS } from "../constants/enrollmentStatus";
+import { EXPERIMENTAL_STATUS } from "../constants/experimentalStatus";
+import { sendWhatsAppMessage } from "../services/whatsapp";
+
+import {
+  appendInternalNote,
+  cleanOptionalText,
+  ensureUpdated,
+  nowISO,
+} from "../helpers/contactHelpers";
+
+import {
+  withUpdatedAt,
+  clearFollowUpFields,
+  clearWaitingListFields,
+  clearLostFields,
+} from "../helpers/contactUpdates";
+
+import {
+  buildEnrollmentUpdate,
+  buildCancellationUpdate,
+  buildReactivationUpdate,
+  buildFollowUpUpdate,
+  buildWaitingListUpdate,
+  buildLostUpdate,
+} from "../builders/contactBuilders";
+
+import { getFollowUpState } from "../helpers/followUpRules";
+/* =========================================================
+ * SELECTS
+ * =======================================================*/
+
+/*
+ * Categoria relacionada diretamente ao contato.
+ */
+const CONTACT_CATEGORY_SELECT = `
+  category:categories!contacts_category_id_fkey (
+    id,
+    name,
+    weekday,
+    start_time,
+    end_time,
+    trial_status,
+    experimental_limit
+  )
+`;
+
+/*
+ * Categoria de interesse comercial do contato.
+ */
+const INTEREST_CATEGORY_SELECT = `
+  interest_category:categories!contacts_interest_category_id_fkey (
+    id,
+    name,
+    weekday,
+    start_time,
+    end_time,
+    trial_status,
+    experimental_limit
+  )
+`;
+
+/*
+ * Categoria relacionada diretamente à sessão experimental.
+ *
+ * Aqui não usamos contacts_category_id_fkey porque a tabela
+ * raiz da consulta é experimental_sessions.
+ */
+const SESSION_CATEGORY_SELECT = `
+  category:categories (
+    id,
+    name,
+    weekday,
+    start_time,
+    end_time,
+    trial_status,
+    experimental_limit
+  )
+`;
+
+/* =========================================================
+ * CONTATO + CATEGORIAS
+ * =======================================================*/
+
+const CONTACT_WITH_CATEGORY = `
+  *,
+  ${CONTACT_CATEGORY_SELECT},
+  ${INTEREST_CATEGORY_SELECT}
+`;
+
+/* =========================================================
+ * SESSÃO + CATEGORIA
+ * =======================================================*/
+
+const SESSION_WITH_CATEGORY = `
+  *,
+  ${SESSION_CATEGORY_SELECT}
+`;
+
+/* =========================================================
+ * SESSÃO + CATEGORIA + CONTATO
+ * =======================================================*/
+
+const SESSION_WITH_CONTACT = `
+  *,
+  ${SESSION_CATEGORY_SELECT},
+  contact:contacts (
+    id,
+    child_name,
+    birth_date,
+    responsible_name,
+    phone,
+    email,
+    source,
+    neighborhood,
+    trained_elsewhere,
+    previous_club,
+    observations,
+    internal_notes,
+    status,
+    category_id,
+    interest_category_id,
+    preferred_shift,
+    preferred_days,
+    qualification_status,
+    follow_up_date,
+    follow_up_started_at,
+    follow_up_attempts,
+    last_follow_up_at,
+    enrolled_at,
+    enrollment_status,
+    left_at,
+    left_reason,
+    experimental_date,
+    experimental_time,
+    experimental_result,
+    lost_reason,
+    waiting_list_reason,
+    waiting_list_notes,
+    waiting_list_at,
+    entry_channel,
+    first_contact_at,
+    created_at,
+    updated_at
+  )
+`;
+
+/* =========================================================
+ * CONSTANTES
+ * =======================================================*/
+
+const EXPERIMENTAL_STATUSES = [
+  EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+  EXPERIMENTAL_STATUS.CONFIRMED,
+  EXPERIMENTAL_STATUS.ATTENDED,
+  EXPERIMENTAL_STATUS.NO_SHOW,
+  EXPERIMENTAL_STATUS.CANCELLED,
+];
+
+const PROTECTED_COMMERCIAL_STATUSES = [
+  CONTACT_STATUS.ENROLLED,
+  CONTACT_STATUS.FOLLOW_UP,
+  CONTACT_STATUS.WAITING_LIST,
+  CONTACT_STATUS.LOST,
+];
+/* =========================================================
+ * VAGAS PARA EXPERIMENTAL
+ * =======================================================*/
+
+async function ensureExperimentalAvailability(trainingGroupScheduleId, experimentalDate) {
+  if (!trainingGroupScheduleId || !experimentalDate) {
+    return null;
+  }
+
+  const { data: schedule, error: scheduleError } = await supabase
+    .from("training_group_schedules")
+    .select(
+      `
+      id,
+      training_group_id,
+      weekday,
+      start_time,
+      experimental_limit
+    `,
+    )
+    .eq("id", trainingGroupScheduleId)
+    .single();
+
+  if (scheduleError) {
+    throw scheduleError;
+  }
+
+  const { count, error: countError } = await supabase
+    .from("experimental_sessions")
+    .select("*", {
+      count: "exact",
+      head: true,
+    })
+    .eq("training_group_schedule_id", trainingGroupScheduleId)
+    .eq("experimental_date", experimentalDate)
+    .in("status", [
+      EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+      EXPERIMENTAL_STATUS.CONFIRMED,
+    ]);
+
+  if (countError) {
+    throw countError;
+  }
+
+  const limit = schedule.experimental_limit ?? 0;
+
+  if (limit > 0 && count >= limit) {
+    throw new Error(
+      "Este horário não possui mais vagas para aula experimental nesta data.",
+    );
+  }
+
+  return schedule;
+}
+/* =========================================================
+ * EXPERIMENTAIS
+ * =======================================================*/
+
+async function createExperimentalSession({
+  contactId,
+  categoryId,
+  trainingGroupScheduleId = null,
+  experimentalDate,
+  experimentalTime = null,
+  status = EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+  notes = null,
+  coachNotes = null,
+  preferredPosition = null,
+}) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  if (!categoryId) {
+    throw new Error("Categoria não informada.");
+  }
+
+  if (!experimentalDate) {
+    throw new Error("Data da experimental não informada.");
+  }
+
+  if (!EXPERIMENTAL_STATUSES.includes(status)) {
+    throw new Error("Status da experimental inválido.");
+  }
+
+  const { data, error } = await supabase
+    .from("experimental_sessions")
+    .insert({
+      contact_id: contactId,
+      category_id: categoryId,
+      training_group_schedule_id: trainingGroupScheduleId,
+      experimental_date: experimentalDate,
+      experimental_time: experimentalTime,
+      status,
+      notes: cleanOptionalText(notes),
+      coach_notes: cleanOptionalText(coachNotes),
+      preferred_position: cleanOptionalText(preferredPosition),
+    })
+    .select(SESSION_WITH_CONTACT)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+async function getLatestExperimentalSession(contactId) {
+  const { data, error } = await supabase
+    .from("experimental_sessions")
+    .select(
+      `
+      id,
+      contact_id,
+      category_id,
+      experimental_date,
+      experimental_time,
+      status,
+      created_at,
+      updated_at
+    `,
+    )
+    .eq("contact_id", contactId)
+    .order("experimental_date", {
+      ascending: false,
+    })
+    .order("experimental_time", {
+      ascending: false,
+    })
+    .order("created_at", {
+      ascending: false,
+    })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data || null;
+}
+/* =========================================================
+ * CONSULTAS
+ * =======================================================*/
+
+export async function getContacts() {
+  const { data, error } = await supabase
+    .from("contacts")
+    .select(CONTACT_WITH_CATEGORY)
+    .order("first_contact_at", {
+      ascending: false,
+      nullsFirst: false,
+    })
+    .order("created_at", {
+      ascending: false,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+export async function getContactById(contactId) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .select(CONTACT_WITH_CATEGORY)
+    .eq("id", contactId)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function getExperimentals() {
+  const { data, error } = await supabase
+    .from("experimental_sessions")
+    .select(SESSION_WITH_CONTACT)
+    .order("experimental_date", {
+      ascending: true,
+    })
+    .order("experimental_time", {
+      ascending: true,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+export async function getExperimentalSession(sessionId) {
+  if (!sessionId) {
+    throw new Error("Experimental não informada.");
+  }
+
+  const { data, error } = await supabase
+    .from("experimental_sessions")
+    .select(SESSION_WITH_CONTACT)
+    .eq("id", sessionId)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function getContactExperimentalSessions(contactId) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  const { data, error } = await supabase
+    .from("experimental_sessions")
+    .select(SESSION_WITH_CATEGORY)
+    .eq("contact_id", contactId)
+    .order("experimental_date", {
+      ascending: false,
+    })
+    .order("experimental_time", {
+      ascending: false,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/* =========================================================
+ * ATUALIZAÇÃO DE CONTATOS
+ * =======================================================*/
+
+export async function updateContact(contactId, updates) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  if (!updates || typeof updates !== "object" || Array.isArray(updates)) {
+    throw new Error("Dados inválidos.");
+  }
+
+  const allowedFields = [
+    "child_name",
+    "birth_date",
+    "responsible_name",
+    "phone",
+    "email",
+    "source",
+    "entry_channel",
+    "neighborhood",
+    "trained_elsewhere",
+    "previous_club",
+
+    "category_id",
+    "interest_category_id",
+    "preferred_shift",
+    "preferred_days",
+    "qualification_status",
+
+    "observations",
+    "internal_notes",
+    "first_contact_at",
+  ];
+
+  const payload = {};
+
+  allowedFields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(updates, field)) {
+      payload[field] = updates[field];
+    }
+  });
+
+  if (!Object.keys(payload).length) {
+    throw new Error("Nenhum dado para atualizar.");
+  }
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update({
+      ...payload,
+      ...withUpdatedAt(),
+    })
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
+export async function addContactInternalNote(contactId, note) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  const current = await getContactById(contactId);
+
+  const internalNotes = appendInternalNote(current.internal_notes, note);
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update({
+      internal_notes: internalNotes,
+      ...withUpdatedAt(),
+    })
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
+export async function updateContactStatus(contactId, status) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  const validStatuses = Object.values(CONTACT_STATUS);
+
+  if (!validStatuses.includes(status)) {
+    throw new Error("Status do contato inválido.");
+  }
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update({
+      status,
+      ...withUpdatedAt(),
+    })
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
+/* =========================================================
+ * EXPERIMENTAIS
+ * =======================================================*/
+
+export async function updateExperimentalCoachNotes(sessionId, coachNotes = "") {
+  if (!sessionId) {
+    throw new Error("Experimental não informada.");
+  }
+
+  const { data, error } = await supabase
+    .from("experimental_sessions")
+    .update({
+      coach_notes: cleanOptionalText(coachNotes),
+      ...withUpdatedAt(),
+    })
+    .eq("id", sessionId)
+    .select(SESSION_WITH_CONTACT)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function updateExperimentalSessionStatus(
+  sessionId,
+  status,
+  correctionReason = "",
+) {
+  if (!sessionId) {
+    throw new Error("Experimental não informada.");
+  }
+
+  if (!EXPERIMENTAL_STATUSES.includes(status)) {
+    throw new Error("Status da experimental inválido.");
+  }
+
+  const currentSession = await getExperimentalSession(sessionId);
+
+  const currentContact = await getContactById(currentSession.contact_id);
+
+  let sessionNotes = currentSession.notes || null;
+
+  if (correctionReason.trim() && currentSession.status !== status) {
+    sessionNotes = appendInternalNote(
+      sessionNotes,
+      `Correção: ${currentSession.status} → ${status}. ${correctionReason}`,
+    );
+  }
+
+  const { data: updatedSession, error } = await supabase
+    .from("experimental_sessions")
+    .update({
+      status,
+      notes: sessionNotes,
+      ...withUpdatedAt(),
+    })
+    .eq("id", sessionId)
+    .select(SESSION_WITH_CONTACT)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const latest = await getLatestExperimentalSession(currentContact.id);
+
+  const isLatestSession = latest?.id === sessionId;
+
+  const hasProtectedCommercialStatus = PROTECTED_COMMERCIAL_STATUSES.includes(
+    currentContact.status,
+  );
+
+  if (isLatestSession && !hasProtectedCommercialStatus) {
+    const { error: contactError } = await supabase
+      .from("contacts")
+      .update({
+        status,
+        category_id: updatedSession.category_id,
+        experimental_date: updatedSession.experimental_date,
+        experimental_time: updatedSession.experimental_time,
+        ...withUpdatedAt(),
+      })
+      .eq("id", currentContact.id);
+
+    if (contactError) {
+      throw contactError;
+    }
+  }
+
+  return updatedSession;
+}
+
+export async function deleteExperimentalSession(sessionId) {
+  if (!sessionId) {
+    throw new Error("Experimental não informada.");
+  }
+
+  const session = await getExperimentalSession(sessionId);
+
+  const contact = await getContactById(session.contact_id);
+
+  const { error: deleteError } = await supabase
+    .from("experimental_sessions")
+    .delete()
+    .eq("id", sessionId);
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  const latest = await getLatestExperimentalSession(contact.id);
+
+  const hasProtectedCommercialStatus = PROTECTED_COMMERCIAL_STATUSES.includes(
+    contact.status,
+  );
+
+  /*
+   * Se o contato já avançou comercialmente,
+   * excluir uma experimental do histórico
+   * não deve alterar seu status atual.
+   */
+  if (hasProtectedCommercialStatus) {
+    return true;
+  }
+
+  if (latest) {
+    const { error: contactError } = await supabase
+      .from("contacts")
+      .update({
+        status: latest.status,
+        category_id: latest.category_id,
+        experimental_date: latest.experimental_date,
+        experimental_time: latest.experimental_time,
+        ...withUpdatedAt(),
+      })
+      .eq("id", contact.id);
+
+    if (contactError) {
+      throw contactError;
+    }
+
+    return true;
+  }
+
+  const { error: contactError } = await supabase
+    .from("contacts")
+    .update({
+      status: CONTACT_STATUS.NEW_CONTACT,
+      category_id: null,
+      experimental_date: null,
+      experimental_time: null,
+      experimental_result: null,
+      ...withUpdatedAt(),
+    })
+    .eq("id", contact.id);
+
+  if (contactError) {
+    throw contactError;
+  }
+
+  return true;
+}
+
+/* =========================================================
+ * CRIAÇÃO DE CONTATO
+ * =======================================================*/
+
+export async function createContact(contact) {
+  if (!contact || typeof contact !== "object") {
+    throw new Error("Dados do contato inválidos.");
+  }
+
+  let schedule = null;
+
+  const isWaitingList = contact.status === CONTACT_STATUS.WAITING_LIST;
+
+  /*
+   * Só validamos disponibilidade quando o contato
+   * realmente será criado com uma experimental.
+   *
+   * Lista de interesse não ocupa vaga de experimental.
+   *
+   * A disponibilidade agora é controlada por
+   * training_group_schedule_id + experimental_date, contando
+   * experimental_sessions — não depende mais de
+   * categories.experimental_limit.
+   *
+   * Contatos criados sem training_group_schedule_id (ex.: cadastro
+   * manual no Admin via NewContactModal, ainda não migrado) não
+   * passam por esta validação.
+   */
+  if (
+    !isWaitingList &&
+    contact.training_group_schedule_id &&
+    contact.experimental_date
+  ) {
+    schedule = await ensureExperimentalAvailability(
+      contact.training_group_schedule_id,
+      contact.experimental_date,
+    );
+  }
+  /*
+   * Esses campos pertencem à experimental e não à
+   * tabela contacts.
+   */
+  const {
+  coach_notes: initialCoachNotes = null,
+  preferred_position: initialPreferredPosition = null,
+
+  // Campos usados apenas pelo fluxo de agendamento
+  training_group_id: _trainingGroupId,
+  training_group_schedule_id: trainingGroupScheduleId,
+
+  ...contactPayload
+} = contact;
+
+  /*
+   * Registra automaticamente quando o contato
+   * entrou na lista de interesse.
+   */
+  if (
+    contactPayload.status === CONTACT_STATUS.WAITING_LIST &&
+    !contactPayload.waiting_list_at
+  ) {
+    contactPayload.waiting_list_at = nowISO();
+  }
+
+  if (
+    !Array.isArray(contactPayload.preferred_days) ||
+    contactPayload.preferred_days.length === 0
+  ) {
+    contactPayload.preferred_days = null;
+  }
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .insert(contactPayload)
+    .select(CONTACT_WITH_CATEGORY)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const shouldCreateExperimental =
+    data.status !== CONTACT_STATUS.WAITING_LIST &&
+    data.category_id &&
+    data.experimental_date;
+
+  if (!shouldCreateExperimental) {
+    return data;
+  }
+
+  const experimentalStatus =
+    data.status === CONTACT_STATUS.CONFIRMED
+      ? EXPERIMENTAL_STATUS.CONFIRMED
+      : EXPERIMENTAL_STATUS.PENDING_CONFIRMATION;
+
+   try {
+    await createExperimentalSession({
+  contactId: data.id,
+  categoryId: data.category_id,
+  trainingGroupScheduleId,
+  experimentalDate: data.experimental_date,
+  experimentalTime:
+    data.experimental_time || schedule?.start_time || null,
+  status: experimentalStatus,
+  notes: "Primeira experimental do contato.",
+  coachNotes: initialCoachNotes,
+  preferredPosition: initialPreferredPosition,
+});
+  } catch (err) {
+    /*
+     * Rollback manual:
+     * se a experimental não puder ser criada,
+     * removemos o contato recém-criado.
+     */
+    const { error: rollbackError } = await supabase
+      .from("contacts")
+      .delete()
+      .eq("id", data.id);
+
+    if (rollbackError) {
+      console.error("Erro ao desfazer criação do contato:", rollbackError);
+    }
+
+    throw err;
+  }
+
+  return data;
+}
+
+/* =========================================================
+ * RESULTADO COMERCIAL
+ * =======================================================*/
+
+export async function saveExperimentalResult(
+  contactId,
+  { result, followUpDate = null, notes = "", lostReason = null },
+) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  const allowedResults = [
+    CONTACT_STATUS.ENROLLED,
+    CONTACT_STATUS.FOLLOW_UP,
+    CONTACT_STATUS.LOST,
+  ];
+
+  if (!allowedResults.includes(result)) {
+    throw new Error("Resultado inválido.");
+  }
+
+  const current = await getContactById(contactId);
+
+  let updates;
+
+  switch (result) {
+    case CONTACT_STATUS.ENROLLED: {
+      updates = buildEnrollmentUpdate(current, {
+        enrolledAt: nowISO(),
+        notes,
+      });
+
+      break;
+    }
+
+    case CONTACT_STATUS.FOLLOW_UP: {
+      if (!followUpDate) {
+        throw new Error("Informe a data do retorno.");
+      }
+
+      updates = buildFollowUpUpdate(current, {
+        followUpDate,
+        notes,
+        firstTime: true,
+      });
+
+      /*
+       * Esta função registra o resultado comercial
+       * da aula experimental.
+       */
+      updates.experimental_result = CONTACT_STATUS.FOLLOW_UP;
+
+      break;
+    }
+
+    case CONTACT_STATUS.LOST: {
+      if (!lostReason) {
+        throw new Error("Informe o motivo da não conversão.");
+      }
+
+      updates = buildLostUpdate(current, {
+        lostReason,
+        notes,
+        attended: true,
+      });
+
+      break;
+    }
+
+    default:
+      throw new Error("Resultado inválido.");
+  }
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update(updates)
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
+/* =========================================================
+ * MATRÍCULA
+ * =======================================================*/
+
+export async function enrollContact(
+  contactId,
+  { notes = "", enrolledAt = null } = {},
+) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  const current = await getContactById(contactId);
+
+  let enrollmentDate = nowISO();
+
+  if (enrolledAt) {
+    enrollmentDate = /^\d{4}-\d{2}-\d{2}$/.test(enrolledAt)
+      ? `${enrolledAt}T12:00:00`
+      : enrolledAt;
+  }
+
+  const updates = buildEnrollmentUpdate(current, {
+    enrolledAt: enrollmentDate,
+    notes,
+  });
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update(updates)
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
+export async function enrollFromFollowUp(contactId, notes = "") {
+  return enrollContact(contactId, {
+    notes,
+  });
+}
+
+/* =========================================================
+ * CANCELAMENTO DE MATRÍCULA
+ * =======================================================*/
+
+export async function cancelEnrollment(
+  contactId,
+  { reason, notes = "", leftAt = null } = {},
+) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  if (!reason?.trim()) {
+    throw new Error("Informe o motivo do cancelamento.");
+  }
+
+  const current = await getContactById(contactId);
+
+  if (
+    current.status !== CONTACT_STATUS.ENROLLED ||
+    current.enrollment_status !== ENROLLMENT_STATUS.ACTIVE
+  ) {
+    throw new Error("Contato não possui matrícula ativa.");
+  }
+
+  let departure = nowISO();
+
+  if (leftAt) {
+    departure = /^\d{4}-\d{2}-\d{2}$/.test(leftAt)
+      ? `${leftAt}T12:00:00`
+      : leftAt;
+  }
+
+  const updates = buildCancellationUpdate(current, {
+    reason,
+    leftAt: departure,
+    notes,
+  });
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update(updates)
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
+/* =========================================================
+ * REATIVAÇÃO DE MATRÍCULA
+ * =======================================================*/
+
+export async function reactivateEnrollment(contactId, { notes = "" } = {}) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  const current = await getContactById(contactId);
+
+  if (current.enrollment_status !== ENROLLMENT_STATUS.CANCELLED) {
+    throw new Error("A matrícula não está cancelada.");
+  }
+
+  const updates = buildReactivationUpdate(current, notes);
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update(updates)
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
+/* =========================================================
+ * FOLLOW UP
+ * =======================================================*/
+
+export async function getFollowUps() {
+  const { data, error } = await supabase
+    .from("contacts")
+    .select(CONTACT_WITH_CATEGORY)
+    .eq("status", CONTACT_STATUS.FOLLOW_UP)
+    .not("follow_up_date", "is", null)
+    .order("follow_up_date", {
+      ascending: true,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+export async function scheduleFollowUp(contactId, followUpDate, notes = "") {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  if (!followUpDate) {
+    throw new Error("Informe a data do próximo retorno.");
+  }
+
+  const current = await getContactById(contactId);
+
+  const isAlreadyInFollowUp =
+    current.status === CONTACT_STATUS.FOLLOW_UP &&
+    Boolean(current.follow_up_started_at);
+
+  /*
+   * O limite só é verificado quando o contato
+   * já está dentro de um ciclo de acompanhamento.
+   *
+   * O primeiro agendamento apenas inicia o ciclo
+   * e não conta como tentativa.
+   */
+  if (isAlreadyInFollowUp) {
+    const followUpState = getFollowUpState(current);
+
+    if (!followUpState.canReschedule) {
+      throw new Error(
+        "Este acompanhamento atingiu o limite. Encerre a oportunidade ou matricule o atleta.",
+      );
+    }
+  }
+
+  const updates = buildFollowUpUpdate(current, {
+    followUpDate,
+    notes,
+    firstTime: !isAlreadyInFollowUp,
+  });
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update(updates)
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
+export async function loseFromFollowUp(contactId, lostReason, notes = "") {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  if (!lostReason) {
+    throw new Error("Informe o motivo da não conversão.");
+  }
+
+  return closeOpportunity(contactId, {
+    lostReason,
+    notes,
+  });
+}
+
+/* =========================================================
+ * LISTA DE INTERESSE
+ * =======================================================*/
+
+export async function getWaitingList() {
+  const { data, error } = await supabase
+    .from("contacts")
+    .select(CONTACT_WITH_CATEGORY)
+    .eq("status", CONTACT_STATUS.WAITING_LIST)
+    .order("waiting_list_at", {
+      ascending: true,
+      nullsFirst: false,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+export async function addToWaitingList(
+  contactId,
+  {
+    reason,
+    notes = "",
+
+    categoryId = null,
+    preferredShift = null,
+    preferredDays = [],
+  },
+) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  if (!reason) {
+    throw new Error("Informe o motivo da lista de interesse.");
+  }
+
+  const current = await getContactById(contactId);
+
+ const updates = {
+    ...buildWaitingListUpdate(current,{
+        reason,
+        notes,
+
+        interestCategoryId: categoryId,
+        preferredShift,
+        preferredDays,
+    }),
+
+    interest_category_id:
+        categoryId || null,
+
+    preferred_shift:
+        preferredShift || null,
+
+    preferred_days:
+        preferredDays?.length
+            ? preferredDays
+            : null,
+};
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update(updates)
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+/* =========================================================
+ * REAGENDAMENTO DE EXPERIMENTAL
+ * =======================================================*/
+
+export async function rescheduleExperimental(
+  contactId,
+  {
+    categoryId,
+    experimentalDate,
+    experimentalTime = null,
+    notes = "",
+    coachNotes = "",
+  },
+) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  if (!categoryId) {
+    throw new Error("Selecione uma categoria.");
+  }
+
+  if (!experimentalDate) {
+    throw new Error("Informe a data da experimental.");
+  }
+
+  const active = await getLatestExperimentalSession(contactId);
+
+  const hasActiveExperimental =
+    active &&
+    [
+      EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+      EXPERIMENTAL_STATUS.CONFIRMED,
+    ].includes(active.status);
+
+  if (hasActiveExperimental) {
+    throw new Error("Este contato já possui uma aula experimental agendada.");
+  }
+
+  const category = await ensureExperimentalAvailability(
+    categoryId,
+    experimentalDate,
+  );
+
+  const time = experimentalTime || category?.start_time || null;
+
+  const session = await createExperimentalSession({
+    contactId,
+    categoryId,
+    experimentalDate,
+    experimentalTime: time,
+
+    status: EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+
+    notes: notes || "Experimental reagendada.",
+
+    coachNotes,
+  });
+
+  const updates = {
+    status: CONTACT_STATUS.PENDING_CONFIRMATION,
+
+    category_id: categoryId,
+
+    experimental_date: experimentalDate,
+
+    experimental_time: time,
+
+    experimental_result: null,
+
+    ...clearFollowUpFields(),
+    ...clearWaitingListFields(),
+    ...clearLostFields(),
+
+    ...withUpdatedAt(),
+  };
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update(updates)
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    const { error: rollbackError } = await supabase
+      .from("experimental_sessions")
+      .delete()
+      .eq("id", session.id);
+
+    if (rollbackError) {
+      console.error("Erro ao desfazer criação da experimental:", rollbackError);
+    }
+
+    throw error;
+  }
+
+  return {
+    contact: ensureUpdated(data),
+    session,
+  };
+}
+
+/* =========================================================
+ * CENTRAL DE ACOMPANHAMENTO
+ * =======================================================*/
+
+export async function getFollowUpCenter() {
+  const [followUpsResult, waitingListResult] = await Promise.all([
+    supabase
+      .from("contacts")
+      .select(CONTACT_WITH_CATEGORY)
+      .eq("status", CONTACT_STATUS.FOLLOW_UP)
+      .not("follow_up_date", "is", null)
+      .order("follow_up_date", {
+        ascending: true,
+      }),
+
+    supabase
+      .from("contacts")
+      .select(CONTACT_WITH_CATEGORY)
+      .eq("status", CONTACT_STATUS.WAITING_LIST)
+      .order("waiting_list_at", {
+        ascending: true,
+        nullsFirst: false,
+      }),
+  ]);
+
+  if (followUpsResult.error) {
+    throw followUpsResult.error;
+  }
+
+  if (waitingListResult.error) {
+    throw waitingListResult.error;
+  }
+
+  return {
+    followUps: followUpsResult.data || [],
+
+    waitingList: waitingListResult.data || [],
+  };
+}
+
+/* =========================================================
+ * EXPERIMENTAL A PARTIR DA LISTA DE INTERESSE
+ * =======================================================*/
+
+export async function scheduleExperimentalFromWaitingList(
+  contactId,
+  { categoryId, experimentalDate, experimentalTime = null, coachNotes = "" },
+) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  if (!categoryId) {
+    throw new Error("Selecione uma categoria.");
+  }
+
+  if (!experimentalDate) {
+    throw new Error("Informe a data da experimental.");
+  }
+
+  const current = await getContactById(contactId);
+
+  if (current.status !== CONTACT_STATUS.WAITING_LIST) {
+    throw new Error("Este contato não está na lista de interesse.");
+  }
+const active = await getLatestExperimentalSession(contactId);
+
+const category = await ensureExperimentalAvailability(
+  categoryId,
+  experimentalDate,
+);
+
+const time = experimentalTime || category?.start_time || null;
+
+let session;
+
+if (
+  active &&
+  [
+    EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+    EXPERIMENTAL_STATUS.CONFIRMED,
+  ].includes(active.status)
+) {
+  const { data, error } = await supabase
+    .from("experimental_sessions")
+    .update({
+      category_id: categoryId,
+      experimental_date: experimentalDate,
+      experimental_time: time,
+      coach_notes: cleanOptionalText(coachNotes),
+      notes: cleanOptionalText(notes) || active.notes,
+      ...withUpdatedAt(),
+    })
+    .eq("id", active.id)
+    .select(SESSION_WITH_CONTACT)
+    .single();
+
+  if (error) throw error;
+
+  session = data;
+} else {
+  session = await createExperimentalSession({
+    contactId,
+    categoryId,
+    experimentalDate,
+    experimentalTime: time,
+    status: EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+    notes: notes || "Nova experimental agendada.",
+    coachNotes,
+  });
+}
+  
+  const updates = {
+    status: CONTACT_STATUS.PENDING_CONFIRMATION,
+
+    category_id: categoryId,
+
+    experimental_date: experimentalDate,
+
+    experimental_time: time,
+
+    experimental_result: null,
+
+    ...clearFollowUpFields(),
+    ...clearWaitingListFields(),
+    ...clearLostFields(),
+
+    ...withUpdatedAt(),
+  };
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update(updates)
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    const { error: rollbackError } = await supabase
+      if (session?.id && (!active ||
+    ![
+      EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+      EXPERIMENTAL_STATUS.CONFIRMED,
+    ].includes(active.status))) {
+
+  await supabase
+    .from("experimental_sessions")
+    .delete()
+    .eq("id", session.id);
+}
+
+    if (rollbackError) {
+      console.error("Erro ao desfazer criação da experimental:", rollbackError);
+    }
+
+    throw error;
+  }
+
+  return {
+    contact: ensureUpdated(data),
+    session,
+  };
+}
+/* =========================================================
+ * ENCERRAMENTO
+ * =======================================================*/
+
+export async function closeOpportunity(contactId, { lostReason, notes = "" }) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  if (!lostReason) {
+    throw new Error("Informe o motivo da não conversão.");
+  }
+
+  const current = await getContactById(contactId);
+
+  const sessions = await getContactExperimentalSessions(contactId);
+
+  const attended = sessions.some(
+    (session) => session.status === EXPERIMENTAL_STATUS.ATTENDED,
+  );
+
+  const updates = buildLostUpdate(current, {
+    lostReason,
+    notes,
+    attended,
+  });
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update(updates)
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
+export async function closeWaitingListContact(
+  contactId,
+  { lostReason = LOST_REASON.OTHER, notes = "" } = {},
+) {
+  return closeOpportunity(contactId, {
+    lostReason,
+    notes,
+  });
+}
+
+export async function closeNoShowOpportunity(
+  contactId,
+  { lostReason, notes = "" },
+) {
+  return closeOpportunity(contactId, {
+    lostReason,
+    notes,
+  });
+}
+

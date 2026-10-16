@@ -1,0 +1,433 @@
+// src/admin/components/followUps/WaitingListFilters.jsx
+
+import {
+  INTEREST_QUALIFICATION,
+  INTEREST_QUALIFICATION_LABELS,
+} from "../../../constants/interestQualification";
+
+import {
+  PREFERRED_SHIFT,
+  PREFERRED_SHIFT_LABELS,
+} from "../../../constants/preferredShift";
+
+import { WAITING_LIST_FILTER } from "../../../constants/waitingListFilters";
+
+import {
+  PREFERRED_DAY_LABELS,
+  PREFERRED_DAY_OPTIONS,
+} from "../../../constants/preferredDays";
+
+/* =========================================================
+ * COMPONENTE
+ * =======================================================*/
+
+export default function WaitingListFilters({
+  categories = [],
+  filters,
+  resultCount = 0,
+  totalCount = 0,
+  onChange,
+  onClear,
+}) {
+  const hasActiveFilters =
+    filters.categoryId !== WAITING_LIST_FILTER.ALL ||
+    filters.preferredShift !== WAITING_LIST_FILTER.ALL ||
+    filters.preferredDay !== WAITING_LIST_FILTER.ALL ||
+    filters.qualification !== WAITING_LIST_FILTER.ALL;
+
+  const canClear = typeof onClear === "function";
+
+  /* =======================================================
+   * ATUALIZAÇÃO
+   * =====================================================*/
+
+  function updateFilter(key, value) {
+    onChange({
+      ...filters,
+      [key]: value,
+    });
+  }
+
+  function removeFilter(key) {
+    updateFilter(key, WAITING_LIST_FILTER.ALL);
+  }
+
+  /* =======================================================
+   * LABELS DOS FILTROS ATIVOS
+   * =====================================================*/
+
+  const selectedCategory = categories.find(
+    (category) => String(category.id) === String(filters.categoryId),
+  );
+
+  const activeFilters = [];
+
+  if (filters.categoryId !== WAITING_LIST_FILTER.ALL) {
+    activeFilters.push({
+      key: "categoryId",
+      label: selectedCategory?.name || "Categoria",
+    });
+  }
+
+  if (filters.preferredShift !== WAITING_LIST_FILTER.ALL) {
+    activeFilters.push({
+      key: "preferredShift",
+      label:
+        PREFERRED_SHIFT_LABELS[filters.preferredShift] ||
+        filters.preferredShift,
+    });
+  }
+
+  if (filters.preferredDay !== WAITING_LIST_FILTER.ALL) {
+    activeFilters.push({
+      key: "preferredDay",
+      label: PREFERRED_DAY_LABELS[filters.preferredDay] || filters.preferredDay,
+    });
+  }
+
+  if (filters.qualification !== WAITING_LIST_FILTER.ALL) {
+    activeFilters.push({
+      key: "qualification",
+      label:
+        INTEREST_QUALIFICATION_LABELS[filters.qualification] ||
+        filters.qualification,
+    });
+  }
+
+  /* =======================================================
+   * RENDER
+   * =====================================================*/
+
+  return (
+    <div>
+      {/* =================================================
+       * CABEÇALHO OPERACIONAL
+       * =============================================== */}
+
+      <div
+        className="
+          flex
+          flex-col
+          gap-4
+          sm:flex-row
+          sm:items-end
+          sm:justify-between
+        "
+      >
+        <div>
+          <p
+            className="
+              text-xs
+              font-bold
+              uppercase
+              tracking-[0.14em]
+              text-inter-red
+            "
+          >
+            Encontrar oportunidades
+          </p>
+
+          <h2
+            className="
+              mt-1
+              text-lg
+              font-bold
+              text-neutral-900
+            "
+          >
+            Filtrar famílias
+          </h2>
+
+          <p
+            className="
+              mt-1
+              text-sm
+              text-neutral-500
+            "
+          >
+            Combine categoria, turno, dia e qualificação.
+          </p>
+        </div>
+
+        {/* CONTADOR */}
+
+        <div
+          className="
+            shrink-0
+            rounded-xl
+            bg-neutral-900
+            px-4
+            py-3
+            text-white
+          "
+        >
+          <div className="flex items-baseline gap-2">
+            <span
+              className="
+                text-2xl
+                font-bold
+                leading-none
+              "
+            >
+              {resultCount}
+            </span>
+
+            <span
+              className="
+                text-sm
+                font-medium
+                text-neutral-300
+              "
+            >
+              {resultCount === 1 ? "família" : "famílias"}
+            </span>
+          </div>
+
+          {hasActiveFilters && (
+            <p
+              className="
+                mt-1
+                text-xs
+                text-neutral-400
+              "
+            >
+              de {totalCount} na lista
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* =================================================
+       * FILTROS
+       * =============================================== */}
+
+      <div
+        className="
+          mt-5
+          grid
+          gap-3
+          sm:grid-cols-2
+          xl:grid-cols-4
+        "
+      >
+        {/* CATEGORIA */}
+
+        <FilterField label="Categoria" id="waiting-list-category-filter">
+          <select
+            id="waiting-list-category-filter"
+            value={filters.categoryId}
+            onChange={(event) => updateFilter("categoryId", event.target.value)}
+            className={selectClass}
+          >
+            <option value={WAITING_LIST_FILTER.ALL}>Todas as categorias</option>
+
+            {categories.map((category) => (
+              <option key={category.id} value={String(category.id)}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+
+        {/* TURNO */}
+
+        <FilterField label="Turno" id="waiting-list-shift-filter">
+          <select
+            id="waiting-list-shift-filter"
+            value={filters.preferredShift}
+            onChange={(event) =>
+              updateFilter("preferredShift", event.target.value)
+            }
+            className={selectClass}
+          >
+            <option value={WAITING_LIST_FILTER.ALL}>Todos os turnos</option>
+
+            {Object.values(PREFERRED_SHIFT).map((shift) => (
+              <option key={shift} value={shift}>
+                {PREFERRED_SHIFT_LABELS[shift] || shift}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+
+        {/* DIA PREFERIDO */}
+
+        <FilterField label="Dia preferido" id="waiting-list-day-filter">
+          <select
+            id="waiting-list-day-filter"
+            value={filters.preferredDay}
+            onChange={(event) =>
+              updateFilter("preferredDay", event.target.value)
+            }
+            className={selectClass}
+          >
+            <option value={WAITING_LIST_FILTER.ALL}>Todos os dias</option>
+            {PREFERRED_DAY_OPTIONS.map((day) => (
+              <option key={day.value} value={day.value}>
+                {day.label}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+
+        {/* QUALIFICAÇÃO */}
+
+        <FilterField
+          label="Qualificação"
+          id="waiting-list-qualification-filter"
+        >
+          <select
+            id="waiting-list-qualification-filter"
+            value={filters.qualification}
+            onChange={(event) =>
+              updateFilter("qualification", event.target.value)
+            }
+            className={selectClass}
+          >
+            <option value={WAITING_LIST_FILTER.ALL}>
+              Todas as qualificações
+            </option>
+
+            {Object.values(INTEREST_QUALIFICATION).map((qualification) => (
+              <option key={qualification} value={qualification}>
+                {INTEREST_QUALIFICATION_LABELS[qualification] || qualification}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+      </div>
+
+      {/* =================================================
+       * FILTROS ATIVOS
+       * =============================================== */}
+
+      {hasActiveFilters && (
+        <div
+          className="
+            mt-4
+            flex
+            flex-wrap
+            items-center
+            gap-2
+            border-t
+            border-neutral-100
+            pt-4
+          "
+        >
+          <span
+            className="
+              mr-1
+              text-xs
+              font-semibold
+              text-neutral-400
+            "
+          >
+            Filtros ativos:
+          </span>
+
+          {activeFilters.map((filter) => (
+            <button
+              key={filter.key}
+              type="button"
+              onClick={() => removeFilter(filter.key)}
+              className="
+                inline-flex
+                items-center
+                gap-2
+                rounded-full
+                bg-red-50
+                px-3
+                py-1.5
+                text-xs
+                font-semibold
+                text-inter-red
+                transition
+                hover:bg-red-100
+              "
+              title="Remover filtro"
+            >
+              {filter.label}
+
+              <span
+                className="
+                  text-sm
+                  leading-none
+                  opacity-60
+                "
+              >
+                ×
+              </span>
+            </button>
+          ))}
+
+          {canClear && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="
+                ml-1
+                text-xs
+                font-semibold
+                text-neutral-500
+                underline-offset-4
+                transition
+                hover:text-inter-red
+                hover:underline
+              "
+            >
+              Limpar todos
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+ * CAMPO
+ * =======================================================*/
+
+function FilterField({ label, id, children }) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="
+          text-xs
+          font-semibold
+          uppercase
+          tracking-wide
+          text-neutral-500
+        "
+      >
+        {label}
+      </label>
+
+      {children}
+    </div>
+  );
+}
+
+/* =========================================================
+ * ESTILO
+ * =======================================================*/
+
+const selectClass = `
+  mt-2
+  w-full
+  rounded-xl
+  border
+  border-neutral-200
+  bg-white
+  px-4
+  py-3
+  text-sm
+  font-medium
+  text-neutral-800
+  outline-none
+  transition
+  focus:border-inter-red
+  focus:ring-2
+  focus:ring-red-100
+`;

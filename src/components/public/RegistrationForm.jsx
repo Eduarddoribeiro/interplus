@@ -7,38 +7,46 @@ import ScheduleSelector from "./components/ScheduleSelector";
 import ResponsibleForm from "./components/ResponsibleForm";
 import ReviewCard from "./components/ReviewCard";
 import SuccessScreen from "./components/SuccessScreen";
-import { createContact } from "../../services/contacts";
+
+import { submitPublicRegistration } from "../../services/publicRegistration";
+
+const INITIAL_FORM = {
+  child_name: "",
+  birth_date: "",
+
+  modality: null,
+  category: null,
+
+  unit: null,
+  training_group: null,
+  schedule: null,
+
+  experimental_date: "",
+  experimental_time: "",
+
+  responsible_name: "",
+  phone: "",
+  email: "",
+  neighborhood: "",
+
+  trained_elsewhere: false,
+  previous_club: "",
+
+  preferred_position: "",
+  coach_notes: "",
+
+  source: "instagram",
+
+  // Lista de Interesse (Cenário 1 e 2)
+  interest_reason: null,
+  preferred_shift: "any",
+  observations: "",
+};
 
 export default function RegistrationForm() {
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(null);
-
-  const [form, setForm] = useState({
-    // Atleta
-    child_name: "",
-    birth_date: "",
-
-    // Categoria encontrada automaticamente
-    category: null,
-
-    // Aula experimental
-    experimental_date: "",
-    experimental_time: "",
-
-    // Responsável
-    responsible_name: "",
-    phone: "",
-    email: "",
-    neighborhood: "",
-
-    // Histórico
-    trained_elsewhere: false,
-    previous_club: "",
-
-    // Origem
-    source: "Instagram",
-    observations: "",
-  });
+  const [form, setForm] = useState(INITIAL_FORM);
 
   function updateField(field, value) {
     setForm((prev) => ({
@@ -46,17 +54,47 @@ export default function RegistrationForm() {
       [field]: value,
     }));
   }
-
-  if (success) {
-    return <SuccessScreen type={success} />;
+  function handleJoinInterestList() {
+    setStep(3);
   }
 
-  async function handleFinish() {
-    try {
-      const isWaitingList =
-        form.category?.trial_status === "waiting_list";
+   async function handleFinish() {
+    const isInterestList = !!form.interest_reason;
 
-      await createContact({
+    /*
+     * Status, canal de entrada e horário da experimental são
+     * definidos pela função public_register no banco — o site
+     * público não grava direto nas tabelas.
+     */
+    try {
+      if (isInterestList) {
+        const type = await submitPublicRegistration({
+          child_name: form.child_name,
+          birth_date: form.birth_date,
+
+          responsible_name: form.responsible_name,
+          phone: form.phone,
+          email: form.email,
+          neighborhood: form.neighborhood,
+
+          modality_id: form.modality?.id,
+
+          category_id: form.category?.id,
+
+          unit_id: form.unit?.id || null,
+          unit: form.unit?.name || null,
+
+          preferred_shift: form.preferred_shift || null,
+          observations: form.observations || null,
+
+          waiting_list_reason: form.interest_reason,
+        });
+
+        setSuccess(type);
+        return;
+      }
+
+      const type = await submitPublicRegistration({
         child_name: form.child_name,
         birth_date: form.birth_date,
 
@@ -65,41 +103,38 @@ export default function RegistrationForm() {
         email: form.email,
         neighborhood: form.neighborhood,
 
-        source: form.source,
-
         trained_elsewhere: form.trained_elsewhere,
-        previous_club: form.previous_club,
 
-        observations: form.observations,
+        previous_club: form.trained_elsewhere
+          ? form.previous_club
+          : null,
+
+        preferred_position: form.preferred_position,
+
+        coach_notes: form.coach_notes,
+
+        modality_id: form.modality?.id,
 
         category_id: form.category?.id,
 
-        experimental_date: isWaitingList
-          ? null
-          : form.experimental_date,
+        experimental_date: form.experimental_date,
 
-        experimental_time: isWaitingList
-          ? null
-          : form.experimental_time,
-
-        status: isWaitingList
-          ? "waiting_list"
-          : "pending_confirmation",
-
-        unit: "Viamão",
+        training_group_schedule_id: form.schedule?.id,
       });
 
-      setSuccess(
-        isWaitingList
-          ? "waiting_list"
-          : "scheduled"
-      );
+      setSuccess(type);
     } catch (error) {
-      console.error(error);
+      console.error("Erro completo:", error);
+
       alert(
-        "Não foi possível enviar sua solicitação. Tente novamente."
+        `${error?.message || "Erro desconhecido"}\n\n` +
+        `${error?.details || ""}`
       );
     }
+  }
+
+  if (success) {
+    return <SuccessScreen type={success} />;
   }
 
   return (
@@ -124,9 +159,10 @@ export default function RegistrationForm() {
           </h2>
 
           <p className="mt-4 max-w-2xl text-white/70">
-            Informe os dados do atleta, escolha uma data disponível para a aula
-            experimental e finalize sua solicitação. Nossa equipe confirmará o
-            agendamento pelo WhatsApp.
+            Informe os dados do atleta, escolha a modalidade, a turma e o
+            horário disponíveis para a aula experimental e finalize sua
+            solicitação. Nossa equipe confirmará o agendamento pelo
+            WhatsApp.
           </p>
 
           <div className="mt-10">
@@ -154,12 +190,13 @@ export default function RegistrationForm() {
             />
           )}
 
-          {step === 2 && (
+                  {step === 2 && (
             <ScheduleSelector
               form={form}
               updateField={updateField}
               onBack={() => setStep(1)}
               onNext={() => setStep(3)}
+              onInterestList={handleJoinInterestList}
             />
           )}
 

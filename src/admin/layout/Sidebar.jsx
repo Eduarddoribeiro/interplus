@@ -3,11 +3,11 @@ import {
   Users,
   CalendarDays,
   PhoneCall,
+  ListChecks,
   BarChart3,
-  Settings,
+  ShieldCheck,
   LogOut
-} from 'lucide-react'
-
+} from "lucide-react";
 import { NavLink } from 'react-router-dom'
 
 const menu = [
@@ -19,7 +19,7 @@ const menu = [
   {
     label: 'Contatos',
     icon: Users,
-    to: '/admin/students'
+    to: '/admin/contacts'
   },
   {
     label: 'Experimentais',
@@ -31,15 +31,21 @@ const menu = [
     icon: PhoneCall,
     to: '/admin/follow-ups'
   },
+
+  {
+  label: "Lista de Interesse",
+  icon: ListChecks,
+  to: "/admin/waiting-list",
+},
   {
     label: 'Relatórios',
     icon: BarChart3,
     to: '/admin/reports'
   },
   {
-    label: 'Configurações',
-    icon: Settings,
-    to: '/admin/settings'
+    label: 'Administração',
+    icon: ShieldCheck,
+    to: '/admin/administration'
   }
 ]
 
