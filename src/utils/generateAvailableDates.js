@@ -30,7 +30,13 @@ export function getNextOccurrence(weekday, daysAhead = 60) {
 
     if (date.getDay() !== jsTargetDay) continue;
 
-    const iso = date.toISOString().split("T")[0];
+    // Data local (toISOString usaria UTC e, à noite no Brasil,
+    // devolveria o dia seguinte).
+    const iso = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, "0"),
+      String(date.getDate()).padStart(2, "0"),
+    ].join("-");
 
     return {
       iso,

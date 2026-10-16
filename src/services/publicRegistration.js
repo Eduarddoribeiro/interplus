@@ -1,6 +1,5 @@
 import { supabase } from "../lib/supabase";
 import { getNextOccurrence } from "../utils/generateAvailableDates";
-import { EXPERIMENTAL_STATUS } from "../constants/experimentalStatus";
 
 /**
  * Serviço dedicado ao fluxo público de agendamento de aula
@@ -89,18 +88,15 @@ export async function getAvailableSchedules(trainingGroupId) {
 
       if (!next) return null;
 
-      const { count, error: countError } = await supabase
-        .from("experimental_sessions")
-        .select("*", {
-          count: "exact",
-          head: true,
-        })
-        .eq("training_group_schedule_id", scheduleRow.id)
-        .eq("experimental_date", next.iso)
-        .in("status", [
-          EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
-          EXPERIMENTAL_STATUS.CONFIRMED,
-        ]);
+      // O site público não lê experimental_sessions: a função
+      // devolve só a quantidade de vagas ocupadas.
+      const { data: count, error: countError } = await supabase.rpc(
+        "public_trial_occupancy",
+        {
+          p_schedule_id: scheduleRow.id,
+          p_date: next.iso,
+        },
+      );
 
       if (countError) throw countError;
 
@@ -120,21 +116,19 @@ export async function getAvailableSchedules(trainingGroupId) {
 }
 
 /**
- * @deprecated Não é mais chamada pelo fluxo público — a ocupação
- * agora é derivada de experimental_sessions, não de
- * current_experimentals. Mantida apenas porque a RPC ainda existe
- * no banco (decisão de manter current_experimentals dormente até a
- * limpeza final).
+ * Envia o cadastro público (aula experimental ou lista de
+ * interesse) para a função public_register, que valida os dados,
+ * confere a vaga e grava contato + experimental numa única
+ * transação.
+ *
+ * Retorna "scheduled" ou "waiting_list".
  */
-export async function incrementScheduleExperimentals(scheduleId) {
-  if (!scheduleId) return null;
-
-  const { data, error } = await supabase.rpc(
-    "increment_schedule_experimentals",
-    { p_schedule_id: scheduleId },
-  );
+export async function submitPublicRegistration(payload) {
+  const { data, error } = await supabase.rpc("public_register", {
+    p: payload,
+  });
 
   if (error) throw error;
 
-  return data;
+  return data?.type;
 }

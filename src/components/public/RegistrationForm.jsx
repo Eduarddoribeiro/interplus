@@ -8,8 +8,7 @@ import ResponsibleForm from "./components/ResponsibleForm";
 import ReviewCard from "./components/ReviewCard";
 import SuccessScreen from "./components/SuccessScreen";
 
-import { createContact } from "../../services/contacts";
-import { CONTACT_STATUS } from "../../constants/contactStatus";
+import { submitPublicRegistration } from "../../services/publicRegistration";
 
 const INITIAL_FORM = {
   child_name: "",
@@ -62,9 +61,14 @@ export default function RegistrationForm() {
    async function handleFinish() {
     const isInterestList = !!form.interest_reason;
 
+    /*
+     * Status, canal de entrada e horário da experimental são
+     * definidos pela função public_register no banco — o site
+     * público não grava direto nas tabelas.
+     */
     try {
       if (isInterestList) {
-        await createContact({
+        const type = await submitPublicRegistration({
           child_name: form.child_name,
           birth_date: form.birth_date,
 
@@ -73,31 +77,24 @@ export default function RegistrationForm() {
           email: form.email,
           neighborhood: form.neighborhood,
 
-          entry_channel: "public_form",
-
           modality_id: form.modality?.id,
 
-          interest_category_id: form.category?.id,
+          category_id: form.category?.id,
 
           unit_id: form.unit?.id || null,
-          training_group_id: form.training_group?.id || null,
+          unit: form.unit?.name || null,
 
           preferred_shift: form.preferred_shift || null,
-          observations: form.observations
-            ? form.observations
-            : null,
+          observations: form.observations || null,
 
-          status: CONTACT_STATUS.WAITING_LIST,
           waiting_list_reason: form.interest_reason,
-
-          unit: form.unit?.name || "Viamão",
         });
 
-        setSuccess("waiting_list");
+        setSuccess(type);
         return;
       }
 
-      await createContact({
+      const type = await submitPublicRegistration({
         child_name: form.child_name,
         birth_date: form.birth_date,
 
@@ -105,8 +102,6 @@ export default function RegistrationForm() {
         phone: form.phone,
         email: form.email,
         neighborhood: form.neighborhood,
-
-        entry_channel: "public_form",
 
         trained_elsewhere: form.trained_elsewhere,
 
@@ -124,18 +119,10 @@ export default function RegistrationForm() {
 
         experimental_date: form.experimental_date,
 
-        experimental_time: form.experimental_time,
-
-        training_group_id: form.training_group?.id,
-
         training_group_schedule_id: form.schedule?.id,
-
-        status: CONTACT_STATUS.PENDING_CONFIRMATION,
-
-        unit: form.unit?.name || "Viamão",
       });
 
-      setSuccess("scheduled");
+      setSuccess(type);
     } catch (error) {
       console.error("Erro completo:", error);
 
