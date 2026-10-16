@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useScrolled } from "../../hooks/useScrolled";
 
 const links = [
@@ -55,6 +56,17 @@ export default function Navbar() {
               </a>
             ))}
 
+            <Link
+              to="/experimental"
+              className={`px-6 py-3 rounded-full border text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 ${
+                scrolled
+                  ? "border-inter-red text-inter-red hover:bg-inter-red hover:text-white"
+                  : "border-white/70 text-white hover:bg-white hover:text-neutral-950"
+              }`}
+            >
+              Aula experimental
+            </Link>
+
             <a
               href="#seja-parceiro"
               className="px-6 py-3 rounded-full bg-inter-red text-white text-sm font-semibold transition-all duration-300 hover:bg-inter-red-dark hover:-translate-y-0.5 hover:shadow-lg"
@@ -96,6 +108,14 @@ export default function Navbar() {
                   {link.label}
                 </a>
               ))}
+
+              <Link
+                to="/experimental"
+                onClick={() => setOpen(false)}
+                className="mt-2 rounded-full border border-inter-red py-4 text-center text-inter-red font-semibold"
+              >
+                Aula experimental
+              </Link>
 
               <a
                 href="#seja-parceiro"
