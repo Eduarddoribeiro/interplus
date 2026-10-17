@@ -7,10 +7,10 @@ import SectionTitle from "../../../components/common/SectionTitle";
 import { getActiveLocations } from "../../../../services/administration/locations";
 import { getActiveModalities } from "../../../../services/administration/modalities";
 import { getActiveCategories } from "../../../../services/categories";
-import { getActiveCoaches } from "../../../../services/administration/coaches";
 import {
   createTrainingGroup,
   getTrainingGroup,
+  setTrainingGroupCategories,
   updateTrainingGroup,
 } from "../../../../services/administration/trainingGroups";
 
@@ -23,8 +23,7 @@ const EMPTY_FORM = {
   name: "",
   location_id: "",
   modality_id: "",
-  category_id: "",
-  coach_id: "",
+  category_ids: [],
   status: TRAINING_GROUP_STATUS.OPEN,
   featured: false,
 };
@@ -33,7 +32,9 @@ const EMPTY_FORM = {
  * Cadastro e edição de turma.
  *
  * A unidade não é escolhida aqui: ela vem do local
- * (Unidade = cidade, Local = ginásio/arena).
+ * (Unidade = cidade, Local = ginásio/arena). Uma turma pode
+ * atender mais de uma categoria (ex.: Sub-15 e Sub-17); os
+ * professores ficam em cada horário.
  */
 export default function TrainingGroupForm() {
   const navigate = useNavigate();
@@ -43,7 +44,6 @@ export default function TrainingGroupForm() {
   const [locations, setLocations] = useState([]);
   const [modalities, setModalities] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [coaches, setCoaches] = useState([]);
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -56,27 +56,26 @@ export default function TrainingGroupForm() {
 
   async function loadData() {
     try {
-      const [locations, modalities, categories, coaches, group] =
+      const [locations, modalities, categories, group] =
         await Promise.all([
           getActiveLocations(),
           getActiveModalities(),
           getActiveCategories(),
-          getActiveCoaches(),
           isEditing ? getTrainingGroup(id) : null,
         ]);
 
       setLocations(locations);
       setModalities(modalities);
       setCategories(categories);
-      setCoaches(coaches);
 
       if (group) {
         setForm({
           name: group.name ?? "",
           location_id: group.location_id ?? "",
           modality_id: group.modality_id ?? "",
-          category_id: group.category_id ?? "",
-          coach_id: group.coach_id ?? "",
+          category_ids: group.categories?.length
+            ? group.categories.map((item) => item.category?.id).filter(Boolean)
+            : [group.category_id].filter(Boolean),
           status: group.status ?? TRAINING_GROUP_STATUS.OPEN,
           featured: !!group.featured,
         });
@@ -96,6 +95,15 @@ export default function TrainingGroupForm() {
     }));
   }
 
+  function toggleCategory(categoryId) {
+    setForm((old) => ({
+      ...old,
+      category_ids: old.category_ids.includes(categoryId)
+        ? old.category_ids.filter((item) => item !== categoryId)
+        : [...old.category_ids, categoryId],
+    }));
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -103,8 +111,13 @@ export default function TrainingGroupForm() {
       (item) => String(item.id) === String(form.location_id),
     );
 
-    if (!form.name.trim() || !location || !form.modality_id || !form.category_id) {
-      setError("Preencha nome, local, modalidade e categoria.");
+    // Categorias na ordem do cadastro (a primeira é a principal)
+    const categoryIds = categories
+      .map((category) => category.id)
+      .filter((categoryId) => form.category_ids.includes(categoryId));
+
+    if (!form.name.trim() || !location || !form.modality_id || !categoryIds.length) {
+      setError("Preencha nome, local, modalidade e ao menos uma categoria.");
       return;
     }
 
@@ -113,8 +126,7 @@ export default function TrainingGroupForm() {
       location_id: location.id,
       unit_id: location.unit_id,
       modality_id: form.modality_id,
-      category_id: form.category_id,
-      coach_id: form.coach_id || null,
+      category_id: categoryIds[0],
       status: form.status,
       featured: form.featured,
     };
@@ -126,6 +138,8 @@ export default function TrainingGroupForm() {
       const trainingGroup = isEditing
         ? await updateTrainingGroup(id, payload)
         : await createTrainingGroup(payload);
+
+      await setTrainingGroupCategories(trainingGroup.id, categoryIds);
 
       navigate(`/admin/administration/training-groups/${trainingGroup.id}`);
     } catch (err) {
@@ -196,23 +210,37 @@ export default function TrainingGroupForm() {
             items={modalities}
           />
 
-          <Select
-            label="Categoria"
-            name="category_id"
-            value={form.category_id}
-            onChange={handleChange}
-            items={categories}
-          />
-
-          <Select
-            label="Professor"
-            name="coach_id"
-            value={form.coach_id}
-            onChange={handleChange}
-            items={coaches}
-          />
-
         </div>
+
+        {/* CATEGORIAS */}
+        <fieldset>
+          <legend className="mb-2">Categorias atendidas</legend>
+
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => {
+              const selected = form.category_ids.includes(category.id);
+
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => toggleCategory(category.id)}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                    selected
+                      ? "border-red-600 bg-red-50 text-red-700"
+                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
+                  }`}
+                >
+                  {category.name}
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="mt-2 text-sm text-neutral-500">
+            Marque mais de uma quando a turma juntar categorias (ex.: Sub-15 e Sub-17).
+          </p>
+        </fieldset>
 
         {/* SITUAÇÃO */}
         <fieldset className="space-y-3">

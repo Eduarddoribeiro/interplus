@@ -19,7 +19,7 @@ export async function getCategories() {
     .from("categories")
     .select(`
       *,
-      training_groups(count)
+      training_group_categories(count)
     `)
     .order("order_index");
 
@@ -27,7 +27,7 @@ export async function getCategories() {
 
   return (data ?? []).map((category) => ({
     ...category,
-    training_groups_count: category.training_groups?.[0]?.count ?? 0,
+    training_groups_count: category.training_group_categories?.[0]?.count ?? 0,
   }));
 }
 

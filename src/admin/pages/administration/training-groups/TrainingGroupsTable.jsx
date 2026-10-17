@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Pencil } from "lucide-react";
 
 import TrainingGroupStatusBadge from "../components/TrainingGroupStatusBadge";
+import { getTrainingGroupCategoryNames } from "../../../../services/administration/trainingGroups";
 
 export default function TrainingGroupsTable({
   groups,
@@ -31,7 +32,7 @@ export default function TrainingGroupsTable({
             </th>
 
             <th className="px-6 py-4 text-left">
-              Categoria
+              Categorias
             </th>
 
             <th className="px-6 py-4 text-left">
@@ -42,9 +43,6 @@ export default function TrainingGroupsTable({
               Local
             </th>
 
-            <th className="px-6 py-4 text-left">
-              Professor
-            </th>
 
             <th className="px-6 py-4 text-left">
               Status
@@ -65,7 +63,7 @@ export default function TrainingGroupsTable({
             <tr>
 
               <td
-                colSpan={7}
+                colSpan={6}
                 className="px-6 py-16 text-center text-neutral-500"
               >
                 Nenhuma turma cadastrada.
@@ -87,7 +85,7 @@ export default function TrainingGroupsTable({
                 </td>
 
                 <td className="px-6 py-5">
-                  {group.category?.name}
+                  {getTrainingGroupCategoryNames(group)}
                 </td>
 
                 <td className="px-6 py-5">
@@ -103,9 +101,6 @@ export default function TrainingGroupsTable({
                   )}
                 </td>
 
-                <td className="px-6 py-5">
-                  {group.coach?.name ?? "-"}
-                </td>
 
                 <td className="px-6 py-5">
 

@@ -7,7 +7,9 @@ export default function ScheduleModal({
   open,
   editing,
   form,
+  coaches = [],
   onChange,
+  onToggleCoach,
   onClose,
   onSave,
 }) {
@@ -67,6 +69,33 @@ export default function ScheduleModal({
         </FormField>
 
       </div>
+
+      <FormField label="Professores">
+        <div className="flex flex-wrap gap-2">
+          {coaches.map((coach) => {
+            const selected = form.coach_ids?.includes(coach.id);
+
+            return (
+              <button
+                key={coach.id}
+                type="button"
+                onClick={() => onToggleCoach?.(coach.id)}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                  selected
+                    ? "border-red-600 bg-red-50 text-red-700"
+                    : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
+                }`}
+              >
+                {coach.name}
+              </button>
+            );
+          })}
+
+          {coaches.length === 0 && (
+            <p className="text-sm text-neutral-500">Nenhum professor ativo cadastrado.</p>
+          )}
+        </div>
+      </FormField>
 
       <label className="flex items-center gap-3">
         <input
