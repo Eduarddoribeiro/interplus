@@ -17,6 +17,7 @@ import { WEEKDAY_LABELS } from "../../../../constants/weekdays";
 
 import CrudTable from "../components/CrudTable";
 import StatusBadge from "../components/StatusBadge";
+import TrainingGroupStatusBadge from "../components/TrainingGroupStatusBadge";
 import ConfirmDialog from "../components/ConfirmDialog";
 
 import ScheduleModal from "../schedules/ScheduleModal";
@@ -165,17 +166,42 @@ export default function TrainingGroupDetails() {
         Voltar
       </button>
 
-      <SectionTitle
-        title={group.name}
-        subtitle="Gerencie os dados e horários desta turma."
-      />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <SectionTitle
+          title={group.name}
+          subtitle="Gerencie os dados e horários desta turma."
+        />
 
-      <div className="grid grid-cols-2 gap-6 rounded-2xl border border-neutral-200 bg-white p-6 md:grid-cols-4">
+        <button
+          onClick={() =>
+            navigate(`/admin/administration/training-groups/${group.id}/edit`)
+          }
+          className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-3 font-medium hover:bg-neutral-50"
+        >
+          <Pencil size={18} />
+          Editar turma
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6 rounded-2xl border border-neutral-200 bg-white p-6 md:grid-cols-3">
 
         <Info label="Categoria" value={group.category?.name} />
         <Info label="Modalidade" value={group.modality?.name} />
         <Info label="Professor" value={group.coach?.name} />
+        <Info label="Local" value={group.location?.name} />
         <Info label="Unidade" value={group.unit?.name} />
+
+        <div>
+          <p className="text-sm text-neutral-500">Situação</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <TrainingGroupStatusBadge status={group.status} />
+            {group.featured && (
+              <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+                Destaque
+              </span>
+            )}
+          </div>
+        </div>
 
       </div>
 

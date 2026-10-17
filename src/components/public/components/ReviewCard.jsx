@@ -76,11 +76,6 @@ export default function ReviewCard({
         />
 
         <Info
-          label="Modalidade"
-          value={form.modality?.name}
-        />
-
-        <Info
           label="Categoria"
           value={form.category?.name}
           highlight
@@ -115,13 +110,8 @@ export default function ReviewCard({
         <Section title="Lista de Interesse">
 
           <Info
-            label="Unidade"
-            value={form.unit?.name}
-          />
-
-          <Info
-            label="Turma de interesse"
-            value={form.training_group?.name}
+            label="Local de preferência"
+            value={form.preferred_location?.name || "Qualquer local"}
           />
 
           <Info
@@ -141,8 +131,13 @@ export default function ReviewCard({
         <Section title="Aula Experimental">
 
           <Info
-            label="Unidade"
-            value={form.unit?.name}
+            label="Modalidade"
+            value={form.modality?.name}
+          />
+
+          <Info
+            label="Local"
+            value={form.location?.name}
           />
 
           <Info

@@ -89,7 +89,7 @@ export default function UnitsPage() {
     <>
       <CrudPage
         title="Unidades"
-        subtitle="Gerencie as unidades da escola."
+        subtitle="Cidades onde a escola atua. Os ginásios e arenas ficam em Locais."
         createLabel="Nova Unidade"
         onCreate={handleCreate}
       >

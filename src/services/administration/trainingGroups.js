@@ -10,6 +10,10 @@ export async function getTrainingGroups() {
         id,
         name
       ),
+      location:locations(
+        id,
+        name
+      ),
       modality:modalities(
         id,
         name
@@ -36,6 +40,10 @@ export async function getTrainingGroup(id) {
     .select(`
       *,
       unit:units(
+        id,
+        name
+      ),
+      location:locations(
         id,
         name
       ),
@@ -85,11 +93,11 @@ export async function updateTrainingGroup(id, group) {
   return data;
 }
 
-export async function toggleTrainingGroup(id, active) {
+export async function updateTrainingGroupStatus(id, status) {
   const { data, error } = await supabase
     .from("training_groups")
     .update({
-      active,
+      status,
     })
     .eq("id", id)
     .select()
@@ -117,9 +125,10 @@ export async function getActiveTrainingGroups() {
       name,
       category:categories(name),
       modality:modalities(name),
-      unit:units(name)
+      unit:units(name),
+      location:locations(name)
     `)
-    .eq("active", true)
+    .neq("status", "inactive")
     .order("name");
 
   if (error) throw error;

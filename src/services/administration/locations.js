@@ -20,7 +20,7 @@ export async function getLocations() {
 export async function getActiveLocations() {
   const { data, error } = await supabase
     .from("locations")
-    .select("id, name, unit_id")
+    .select("id, name, unit_id, unit:units(id, name)")
     .eq("active", true)
     .order("name");
 

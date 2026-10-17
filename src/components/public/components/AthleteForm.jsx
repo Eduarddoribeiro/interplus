@@ -1,35 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { getCategoryByBirthDate } from "../../../services/categories";
-import { getActiveModalities } from "../../../services/administration/modalities";
 
 export default function AthleteForm({
   form,
   updateField,
   onNext,
 }) {
-  const [modalities, setModalities] = useState([]);
-  const [loadingModalities, setLoadingModalities] = useState(true);
-
-  useEffect(() => {
-    async function loadModalities() {
-      try {
-        setLoadingModalities(true);
-
-        const data = await getActiveModalities();
-
-        setModalities(data);
-      } catch (err) {
-        console.error("Erro ao buscar modalidades:", err);
-
-        setModalities([]);
-      } finally {
-        setLoadingModalities(false);
-      }
-    }
-
-    loadModalities();
-  }, []);
-
   useEffect(() => {
     async function loadCategory() {
       if (!form.birth_date) {
@@ -74,21 +50,6 @@ export default function AthleteForm({
 
   const category = form.category;
 
-  function handleModalityChange(e) {
-    const modalityId = e.target.value;
-
-    if (!modalityId) {
-      updateField("modality", null);
-      return;
-    }
-
-    const modality = modalities.find(
-      (item) => String(item.id) === modalityId
-    );
-
-    updateField("modality", modality ?? null);
-  }
-
   return (
     <div className="space-y-8">
 
@@ -99,8 +60,8 @@ export default function AthleteForm({
         </h2>
 
         <p className="mt-2 text-neutral-500">
-          Informe os dados do atleta, escolha a modalidade desejada e
-          encontraremos automaticamente a categoria correta.
+          Informe o nome e a data de nascimento. Encontraremos
+          automaticamente a categoria e as turmas para a idade do atleta.
         </p>
       </div>
 
@@ -122,32 +83,6 @@ export default function AthleteForm({
             className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-red-600 focus:ring-2 focus:ring-red-600/10"
             placeholder="Nome completo"
           />
-        </div>
-
-        {/* MODALIDADE */}
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-neutral-900">
-            Modalidade
-          </label>
-
-          <select
-            value={form.modality?.id ?? ""}
-            onChange={handleModalityChange}
-            disabled={loadingModalities}
-            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 outline-none transition focus:border-red-600 focus:ring-2 focus:ring-red-600/10 disabled:bg-neutral-100 disabled:text-neutral-400"
-          >
-            <option value="">
-              {loadingModalities
-                ? "Carregando modalidades..."
-                : "Selecione..."}
-            </option>
-
-            {modalities.map((modality) => (
-              <option key={modality.id} value={modality.id}>
-                {modality.name}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* NASCIMENTO */}
@@ -203,8 +138,8 @@ export default function AthleteForm({
           <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-4 sm:px-6">
 
             <p className="text-sm leading-relaxed text-neutral-600">
-              No próximo passo você poderá escolher a unidade, a turma e o
-              horário disponíveis para a aula experimental.
+              No próximo passo você verá os locais e horários com vaga
+              para a aula experimental.
             </p>
 
           </div>
@@ -220,7 +155,6 @@ export default function AthleteForm({
           disabled={
             !form.child_name ||
             !form.birth_date ||
-            !form.modality ||
             !category
           }
           onClick={onNext}

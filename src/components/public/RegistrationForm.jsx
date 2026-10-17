@@ -18,6 +18,7 @@ const INITIAL_FORM = {
   category: null,
 
   unit: null,
+  location: null,
   training_group: null,
   schedule: null,
 
@@ -39,6 +40,7 @@ const INITIAL_FORM = {
 
   // Lista de Interesse (Cenário 1 e 2)
   interest_reason: null,
+  preferred_location: null,
   preferred_shift: "any",
   observations: "",
 };
@@ -62,9 +64,10 @@ export default function RegistrationForm() {
     const isInterestList = !!form.interest_reason;
 
     /*
-     * Status, canal de entrada e horário da experimental são
-     * definidos pela função public_register no banco — o site
-     * público não grava direto nas tabelas.
+     * Status, canal de entrada, horário, unidade, local, turma e
+     * modalidade são definidos pela função public_register a
+     * partir do horário escolhido — o site público não grava
+     * direto nas tabelas.
      */
     try {
       if (isInterestList) {
@@ -77,12 +80,9 @@ export default function RegistrationForm() {
           email: form.email,
           neighborhood: form.neighborhood,
 
-          modality_id: form.modality?.id,
-
           category_id: form.category?.id,
 
-          unit_id: form.unit?.id || null,
-          unit: form.unit?.name || null,
+          location_id: form.preferred_location?.id || null,
 
           preferred_shift: form.preferred_shift || null,
           observations: form.observations || null,
@@ -113,13 +113,11 @@ export default function RegistrationForm() {
 
         coach_notes: form.coach_notes,
 
-        modality_id: form.modality?.id,
-
         category_id: form.category?.id,
 
         experimental_date: form.experimental_date,
 
-        training_group_schedule_id: form.schedule?.id,
+        training_group_schedule_id: form.schedule?.schedule_id,
       });
 
       setSuccess(type);
@@ -159,8 +157,8 @@ export default function RegistrationForm() {
           </h2>
 
           <p className="mt-4 max-w-2xl text-white/70">
-            Informe os dados do atleta, escolha a modalidade, a turma e o
-            horário disponíveis para a aula experimental e finalize sua
+            Informe a data de nascimento do atleta, escolha o local e o
+            horário com vaga para a aula experimental e finalize sua
             solicitação. Nossa equipe confirmará o agendamento pelo
             WhatsApp.
           </p>

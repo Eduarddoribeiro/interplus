@@ -1,13 +1,33 @@
 import { useEffect, useState } from "react";
+import { CalendarDays, Clock, MapPin, Star } from "lucide-react";
 
 import { WEEKDAY_LABELS } from "../../../constants/weekdays";
- 
 
 import {
-  getTrainingGroupsForPublic,
-  getAvailableSchedules,
+  getTrialOptions,
+  getPublicLocations,
+  groupTrialOptions,
 } from "../../../services/publicRegistration";
 
+const formatTime = (time) => time?.slice(0, 5);
+
+function formatNextDate(iso) {
+  if (!iso) return "";
+
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+  });
+}
+
+/*
+ * Etapa 2 do formulário público.
+ *
+ * Mostra as turmas ABERTAS da categoria do atleta, cada uma com
+ * modalidade, local, endereço e os horários com a próxima data.
+ * Sem turma aberta (ou todos os horários lotados), oferece a lista
+ * de interesse com preferência de local opcional.
+ */
 export default function ScheduleSelector({
   form,
   updateField,
@@ -15,154 +35,67 @@ export default function ScheduleSelector({
   onNext,
   onInterestList,
 }) {
-  const modality = form.modality;
   const category = form.category;
 
-  const formatTime = (time) => time?.slice(0, 5);
+  const [loading, setLoading] = useState(true);
+  const [groups, setGroups] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [loadError, setLoadError] = useState(false);
 
-  const [loadingGroups, setLoadingGroups] = useState(true);
-  const [allGroups, setAllGroups] = useState([]);
-
-  const [loadingSchedules, setLoadingSchedules] = useState(false);
-  const [schedules, setSchedules] = useState([]);
-
-  /* =========================================================
-   * 1. TURMAS (Modalidade + Categoria)
-   * =======================================================*/
   useEffect(() => {
-    async function loadGroups() {
-      if (!modality?.id || !category?.id) {
-        setAllGroups([]);
-        setLoadingGroups(false);
+    async function load() {
+      if (!category?.id) {
+        setGroups([]);
+        setLoading(false);
         return;
       }
 
       try {
-        setLoadingGroups(true);
+        setLoading(true);
+        setLoadError(false);
 
-        const data = await getTrainingGroupsForPublic(
-          modality.id,
-          category.id
-        );
+        const [options, locationsData] = await Promise.all([
+          getTrialOptions(category.id),
+          getPublicLocations(),
+        ]);
 
-        setAllGroups(data);
-
-        // Reseta seleções dependentes ao mudar modalidade/categoria
-        updateField("unit", null);
-        updateField("training_group", null);
-        updateField("schedule", null);
+        setGroups(groupTrialOptions(options));
+        setLocations(locationsData);
       } catch (error) {
         console.error("Erro ao buscar turmas:", error);
-
-        setAllGroups([]);
+        setGroups([]);
+        setLoadError(true);
       } finally {
-        setLoadingGroups(false);
+        setLoading(false);
       }
     }
 
-    loadGroups();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modality?.id, category?.id]);
+    load();
+  }, [category?.id]);
 
-  /* =========================================================
-   * UNIDADES DISPONÍVEIS (derivadas das turmas encontradas)
-   * =======================================================*/
-  const units = [];
-  const seenUnitIds = new Set();
-
-  allGroups.forEach((group) => {
-    if (group.unit && !seenUnitIds.has(group.unit.id)) {
-      seenUnitIds.add(group.unit.id);
-      units.push(group.unit);
-    }
-  });
-
-  /* =========================================================
-   * 2. UNIDADE — seleciona automaticamente quando só há uma
-   * =======================================================*/
-  useEffect(() => {
-    if (loadingGroups) return;
-
-    if (units.length === 1 && !form.unit) {
-      updateField("unit", units[0]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingGroups, units.length]);
-
-  const groupsForUnit = form.unit
-    ? allGroups.filter((group) => group.unit?.id === form.unit.id)
-    : [];
-
-  /* =========================================================
-   * 2.1 TURMA — seleciona automaticamente quando só há uma
-   *      disponível para a unidade escolhida (mesmo padrão da
-   *      etapa de Unidade).
-   * =======================================================*/
-  useEffect(() => {
-    if (loadingGroups) return;
-    if (!form.unit) return;
-
-    if (groupsForUnit.length === 1 && !form.training_group) {
-      updateField("training_group", groupsForUnit[0]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingGroups, form.unit?.id, groupsForUnit.length]);
-
-  /* =========================================================
-   * 3. HORÁRIOS DISPONÍVEIS DA TURMA SELECIONADA
-   * =======================================================*/
-  useEffect(() => {
-    async function loadSchedules() {
-      if (!form.training_group?.id) {
-        setSchedules([]);
-        return;
-      }
-
-      try {
-        setLoadingSchedules(true);
-
-        const data = await getAvailableSchedules(form.training_group.id);
-
-        setSchedules(data);
-      } catch (error) {
-        console.error("Erro ao buscar horários:", error);
-
-        setSchedules([]);
-      } finally {
-        setLoadingSchedules(false);
-      }
-    }
-
-    loadSchedules();
-  }, [form.training_group?.id]);
-
-  function handleSelectUnit(unit) {
-    updateField("unit", unit);
-    updateField("training_group", null);
-    updateField("schedule", null);
-  }
-
-  function handleSelectGroup(group) {
-    updateField("training_group", group);
-    updateField("schedule", null);
-  }
-
-   function handleSelectSchedule(schedule) {
+  function handleSelectSchedule(group, schedule) {
     updateField("schedule", schedule);
+    updateField("training_group", { id: group.id, name: group.name });
+    updateField("modality", group.modality);
+    updateField("location", group.location);
+    updateField("unit", group.unit);
     updateField("experimental_date", schedule.next_date ?? "");
     updateField("experimental_time", schedule.start_time);
+    updateField("interest_reason", null);
   }
 
-    function handleJoinInterestList(reason) {
+  function handleJoinInterestList(reason) {
+    updateField("schedule", null);
+    updateField("training_group", null);
     updateField("interest_reason", reason);
     onInterestList();
   }
 
-  if (!modality || !category) {
+  if (!category) {
     return (
       <div className="space-y-6">
         <p className="font-semibold text-red-600">
-          Não foi possível identificar a modalidade e a categoria.
+          Não foi possível identificar a categoria do atleta.
         </p>
 
         <button onClick={onBack} className="rounded-xl border px-6 py-3">
@@ -172,198 +105,183 @@ export default function ScheduleSelector({
     );
   }
 
-  if (loadingGroups) {
+  if (loading) {
     return (
-      <div className="py-20 text-center">Carregando turmas disponíveis...</div>
+      <div className="py-20 text-center text-neutral-500">
+        Carregando turmas disponíveis...
+      </div>
     );
   }
 
-  const noGroupsAtAll = allGroups.length === 0;
+  const hasGroups = groups.length > 0;
 
-  const showUnitPicker = !noGroupsAtAll && units.length > 1;
-
-  const showGroupPicker =
-    !noGroupsAtAll && !!form.unit && groupsForUnit.length > 1;
-
-  const showNoGroupsForUnit =
-    !noGroupsAtAll && !!form.unit && groupsForUnit.length === 0;
-
-  const canShowSchedules = !noGroupsAtAll && !!form.training_group;
-  const canContinue = !!form.schedule;
+  const hasFreeSchedule = groups.some((group) =>
+    group.schedules.some((schedule) => schedule.spots_left !== 0),
+  );
 
   return (
     <div className="space-y-8">
       {/* Cabeçalho */}
       <div>
-        <h2 className="text-3xl font-bold text-neutral-900">
-          Escolha a turma e o horário
+        <span className="text-xs font-semibold uppercase tracking-[0.20em] text-red-600">
+          {category.name}
+        </span>
+
+        <h2 className="mt-2 text-3xl font-bold text-neutral-900">
+          Escolha o horário da aula experimental
         </h2>
 
         <p className="mt-2 text-neutral-500">
-          Selecione a turma e o horário disponíveis para a aula experimental.
+          Estas são as turmas com vagas para a idade do atleta.
         </p>
       </div>
 
-      {/* Modalidade / Categoria */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <span className="text-xs font-semibold uppercase tracking-[0.20em] text-red-600">
-          {modality.name}
-        </span>
+      {loadError && (
+        <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-neutral-700">
+          Não foi possível carregar as turmas agora. Tente novamente em
+          alguns instantes.
+        </div>
+      )}
 
-        <h3 className="mt-2 text-4xl font-bold text-neutral-900">
-          {category.name}
-        </h3>
-      </div>
+      {/* Turmas abertas */}
+      {groups.map((group) => (
+        <div
+          key={group.id}
+          className={`rounded-2xl border bg-white p-6 shadow-sm ${
+            group.featured ? "border-red-200" : "border-neutral-200"
+          }`}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.20em] text-red-600">
+                {group.modality?.name}
+              </p>
 
-           {/* Sem turmas para a combinação — Cenário 1 */}
-      {noGroupsAtAll && (
+              <h3 className="mt-1 text-xl font-bold text-neutral-900">
+                {group.location?.name}
+              </h3>
+
+              <p className="mt-1 text-sm text-neutral-500">{group.name}</p>
+            </div>
+
+            {group.featured && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                <Star size={14} />
+                Novas turmas
+              </span>
+            )}
+          </div>
+
+          {group.location?.address && (
+            <p className="mt-3 flex items-start gap-2 text-sm text-neutral-600">
+              <MapPin size={16} className="mt-0.5 shrink-0" />
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  `${group.location.name}, ${group.location.address}`,
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline-offset-2 hover:underline"
+              >
+                {group.location.address}
+              </a>
+            </p>
+          )}
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {group.schedules.map((schedule) => {
+              const selected = form.schedule?.schedule_id === schedule.schedule_id;
+              const full = schedule.spots_left === 0;
+
+              return (
+                <button
+                  key={schedule.schedule_id}
+                  type="button"
+                  disabled={full}
+                  onClick={() => handleSelectSchedule(group, schedule)}
+                  className={`rounded-xl border p-4 text-left transition-all ${
+                    selected
+                      ? "border-red-600 bg-red-50 shadow-sm"
+                      : full
+                        ? "cursor-not-allowed border-neutral-200 bg-neutral-50 opacity-60"
+                        : "border-neutral-200 bg-white hover:border-red-300 hover:shadow-sm"
+                  }`}
+                >
+                  <p className="font-semibold text-neutral-900">
+                    {WEEKDAY_LABELS[schedule.weekday]}
+                  </p>
+
+                  <p className="mt-1 flex items-center gap-2 text-sm text-neutral-600">
+                    <Clock size={14} />
+                    {formatTime(schedule.start_time)} às{" "}
+                    {formatTime(schedule.end_time)}
+                  </p>
+
+                  <p className="mt-1 flex items-center gap-2 text-sm text-neutral-600">
+                    <CalendarDays size={14} />
+                    {full
+                      ? "Sem vagas nesta data"
+                      : `Próxima aula: ${formatNextDate(schedule.next_date)}`}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {/* Sem turma aberta ou tudo lotado: lista de interesse */}
+      {(!hasGroups || !hasFreeSchedule) && !loadError && (
         <div className="rounded-2xl border border-red-100 bg-red-50 p-6">
           <h3 className="text-xl font-bold text-neutral-900">
-            Ainda não temos turma para esta categoria
+            {hasGroups
+              ? "Todas as vagas de experimental estão preenchidas"
+              : "No momento não temos turma com vaga para esta idade"}
           </h3>
 
           <p className="mt-3 text-neutral-600">
-            No momento não há turmas de {modality.name} abertas para a
-            categoria {category.name}. Deixe seus dados e avisaremos assim
-            que uma nova turma for aberta.
+            Deixe seus dados na lista de interesse e avisaremos assim que
+            surgir uma vaga para a categoria {category.name}.
           </p>
+
+          {locations.length > 1 && (
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-semibold text-neutral-900">
+                Local de preferência
+              </label>
+
+              <select
+                value={form.preferred_location?.id ?? ""}
+                onChange={(e) =>
+                  updateField(
+                    "preferred_location",
+                    locations.find(
+                      (location) => String(location.id) === e.target.value,
+                    ) ?? null,
+                  )
+                }
+                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-neutral-900 outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600/10 sm:max-w-sm"
+              >
+                <option value="">Qualquer local</option>
+
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <button
             type="button"
-            onClick={() => handleJoinInterestList("future_class")}
+            onClick={() =>
+              handleJoinInterestList(hasGroups ? "no_vacancy" : "future_class")
+            }
             className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700"
           >
             Entrar na lista de interesse
           </button>
-        </div>
-      )}
-
-      {/* Unidade — exibida apenas quando houver mais de uma opção */}
-      {showUnitPicker && (
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-neutral-900">Unidade</p>
-
-          {units.map((unit) => {
-            const selected = form.unit?.id === unit.id;
-
-            return (
-              <button
-                key={unit.id}
-                type="button"
-                onClick={() => handleSelectUnit(unit)}
-                className={`w-full rounded-2xl border p-5 text-left transition-all ${
-                  selected
-                    ? "border-red-600 bg-red-50 shadow-sm"
-                    : "border-neutral-200 bg-white hover:border-red-300 hover:shadow-sm"
-                }`}
-              >
-                <p className="font-semibold text-neutral-900">{unit.name}</p>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Turma — exibida apenas quando houver mais de uma opção */}
-      {showNoGroupsForUnit && (
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-100 p-6">
-          <p className="text-neutral-600">
-            Nenhuma turma ativa encontrada para esta unidade.
-          </p>
-        </div>
-      )}
-
-      {showGroupPicker && (
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-neutral-900">Turma</p>
-
-          {groupsForUnit.map((group) => {
-            const selected = form.training_group?.id === group.id;
-
-            return (
-              <button
-                key={group.id}
-                type="button"
-                onClick={() => handleSelectGroup(group)}
-                className={`w-full rounded-2xl border p-5 text-left transition-all ${
-                  selected
-                    ? "border-red-600 bg-red-50 shadow-sm"
-                    : "border-neutral-200 bg-white hover:border-red-300 hover:shadow-sm"
-                }`}
-              >
-                <p className="font-semibold text-neutral-900">
-                  {group.name}
-                </p>
-
-                {group.coach?.name && (
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Professor(a): {group.coach.name}
-                  </p>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Horário */}
-      {canShowSchedules && (
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-neutral-900">Horário</p>
-
-          {loadingSchedules ? (
-            <div className="py-10 text-center text-neutral-500">
-              Carregando horários...
-            </div>
-                    ) : schedules.length === 0 ? (
-            <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-6">
-              <h3 className="text-xl font-bold text-neutral-900">
-                Todas as vagas estão preenchidas
-              </h3>
-
-              <p className="mt-3 text-neutral-600">
-                A turma {form.training_group?.name} está com todos os
-                horários de experimental lotados no momento. Deixe seus
-                dados e avisaremos assim que surgir uma vaga.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => handleJoinInterestList("no_vacancy")}
-                className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700"
-              >
-                Entrar na lista de interesse
-              </button>
-            </div>
-          ) : (
-            schedules.map((schedule) => {
-              const selected = form.schedule?.id === schedule.id;
-
-              return (
-                <button
-                  key={schedule.id}
-                  type="button"
-                  onClick={() => handleSelectSchedule(schedule)}
-                  className={`w-full rounded-2xl border p-5 text-left transition-all ${
-                    selected
-                      ? "border-red-600 bg-red-50 shadow-sm"
-                      : "border-neutral-200 bg-white hover:border-red-300 hover:shadow-sm"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="font-semibold text-neutral-900">
-                      {WEEKDAY_LABELS[schedule.weekday]}
-                    </p>
-
-                    <p className="text-sm text-neutral-600">
-                      {formatTime(schedule.start_time)} às{" "}
-                      {formatTime(schedule.end_time)}
-                    </p>
-                  </div>
-                </button>
-              );
-            })
-          )}
         </div>
       )}
 
@@ -379,7 +297,7 @@ export default function ScheduleSelector({
 
         <button
           type="button"
-          disabled={!canContinue}
+          disabled={!form.schedule}
           onClick={onNext}
           className="rounded-xl bg-red-600 px-8 py-3 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
