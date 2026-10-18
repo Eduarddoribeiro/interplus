@@ -1210,6 +1210,12 @@ const [waitingForm, setWaitingForm] = useState({
                           {session.notes}
                         </p>
                       ) : null}
+
+                      {session.coach_feedback ? (
+                        <p className="mt-2 whitespace-pre-wrap rounded-lg bg-green-50 p-2 text-xs leading-relaxed text-green-900">
+                          <strong>Professor:</strong> {session.coach_feedback}
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="flex gap-2">

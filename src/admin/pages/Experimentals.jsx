@@ -29,6 +29,10 @@ import {
 
 import SectionTitle from "../components/common/SectionTitle";
 import TrialSlotPicker from "../components/experimentals/TrialSlotPicker";
+import {
+  buildCoachLinkUrl,
+  getOrCreateCoachLink,
+} from "../../services/coachLinks";
 import { WEEKDAY_LABELS } from "../../constants/weekdays";
 
 import {
@@ -1229,6 +1233,11 @@ export default function Experimentals() {
           experimentals={
             scopedExperimentals
           }
+          locationId={
+            /^\d+$/.test(locationFilter)
+              ? Number(locationFilter)
+              : null
+          }
           initialDate={today}
           onClose={() =>
             setCoachListOpen(false)
@@ -1453,6 +1462,20 @@ const isReschedule =
             onSaveCoachNotes
           }
         />
+
+        {/* AVALIAÇÃO DO PROFESSOR (interna) */}
+
+        {item.coach_feedback && (
+          <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-green-800">
+              Avaliação do professor
+            </p>
+
+            <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-800">
+              {item.coach_feedback}
+            </p>
+          </div>
+        )}
 
         {/* AÇÕES */}
 
@@ -1768,6 +1791,7 @@ function CoachNotesEditor({
 function CoachListModal({
   experimentals,
   initialDate,
+  locationId,
   onClose,
 }) {
   const [selectedDate, setSelectedDate] =
@@ -1775,6 +1799,13 @@ function CoachListModal({
 
   const [copied, setCopied] =
     useState(false);
+
+  // Link para o professor marcar presença (sem login)
+  const [linkUrl, setLinkUrl] =
+    useState("");
+
+  const [linkError, setLinkError] =
+    useState("");
 
   const sessions = useMemo(() => {
     return experimentals
@@ -1807,14 +1838,38 @@ function CoachListModal({
     selectedDate,
   ]);
 
-  const text = useMemo(
-    () =>
-      createCoachWhatsAppText(
-        selectedDate,
-        sessions
-      ),
-    [selectedDate, sessions]
-  );
+  useEffect(() => {
+    let cancelled = false;
+
+    setLinkUrl("");
+    setLinkError("");
+
+    if (!sessions.length) return undefined;
+
+    getOrCreateCoachLink(selectedDate, locationId)
+      .then((token) => {
+        if (!cancelled) setLinkUrl(buildCoachLinkUrl(token));
+      })
+      .catch((err) => {
+        console.error("Erro ao gerar link dos professores:", err);
+        if (!cancelled) setLinkError("Não foi possível gerar o link de presença.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate, locationId, sessions.length]);
+
+  const text = useMemo(() => {
+    const list = createCoachWhatsAppText(
+      selectedDate,
+      sessions
+    );
+
+    return list && linkUrl
+      ? `${list}\n\n✅ Marcar quem veio: ${linkUrl}`
+      : list;
+  }, [selectedDate, sessions, linkUrl]);
 
   async function copyList() {
     try {
@@ -1914,6 +1969,20 @@ function CoachListModal({
           </div>
         ) : (
           <>
+            {linkError && (
+              <p className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">
+                {linkError}
+              </p>
+            )}
+
+            {linkUrl && (
+              <p className="mt-5 rounded-xl bg-green-50 p-3 text-xs text-green-800">
+                O link no fim da mensagem abre a lista no celular do
+                professor para marcar quem veio, sem login. Vale até
+                o fim do dia seguinte.
+              </p>
+            )}
+
             <div className="mt-5">
               <p className="text-sm font-semibold text-neutral-900">
                 Prévia da mensagem
