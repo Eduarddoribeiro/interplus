@@ -1852,7 +1852,13 @@ function CoachListModal({
       })
       .catch((err) => {
         console.error("Erro ao gerar link dos professores:", err);
-        if (!cancelled) setLinkError("Não foi possível gerar o link de presença.");
+        if (!cancelled) {
+          setLinkError(
+            `Não foi possível gerar o link de presença${
+              err?.message ? ` (${err.message})` : ""
+            }.`
+          );
+        }
       });
 
     return () => {
