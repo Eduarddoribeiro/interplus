@@ -2,17 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
-  AlertTriangle,
   ArrowRight,
-  CalendarClock,
   CheckCircle2,
-  Inbox,
   ListChecks,
   MapPin,
   MessageCircle,
-  PhoneCall,
   RefreshCw,
-  Users,
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
@@ -21,11 +16,12 @@ import { getDashboardData } from "../../services/dashboard";
 import { EXPERIMENTAL_STATUS_LABEL } from "../../constants/experimentalStatus";
 import { createWhatsAppUrl } from "../../helpers/contactPresentation";
 
-const SESSION_BADGE = {
-  pending_confirmation: "bg-amber-50 text-amber-700",
-  confirmed: "bg-blue-50 text-blue-700",
-  attended: "bg-green-50 text-green-700",
-  no_show: "bg-red-50 text-red-700",
+// Status da agenda: só um ponto discreto
+const SESSION_DOT = {
+  pending_confirmation: "bg-amber-400",
+  confirmed: "bg-neutral-900",
+  attended: "bg-neutral-300",
+  no_show: "bg-red-600",
 };
 
 const formatTime = (time) => time?.slice(0, 5) ?? "";
@@ -113,12 +109,11 @@ export default function Dashboard() {
   const pendingCards = [
     {
       key: "overdue",
+      urgent: true,
       value: pending.overdue,
       title: "Presença sem baixa",
       text: "Experimentais que já passaram sem 'veio' ou 'faltou'.",
       to: "/admin/experimentals?filtro=overdue",
-      icon: AlertTriangle,
-      tone: "border-red-200 bg-red-50 text-red-800",
     },
     {
       key: "toConfirm",
@@ -126,17 +121,14 @@ export default function Dashboard() {
       title: "Confirmar experimentais",
       text: "Nas próximas 48h e ainda não confirmadas.",
       to: "/admin/experimentals?filtro=future",
-      icon: CalendarClock,
-      tone: "border-amber-200 bg-amber-50 text-amber-900",
     },
     {
       key: "followUpsDue",
+      urgent: true,
       value: pending.followUpsDue,
       title: "Retornos vencidos",
       text: "Data de retorno é hoje ou já passou.",
       to: "/admin/follow-ups",
-      icon: PhoneCall,
-      tone: "border-orange-200 bg-orange-50 text-orange-900",
     },
     {
       key: "waitingNow",
@@ -144,8 +136,6 @@ export default function Dashboard() {
       title: "Lista: podem agendar agora",
       text: "Famílias da lista de interesse com vaga aberta.",
       to: "/admin/waiting-list",
-      icon: Users,
-      tone: "border-green-200 bg-green-50 text-green-900",
     },
     {
       key: "triage",
@@ -153,8 +143,6 @@ export default function Dashboard() {
       title: "Contatos para triagem",
       text: "Entraram pelo WhatsApp ou estão sem nome.",
       to: "/admin/contacts?aba=triage",
-      icon: Inbox,
-      tone: "border-neutral-200 bg-white text-neutral-800",
     },
   ].filter((card) => card.value > 0);
 
@@ -179,33 +167,53 @@ export default function Dashboard() {
       </div>
 
       {/* PENDÊNCIAS */}
+      {/* Uma faixa só, neutra; o vermelho marca apenas o que está atrasado */}
       {pendingCards.length === 0 ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-5 text-green-900">
-          <CheckCircle2 size={22} />
-          <p className="font-semibold">Tudo em dia. Nenhuma pendência agora.</p>
+        <div className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-6 py-5 text-neutral-700">
+          <CheckCircle2 size={20} className="text-neutral-400" />
+          <p className="font-medium">Tudo em dia. Nenhuma pendência agora.</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {pendingCards.map(({ key, value, title, text, to, icon: Icon, tone }) => (
-            <Link
-              key={key}
-              to={to}
-              className={`group rounded-2xl border p-5 transition hover:-translate-y-0.5 hover:shadow-md ${tone}`}
-            >
-              <div className="flex items-start justify-between">
-                <span className="font-display text-5xl leading-none">{value}</span>
-                <Icon size={22} className="opacity-70" />
-              </div>
+        <section>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+            Pendências
+          </p>
 
-              <p className="mt-3 font-bold">{title}</p>
-              <p className="mt-1 text-xs opacity-75">{text}</p>
+          <div className="grid overflow-hidden rounded-2xl border border-neutral-200 bg-white sm:grid-cols-2 xl:auto-cols-fr xl:grid-flow-col xl:grid-cols-none">
+            {pendingCards.map(({ key, value, title, text, to, urgent }, index) => (
+              <Link
+                key={key}
+                to={to}
+                className={`group flex flex-col justify-between px-6 py-5 transition-colors hover:bg-neutral-50 ${
+                  index > 0 ? "border-t border-neutral-100 sm:border-t-0 xl:border-l" : ""
+                } ${index % 2 === 1 ? "sm:border-l" : ""} ${index > 1 ? "sm:border-t xl:border-t-0" : ""}`}
+              >
+                <div>
+                  <p className="flex items-center gap-2 text-sm font-medium text-neutral-500">
+                    {urgent && <span className="h-1.5 w-1.5 rounded-full bg-red-600" />}
+                    {title}
+                  </p>
 
-              <p className="mt-3 flex items-center gap-1 text-xs font-semibold opacity-80 group-hover:opacity-100">
-                Resolver <ArrowRight size={13} />
-              </p>
-            </Link>
-          ))}
-        </div>
+                  <p
+                    className={`mt-2 font-display text-5xl leading-none ${
+                      urgent ? "text-red-700" : "text-neutral-900"
+                    }`}
+                  >
+                    {value}
+                  </p>
+                </div>
+
+                <p className="mt-4 flex items-end justify-between gap-3 text-xs leading-relaxed text-neutral-400">
+                  <span>{text}</span>
+                  <ArrowRight
+                    size={15}
+                    className="shrink-0 text-neutral-300 transition group-hover:translate-x-0.5 group-hover:text-neutral-700"
+                  />
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
       <div className="grid gap-8 xl:grid-cols-3">
@@ -265,11 +273,12 @@ export default function Dashboard() {
                             {session.category?.name}
                           </span>
 
-                          <span
-                            className={`rounded-md px-2 py-1 text-xs font-semibold ${
-                              SESSION_BADGE[session.status] ?? "bg-neutral-100 text-neutral-600"
-                            }`}
-                          >
+                          <span className="flex items-center gap-1.5 text-xs text-neutral-500">
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                SESSION_DOT[session.status] ?? "bg-neutral-300"
+                              }`}
+                            />
                             {EXPERIMENTAL_STATUS_LABEL[session.status] ?? session.status}
                           </span>
                         </li>
