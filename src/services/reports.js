@@ -28,6 +28,10 @@ export async function getReportsData() {
   const { data, error } = await supabase
     .from("contacts")
     .select(CONTACT_SELECT)
+    // Fora dos relatórios: arquivados e os criados automaticamente
+    // pelo WhatsApp que ainda não passaram pela triagem (status "new")
+    .is("archived_at", null)
+    .neq("status", "new")
     .order("created_at", {
       ascending: true,
     });
