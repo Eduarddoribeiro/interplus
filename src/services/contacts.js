@@ -81,6 +81,36 @@ const SESSION_CATEGORY_SELECT = `
   )
 `;
 
+/*
+ * Local do contato (preferência na lista de interesse ou local
+ * da experimental marcada).
+ */
+const CONTACT_LOCATION_SELECT = `
+  location:locations (
+    id,
+    name,
+    address
+  )
+`;
+
+/*
+ * Horário da experimental: turma, local e modalidade.
+ */
+const SESSION_SCHEDULE_SELECT = `
+  schedule:training_group_schedules (
+    id,
+    weekday,
+    start_time,
+    end_time,
+    training_group:training_groups (
+      id,
+      name,
+      location:locations ( id, name, address ),
+      modality:modalities ( id, name )
+    )
+  )
+`;
+
 /* =========================================================
  * CONTATO + CATEGORIAS
  * =======================================================*/
@@ -88,7 +118,8 @@ const SESSION_CATEGORY_SELECT = `
 const CONTACT_WITH_CATEGORY = `
   *,
   ${CONTACT_CATEGORY_SELECT},
-  ${INTEREST_CATEGORY_SELECT}
+  ${INTEREST_CATEGORY_SELECT},
+  ${CONTACT_LOCATION_SELECT}
 `;
 
 /* =========================================================
@@ -97,7 +128,8 @@ const CONTACT_WITH_CATEGORY = `
 
 const SESSION_WITH_CATEGORY = `
   *,
-  ${SESSION_CATEGORY_SELECT}
+  ${SESSION_CATEGORY_SELECT},
+  ${SESSION_SCHEDULE_SELECT}
 `;
 
 /* =========================================================
@@ -107,6 +139,7 @@ const SESSION_WITH_CATEGORY = `
 const SESSION_WITH_CONTACT = `
   *,
   ${SESSION_CATEGORY_SELECT},
+  ${SESSION_SCHEDULE_SELECT},
   contact:contacts (
     id,
     child_name,
@@ -123,6 +156,7 @@ const SESSION_WITH_CONTACT = `
     status,
     category_id,
     interest_category_id,
+    location_id,
     preferred_shift,
     preferred_days,
     qualification_status,
@@ -183,7 +217,13 @@ async function ensureExperimentalAvailability(trainingGroupScheduleId, experimen
       training_group_id,
       weekday,
       start_time,
-      experimental_limit
+      experimental_limit,
+      training_group:training_groups (
+        id,
+        location_id,
+        unit_id,
+        modality_id
+      )
     `,
     )
     .eq("id", trainingGroupScheduleId)
@@ -191,6 +231,13 @@ async function ensureExperimentalAvailability(trainingGroupScheduleId, experimen
 
   if (scheduleError) {
     throw scheduleError;
+  }
+
+  // weekday: 1 = segunda ... 7 = domingo
+  const isoWeekday = new Date(`${experimentalDate}T12:00:00`).getDay() || 7;
+
+  if (isoWeekday !== schedule.weekday) {
+    throw new Error("A data escolhida não corresponde ao dia da semana do horário.");
   }
 
   const { count, error: countError } = await supabase
@@ -219,6 +266,19 @@ async function ensureExperimentalAvailability(trainingGroupScheduleId, experimen
   }
 
   return schedule;
+}
+
+/*
+ * Turma, local, unidade e modalidade do contato a partir do
+ * horário da experimental (mesmo que o formulário público grava).
+ */
+function scheduleContactFields(schedule) {
+  return {
+    training_group_id: schedule.training_group?.id ?? schedule.training_group_id,
+    location_id: schedule.training_group?.location_id ?? null,
+    unit_id: schedule.training_group?.unit_id ?? null,
+    modality_id: schedule.training_group?.modality_id ?? null,
+  };
 }
 /* =========================================================
  * EXPERIMENTAIS
@@ -285,6 +345,7 @@ async function getLatestExperimentalSession(contactId) {
       experimental_date,
       experimental_time,
       status,
+      notes,
       created_at,
       updated_at
     `,
@@ -709,20 +770,15 @@ export async function createContact(contact) {
    *
    * Lista de interesse não ocupa vaga de experimental.
    *
-   * A disponibilidade agora é controlada por
+   * A disponibilidade é controlada por
    * training_group_schedule_id + experimental_date, contando
-   * experimental_sessions — não depende mais de
-   * categories.experimental_limit.
-   *
-   * Contatos criados sem training_group_schedule_id (ex.: cadastro
-   * manual no Admin via NewContactModal, ainda não migrado) não
-   * passam por esta validação.
+   * experimental_sessions — o mesmo limite do formulário público.
    */
-  if (
-    !isWaitingList &&
-    contact.training_group_schedule_id &&
-    contact.experimental_date
-  ) {
+  if (!isWaitingList && contact.experimental_date) {
+    if (!contact.training_group_schedule_id) {
+      throw new Error("Escolha a turma e o horário da experimental.");
+    }
+
     schedule = await ensureExperimentalAvailability(
       contact.training_group_schedule_id,
       contact.experimental_date,
@@ -742,6 +798,12 @@ export async function createContact(contact) {
 
   ...contactPayload
 } = contact;
+
+  if (schedule) {
+    Object.assign(contactPayload, scheduleContactFields(schedule), {
+      experimental_time: schedule.start_time,
+    });
+  }
 
   /*
    * Registra automaticamente quando o contato
@@ -1204,8 +1266,8 @@ export async function rescheduleExperimental(
   contactId,
   {
     categoryId,
+    trainingGroupScheduleId,
     experimentalDate,
-    experimentalTime = null,
     notes = "",
     coachNotes = "",
   },
@@ -1218,8 +1280,8 @@ export async function rescheduleExperimental(
     throw new Error("Selecione uma categoria.");
   }
 
-  if (!experimentalDate) {
-    throw new Error("Informe a data da experimental.");
+  if (!trainingGroupScheduleId || !experimentalDate) {
+    throw new Error("Escolha a turma, o horário e a data da experimental.");
   }
 
   const active = await getLatestExperimentalSession(contactId);
@@ -1231,34 +1293,69 @@ export async function rescheduleExperimental(
       EXPERIMENTAL_STATUS.CONFIRMED,
     ].includes(active.status);
 
-  if (hasActiveExperimental) {
-    throw new Error("Este contato já possui uma aula experimental agendada.");
-  }
-
-  const category = await ensureExperimentalAvailability(
-    categoryId,
+  const schedule = await ensureExperimentalAvailability(
+    trainingGroupScheduleId,
     experimentalDate,
   );
 
-  const time = experimentalTime || category?.start_time || null;
+  const time = schedule.start_time;
 
-  const session = await createExperimentalSession({
-    contactId,
-    categoryId,
-    experimentalDate,
-    experimentalTime: time,
+  /*
+   * Remarcar uma aula ainda ativa: a antiga vira "cancelada"
+   * (fica no histórico) e libera a vaga daquela data.
+   */
+  if (hasActiveExperimental) {
+    const { error: cancelError } = await supabase
+      .from("experimental_sessions")
+      .update({
+        status: EXPERIMENTAL_STATUS.CANCELLED,
+        notes: appendInternalNote(
+          active.notes,
+          `Remarcada para ${experimentalDate.split("-").reverse().join("/")}.`,
+        ),
+        ...withUpdatedAt(),
+      })
+      .eq("id", active.id);
 
-    status: EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+    if (cancelError) {
+      throw cancelError;
+    }
+  }
 
-    notes: notes || "Experimental reagendada.",
+  let session;
 
-    coachNotes,
-  });
+  try {
+    session = await createExperimentalSession({
+      contactId,
+      categoryId,
+      trainingGroupScheduleId,
+      experimentalDate,
+      experimentalTime: time,
+
+      status: EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+
+      notes: notes || "Experimental reagendada.",
+
+      coachNotes,
+    });
+  } catch (err) {
+    // Não conseguiu criar a nova: devolve a antiga como estava
+    if (hasActiveExperimental) {
+      await supabase
+        .from("experimental_sessions")
+        .update({ status: active.status, notes: active.notes })
+        .eq("id", active.id);
+    }
+
+    throw err;
+  }
 
   const updates = {
     status: CONTACT_STATUS.PENDING_CONFIRMATION,
 
     category_id: categoryId,
+
+    ...scheduleContactFields(schedule),
 
     experimental_date: experimentalDate,
 
@@ -1287,6 +1384,13 @@ export async function rescheduleExperimental(
 
     if (rollbackError) {
       console.error("Erro ao desfazer criação da experimental:", rollbackError);
+    }
+
+    if (hasActiveExperimental) {
+      await supabase
+        .from("experimental_sessions")
+        .update({ status: active.status, notes: active.notes })
+        .eq("id", active.id);
     }
 
     throw error;
@@ -1338,128 +1442,6 @@ export async function getFollowUpCenter() {
   };
 }
 
-/* =========================================================
- * EXPERIMENTAL A PARTIR DA LISTA DE INTERESSE
- * =======================================================*/
-
-export async function scheduleExperimentalFromWaitingList(
-  contactId,
-  { categoryId, experimentalDate, experimentalTime = null, coachNotes = "" },
-) {
-  if (!contactId) {
-    throw new Error("Contato não informado.");
-  }
-
-  if (!categoryId) {
-    throw new Error("Selecione uma categoria.");
-  }
-
-  if (!experimentalDate) {
-    throw new Error("Informe a data da experimental.");
-  }
-
-  const current = await getContactById(contactId);
-
-  if (current.status !== CONTACT_STATUS.WAITING_LIST) {
-    throw new Error("Este contato não está na lista de interesse.");
-  }
-const active = await getLatestExperimentalSession(contactId);
-
-const category = await ensureExperimentalAvailability(
-  categoryId,
-  experimentalDate,
-);
-
-const time = experimentalTime || category?.start_time || null;
-
-let session;
-
-if (
-  active &&
-  [
-    EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
-    EXPERIMENTAL_STATUS.CONFIRMED,
-  ].includes(active.status)
-) {
-  const { data, error } = await supabase
-    .from("experimental_sessions")
-    .update({
-      category_id: categoryId,
-      experimental_date: experimentalDate,
-      experimental_time: time,
-      coach_notes: cleanOptionalText(coachNotes),
-      notes: cleanOptionalText(notes) || active.notes,
-      ...withUpdatedAt(),
-    })
-    .eq("id", active.id)
-    .select(SESSION_WITH_CONTACT)
-    .single();
-
-  if (error) throw error;
-
-  session = data;
-} else {
-  session = await createExperimentalSession({
-    contactId,
-    categoryId,
-    experimentalDate,
-    experimentalTime: time,
-    status: EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
-    notes: notes || "Nova experimental agendada.",
-    coachNotes,
-  });
-}
-  
-  const updates = {
-    status: CONTACT_STATUS.PENDING_CONFIRMATION,
-
-    category_id: categoryId,
-
-    experimental_date: experimentalDate,
-
-    experimental_time: time,
-
-    experimental_result: null,
-
-    ...clearFollowUpFields(),
-    ...clearWaitingListFields(),
-    ...clearLostFields(),
-
-    ...withUpdatedAt(),
-  };
-
-  const { data, error } = await supabase
-    .from("contacts")
-    .update(updates)
-    .eq("id", contactId)
-    .select(CONTACT_WITH_CATEGORY);
-
-  if (error) {
-    const { error: rollbackError } = await supabase
-      if (session?.id && (!active ||
-    ![
-      EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
-      EXPERIMENTAL_STATUS.CONFIRMED,
-    ].includes(active.status))) {
-
-  await supabase
-    .from("experimental_sessions")
-    .delete()
-    .eq("id", session.id);
-}
-
-    if (rollbackError) {
-      console.error("Erro ao desfazer criação da experimental:", rollbackError);
-    }
-
-    throw error;
-  }
-
-  return {
-    contact: ensureUpdated(data),
-    session,
-  };
-}
 /* =========================================================
  * ENCERRAMENTO
  * =======================================================*/

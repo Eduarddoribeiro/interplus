@@ -24,9 +24,12 @@ import {
   Pencil,
   Save,
   Check,
+  MapPin,
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
+import TrialSlotPicker from "../components/experimentals/TrialSlotPicker";
+import { WEEKDAY_LABELS } from "../../constants/weekdays";
 
 import {
   getExperimentals,
@@ -138,6 +141,43 @@ export default function Experimentals() {
     savingCloseOpportunity,
     setSavingCloseOpportunity,
   ] = useState(false);
+
+  /*
+   * LOCAL (Krahe, Biguá...)
+   */
+
+  const [locationFilter, setLocationFilter] =
+    useState("all");
+
+  const locationOptions = useMemo(() => {
+    const map = new Map();
+
+    experimentals.forEach((item) => {
+      const location = getSessionLocation(item);
+
+      if (location) {
+        map.set(String(location.id), location.name);
+      }
+    });
+
+    return [...map.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [experimentals]);
+
+  const scopedExperimentals = useMemo(() => {
+    if (locationFilter === "all") {
+      return experimentals;
+    }
+
+    return experimentals.filter((item) => {
+      const location = getSessionLocation(item);
+
+      return locationFilter === "none"
+        ? !location
+        : String(location?.id) === locationFilter;
+    });
+  }, [experimentals, locationFilter]);
 
   const today = getTodayISO();
   const tomorrow = addDaysISO(today, 1);
@@ -327,8 +367,7 @@ export default function Experimentals() {
    */
 
   async function handleReschedule({
-    experimentalDate,
-    experimentalTime,
+    slot,
     notes,
     coachNotes,
   }) {
@@ -348,8 +387,10 @@ export default function Experimentals() {
           categoryId:
             rescheduleSession.category.id,
 
-          experimentalDate,
-          experimentalTime,
+          trainingGroupScheduleId:
+            slot.scheduleId,
+
+          experimentalDate: slot.date,
           notes,
           coachNotes,
         }
@@ -467,13 +508,13 @@ export default function Experimentals() {
 
   const stats = useMemo(() => {
     const todayItems =
-      experimentals.filter(
+      scopedExperimentals.filter(
         (item) =>
           item.experimental_date === today
       );
 
     const weekItems =
-      experimentals.filter(
+      scopedExperimentals.filter(
         (item) =>
           item.experimental_date >=
             weekStart &&
@@ -516,7 +557,7 @@ export default function Experimentals() {
       attendanceRate,
     };
   }, [
-    experimentals,
+    scopedExperimentals,
     today,
     weekStart,
     weekEnd,
@@ -531,7 +572,7 @@ export default function Experimentals() {
   const weekSummary = useMemo(() => {
     return weekDays.map((date) => {
       const items =
-        experimentals.filter(
+        scopedExperimentals.filter(
           (item) =>
             item.experimental_date === date
         );
@@ -580,7 +621,7 @@ export default function Experimentals() {
         categories,
       };
     });
-  }, [experimentals, weekDays]);
+  }, [scopedExperimentals, weekDays]);
 
   function goToPreviousWeek() {
     setWeekAnchor(
@@ -633,7 +674,7 @@ export default function Experimentals() {
           );
 
         result =
-          experimentals.filter(
+          scopedExperimentals.filter(
             (item) =>
               item.experimental_date ===
               selectedDate
@@ -642,7 +683,7 @@ export default function Experimentals() {
         switch (activeFilter) {
           case "today":
             result =
-              experimentals.filter(
+              scopedExperimentals.filter(
                 (item) =>
                   item.experimental_date ===
                   today
@@ -651,7 +692,7 @@ export default function Experimentals() {
 
           case "week":
             result =
-              experimentals.filter(
+              scopedExperimentals.filter(
                 (item) =>
                   item.experimental_date >=
                     weekStart &&
@@ -662,7 +703,7 @@ export default function Experimentals() {
 
           case "future":
             result =
-              experimentals.filter(
+              scopedExperimentals.filter(
                 (item) =>
                   item.experimental_date >=
                   today
@@ -671,7 +712,7 @@ export default function Experimentals() {
 
           case "history":
             result =
-              experimentals.filter(
+              scopedExperimentals.filter(
                 (item) =>
                   item.experimental_date <
                   today
@@ -679,7 +720,7 @@ export default function Experimentals() {
             break;
 
           default:
-            result = experimentals;
+            result = scopedExperimentals;
         }
       }
 
@@ -704,7 +745,7 @@ export default function Experimentals() {
         }
       );
     }, [
-      experimentals,
+      scopedExperimentals,
       activeFilter,
       today,
       weekStart,
@@ -1003,6 +1044,38 @@ export default function Experimentals() {
             </button>
           );
         })}
+
+        {locationOptions.length > 0 && (
+          <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-2 sm:ml-auto sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+            {[
+              { id: "all", name: "Todos os locais" },
+              ...locationOptions,
+            ].map((location) => {
+              const active =
+                locationFilter === location.id;
+
+              return (
+                <button
+                  key={location.id}
+                  type="button"
+                  onClick={() =>
+                    setLocationFilter(location.id)
+                  }
+                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                    active
+                      ? "bg-red-600 text-white"
+                      : "text-neutral-600 hover:bg-neutral-100"
+                  }`}
+                >
+                  {location.id !== "all" && (
+                    <MapPin size={15} />
+                  )}
+                  {location.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* LOADING */}
@@ -1089,8 +1162,20 @@ export default function Experimentals() {
                     </div>
 
                     <div className="space-y-4">
-                      {items.map(
-                        (item) => (
+                      {sortByLocation(items).map(
+                        (item, index, sorted) => (
+                          <div key={item.id} className="space-y-4">
+                          {getLocationName(item) !==
+                            getLocationName(sorted[index - 1]) && (
+                            <p className="flex items-center gap-1.5 pt-2 text-sm font-bold text-neutral-700">
+                              <MapPin
+                                size={15}
+                                className="text-red-600"
+                              />
+                              {getLocationName(item)}
+                            </p>
+                          )}
+
                           <ExperimentalCard
                             key={item.id}
                             item={item}
@@ -1126,6 +1211,7 @@ export default function Experimentals() {
                               )
                             }
                           />
+                          </div>
                         )
                       )}
                     </div>
@@ -1141,7 +1227,7 @@ export default function Experimentals() {
       {coachListOpen && (
         <CoachListModal
           experimentals={
-            experimentals
+            scopedExperimentals
           }
           initialDate={today}
           onClose={() =>
@@ -1272,7 +1358,10 @@ const isReschedule =
 
   const displayTime =
     item.experimental_time ||
-    item.category?.start_time;
+    item.schedule?.start_time;
+
+  const trainingGroup =
+    item.schedule?.training_group;
 
   const commercialResult =
     contact.experimental_result;
@@ -1311,6 +1400,13 @@ const isReschedule =
               {contact.child_name ||
                 "Aluno não informado"}
             </h3>
+
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-neutral-500">
+              <MapPin size={14} />
+              {trainingGroup
+                ? `${trainingGroup.location?.name ?? "Sem local"} · ${trainingGroup.name}`
+                : "Sem turma definida (agendamento antigo)"}
+            </p>
           </div>
 
           <SessionStatusBadge
@@ -1694,12 +1790,12 @@ function CoachListModal({
       .sort((a, b) => {
         const timeA =
           a.experimental_time ||
-          a.category?.start_time ||
+          a.schedule?.start_time ||
           "00:00";
 
         const timeB =
           b.experimental_time ||
-          b.category?.start_time ||
+          b.schedule?.start_time ||
           "00:00";
 
         return timeA.localeCompare(
@@ -2354,21 +2450,12 @@ function RescheduleExperimentalModal({
   const contact =
     session.contact || {};
 
-  const [
-    experimentalDate,
-    setExperimentalDate,
-  ] = useState("");
+  // Turma + horário + data escolhidos no TrialSlotPicker
+  const [slot, setSlot] =
+    useState(null);
 
-  const [
-    experimentalTime,
-    setExperimentalTime,
-  ] = useState(
-    session.category?.start_time
-      ? formatTime(
-          session.category.start_time
-        )
-      : ""
-  );
+  const [formError, setFormError] =
+    useState("");
 
   const [notes, setNotes] =
     useState("");
@@ -2383,17 +2470,15 @@ function RescheduleExperimentalModal({
   function handleSubmit(event) {
     event.preventDefault();
 
-    if (!experimentalDate) {
-      alert(
-        "Informe a nova data da experimental."
+    if (!slot) {
+      setFormError(
+        "Escolha a turma, o horário e a nova data."
       );
       return;
     }
 
     onSave({
-      experimentalDate,
-      experimentalTime:
-        experimentalTime || null,
+      slot,
       notes,
       coachNotes,
     });
@@ -2433,7 +2518,9 @@ function RescheduleExperimentalModal({
           </p>
 
           <p className="mt-1 text-sm text-red-700">
-            Não compareceu
+            {session.status === "no_show"
+              ? "Não compareceu"
+              : "Será substituída pela nova data"}
           </p>
         </div>
 
@@ -2448,30 +2535,39 @@ function RescheduleExperimentalModal({
           </div>
         </div>
 
-        <FormDate
-          label="Nova data"
-          value={experimentalDate}
-          min={getTodayISO()}
-          onChange={
-            setExperimentalDate
-          }
-        />
-
         <div className="mt-6">
-          <label className="text-sm font-semibold text-neutral-900">
-            Horário
-          </label>
+          <p className="text-sm font-semibold text-neutral-900">
+            Nova turma, horário e data
+          </p>
 
-          <input
-            type="time"
-            value={experimentalTime}
-            onChange={(event) =>
-              setExperimentalTime(
-                event.target.value
-              )
-            }
-            className="mt-2 w-full rounded-xl border border-neutral-200 px-4 py-3 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
-          />
+          <div className="mt-2">
+            <TrialSlotPicker
+              categoryId={session.category?.id}
+              value={slot}
+              onChange={(value) => {
+                setSlot(value);
+                setFormError("");
+              }}
+            />
+          </div>
+
+          {slot && (
+            <p className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm text-neutral-700">
+              Selecionado:{" "}
+              <strong>
+                {slot.group.location?.name} ·{" "}
+                {WEEKDAY_LABELS[slot.weekday]}{" "}
+                {formatShortDate(slot.date)} às{" "}
+                {formatTime(slot.start_time)}
+              </strong>
+            </p>
+          )}
+
+          {formError && (
+            <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">
+              {formError}
+            </p>
+          )}
         </div>
 
         <FormTextarea
@@ -3273,8 +3369,32 @@ function createCoachWhatsAppText(
       date
     )})*`;
 
-  const blocks =
-    sessions.map((session) => {
+  // Um bloco por local (cada professor recebe o do seu ginásio)
+  const byLocation = sortByLocation(sessions).reduce(
+    (acc, session) => {
+      const name = getLocationName(session);
+
+      (acc[name] ||= []).push(session);
+
+      return acc;
+    },
+    {}
+  );
+
+  const sections = Object.entries(byLocation).map(
+    ([locationName, locationSessions]) =>
+      `📍 *${locationName}*\n\n${buildCoachBlocks(
+        locationSessions
+      ).join("\n\n---\n\n")}`
+  );
+
+  return `${header}\n\n${sections.join(
+    "\n\n━━━━━━━━━━\n\n"
+  )}`;
+}
+
+function buildCoachBlocks(sessions) {
+  return sessions.map((session) => {
       const contact =
         session.contact || {};
 
@@ -3297,7 +3417,7 @@ function createCoachWhatsAppText(
 
       const time =
         session.experimental_time ||
-        session.category?.start_time;
+        session.schedule?.start_time;
 
       if (time) {
         lines.push(
@@ -3317,10 +3437,46 @@ function createCoachWhatsAppText(
 
       return lines.join("\n");
     });
+}
 
-  return `${header}\n\n${blocks.join(
-    "\n\n---\n\n"
-  )}`;
+/*
+ * =========================================================
+ * HELPERS DE LOCAL
+ * =========================================================
+ */
+
+// Local da experimental (via horário da turma); null em agendamentos antigos
+function getSessionLocation(session) {
+  return session?.schedule?.training_group?.location ?? null;
+}
+
+function getLocationName(session) {
+  if (!session) return null;
+
+  return getSessionLocation(session)?.name ?? "Sem local definido";
+}
+
+// Por local e, dentro do local, por horário
+function sortByLocation(sessions) {
+  return [...sessions].sort((a, b) => {
+    const byLocation = getLocationName(a).localeCompare(
+      getLocationName(b)
+    );
+
+    if (byLocation !== 0) return byLocation;
+
+    const timeA =
+      a.experimental_time ||
+      a.schedule?.start_time ||
+      "";
+
+    const timeB =
+      b.experimental_time ||
+      b.schedule?.start_time ||
+      "";
+
+    return timeA.localeCompare(timeB);
+  });
 }
 
 /*
