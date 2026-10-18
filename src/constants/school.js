@@ -5,7 +5,7 @@
 export const SCHOOL = {
   name: "Escola Oficial do Inter Viamão",
   // Somente números, com DDI e DDD (ex.: 5551999999999)
-  whatsapp: "",
+  whatsapp: "5551996476999",
   instagram: "",
 };
 
