@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { SOURCE_OPTIONS } from "../../../constants/school";
+
 const POSITION_OPTIONS = [
   {
     value: "",
@@ -115,11 +117,11 @@ export default function ResponsibleForm({
     form.phone.replace(/\D/g, "").length === 11;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
       {/* CABEÇALHO */}
       <div>
-        <h2 className="text-3xl font-bold text-neutral-900">
+        <h2 className="text-2xl font-bold text-neutral-900 sm:text-3xl">
           Dados do Responsável
         </h2>
 
@@ -241,6 +243,28 @@ export default function ResponsibleForm({
 
         </div>
 
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-neutral-800">
+            Como conheceu a escola?
+          </label>
+
+          <select
+            value={form.source}
+            onChange={(e) =>
+              handleSource(e.target.value)
+            }
+            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+          >
+            <option value="">Selecione...</option>
+
+            {SOURCE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
       </section>
 
            <div className="border-t border-neutral-200" />
@@ -323,32 +347,6 @@ export default function ResponsibleForm({
             </h3>
 
             <div className="grid gap-6 md:grid-cols-2">
-
-              <div>
-
-                <label className="mb-2 block text-sm font-semibold text-neutral-800">
-                  Como conheceu a escola?
-                </label>
-
-                <select
-                  value={form.source}
-                  onChange={(e) =>
-                    handleSource(e.target.value)
-                  }
-                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-                >
-                  <option value="instagram">Instagram</option>
-                  <option value="facebook">Facebook</option>
-                  <option value="google">Google</option>
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="event">Evento</option>
-                  <option value="walk_in">
-                    Passou em frente / viu a escola
-                  </option>
-                  <option value="other">Outro</option>
-                </select>
-
-              </div>
 
               <div>
 

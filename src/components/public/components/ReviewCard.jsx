@@ -1,14 +1,5 @@
 import { WEEKDAY_LABELS } from "../../../constants/weekdays";
-
-const SOURCE_LABEL = {
-  instagram: "Instagram",
-  facebook: "Facebook",
-  google: "Google",
-  whatsapp: "WhatsApp",
-  event: "Evento",
-  walk_in: "Passou em frente à escola",
-  other: "Outro",
-};
+import { SOURCE_LABEL } from "../../../constants/school";
 
 const POSITION_LABEL = {
   goalkeeper: "Goleiro",
@@ -19,6 +10,8 @@ const POSITION_LABEL = {
 
 export default function ReviewCard({
   form,
+  submitting = false,
+  error = "",
   onBack,
   onFinish,
 }) {
@@ -49,7 +42,7 @@ export default function ReviewCard({
 
             {/* Cabeçalho */}
       <div>
-        <h2 className="text-3xl font-bold text-neutral-900">
+        <h2 className="text-2xl font-bold text-neutral-900 sm:text-3xl">
           {form.interest_reason
             ? "Revise seus dados"
             : "Revise sua solicitação"}
@@ -243,13 +236,23 @@ export default function ReviewCard({
 
 </div>
 
+      {error && (
+        <div
+          role="alert"
+          className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
+        >
+          {error}
+        </div>
+      )}
+
       {/* BOTÕES */}
       <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
 
         <button
           type="button"
           onClick={onBack}
-          className="w-full rounded-xl border border-neutral-300 px-6 py-3 font-semibold text-neutral-700 transition hover:bg-neutral-100 sm:w-auto"
+          disabled={submitting}
+          className="w-full rounded-xl border border-neutral-300 px-6 py-3 font-semibold text-neutral-700 transition hover:bg-neutral-100 disabled:opacity-50 sm:w-auto"
         >
           Voltar
         </button>
@@ -257,11 +260,14 @@ export default function ReviewCard({
         <button
           type="button"
           onClick={onFinish}
-          className="w-full rounded-xl bg-red-600 px-8 py-3 font-semibold text-white transition hover:bg-red-700 sm:w-auto"
+          disabled={submitting}
+          className="w-full rounded-xl bg-red-600 px-8 py-3.5 font-semibold text-white transition hover:bg-red-700 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
         >
-          {form.interest_reason
-            ? "Entrar na lista de interesse"
-            : "Confirmar solicitação"}
+          {submitting
+            ? "Enviando..."
+            : form.interest_reason
+              ? "Entrar na lista de interesse"
+              : "Confirmar solicitação"}
         </button>
 
       </div>

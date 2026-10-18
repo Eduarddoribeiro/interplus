@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Clock, MapPin, Star } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Navigation, Star, User } from "lucide-react";
 
 import { WEEKDAY_LABELS } from "../../../constants/weekdays";
+import { mapsUrl } from "../../../utils/calendar";
 
 import {
   getTrialOptions,
@@ -10,6 +11,15 @@ import {
 } from "../../../services/publicRegistration";
 
 const formatTime = (time) => time?.slice(0, 5);
+
+// ["Éder", "Rafa"] -> "Prof. Éder e Rafa"
+function formatCoaches(names) {
+  const list = names.length > 1
+    ? `${names.slice(0, -1).join(", ")} e ${names.at(-1)}`
+    : names[0];
+
+  return `${names.length > 1 ? "Profs." : "Prof."} ${list}`;
+}
 
 function formatNextDate(iso) {
   if (!iso) return "";
@@ -137,19 +147,19 @@ export default function ScheduleSelector({
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Cabeçalho */}
       <div>
         <span className="text-xs font-semibold uppercase tracking-[0.20em] text-red-600">
           {category.name}
         </span>
 
-        <h2 className="mt-2 text-3xl font-bold text-neutral-900">
-          Escolha o horário da aula experimental
+        <h2 className="mt-1 text-2xl font-bold text-neutral-900 sm:text-3xl">
+          Escolha o dia da aula
         </h2>
 
-        <p className="mt-2 text-neutral-500">
-          Estas são as turmas com vagas para a idade do atleta.
+        <p className="mt-1 text-neutral-500">
+          Turmas com vaga para a idade do atleta. Cada aula dura 1 hora.
         </p>
       </div>
 
@@ -164,7 +174,7 @@ export default function ScheduleSelector({
       {groups.map((group) => (
         <div
           key={group.id}
-          className={`rounded-2xl border bg-white p-6 shadow-sm ${
+          className={`rounded-2xl border bg-white p-4 shadow-sm sm:p-6 ${
             group.featured ? "border-red-200" : "border-neutral-200"
           }`}
         >
@@ -190,19 +200,22 @@ export default function ScheduleSelector({
           </div>
 
           {group.location?.address && (
-            <p className="mt-3 flex items-start gap-2 text-sm text-neutral-600">
-              <MapPin size={16} className="mt-0.5 shrink-0" />
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-neutral-600">
+              <span className="flex items-start gap-2">
+                <MapPin size={16} className="mt-0.5 shrink-0" />
+                {group.location.address}
+              </span>
+
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  `${group.location.name}, ${group.location.address}`,
-                )}`}
+                href={mapsUrl(group.location.name, group.location.address)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline-offset-2 hover:underline"
+                className="inline-flex items-center gap-1 rounded-full border border-neutral-200 px-3 py-1 font-semibold text-neutral-800 hover:border-red-300"
               >
-                {group.location.address}
+                <Navigation size={13} />
+                Como chegar
               </a>
-            </p>
+            </div>
           )}
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -240,6 +253,13 @@ export default function ScheduleSelector({
                       ? "Sem vagas nesta data"
                       : `Próxima aula: ${formatNextDate(schedule.next_date)}`}
                   </p>
+
+                  {schedule.coach_names?.length > 0 && (
+                    <p className="mt-1 flex items-center gap-2 text-sm text-neutral-600">
+                      <User size={14} />
+                      {formatCoaches(schedule.coach_names)}
+                    </p>
+                  )}
                 </button>
               );
             })}
