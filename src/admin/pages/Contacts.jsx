@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 
 import {
   Archive,
@@ -27,36 +27,22 @@ import {
   restoreContacts,
 } from "../../services/contacts";
 
-import { CONTACT_STATUS, CONTACT_STATUS_LABEL } from "../../constants/contactStatus";
+import { CONTACT_STATUS_LABEL } from "../../constants/contactStatus";
+import {
+  STALE_DAYS,
+  WHATSAPP_AUTO_STATUS,
+  getContactTab as getTab,
+  getDaysSince,
+  getLastActivity,
+  isBlank,
+  isStale,
+} from "../../helpers/contactTabs";
 import { ARCHIVE_REASON, ARCHIVE_REASON_LABEL } from "../../constants/archiveReasons";
 import { LOST_REASON } from "../../constants/lostReasons";
-import { SOURCE_LABEL } from "../../constants/school";
+import { getSourceLabel as sourceLabel } from "../../constants/school";
 import { createWhatsAppUrl, normalizePhone } from "../../helpers/contactPresentation";
 
 const ITEMS_PER_PAGE = 30;
-
-// Sem atividade há mais que isso = lead parado
-const STALE_DAYS = 60;
-
-// Status criado automaticamente pelo servidor do WhatsApp (fora do funil)
-const WHATSAPP_AUTO_STATUS = "new";
-
-const ACTIVE_STATUSES = [
-  CONTACT_STATUS.NEW_CONTACT,
-  CONTACT_STATUS.PENDING_CONFIRMATION,
-  CONTACT_STATUS.CONFIRMED,
-  CONTACT_STATUS.ATTENDED,
-  CONTACT_STATUS.NO_SHOW,
-  CONTACT_STATUS.FOLLOW_UP,
-];
-
-const CLOSED_STATUSES = [CONTACT_STATUS.LOST, CONTACT_STATUS.CANCELLED];
-
-const EXTRA_SOURCE_LABEL = {
-  franchisor_site: "Site da Franqueadora",
-  unit_site: "Site da Unidade",
-  presential: "Presencial",
-};
 
 const STATUS_BADGE = {
   new: "bg-neutral-100 text-neutral-500",
@@ -76,62 +62,11 @@ const STATUS_BADGE = {
  * REGRAS
  * =======================================================*/
 
-function isBlank(value) {
-  return !value || !String(value).trim();
-}
-
-/*
- * Triagem: entrou sozinho pelo WhatsApp ou foi cadastrado sem o
- * nome do atleta. Precisa de alguém decidir se é lead.
- */
-function isTriage(contact) {
-  if (contact.archived_at) return false;
-  if (contact.status === WHATSAPP_AUTO_STATUS) return true;
-
-  return (
-    [CONTACT_STATUS.NEW_CONTACT, CONTACT_STATUS.WAITING_LIST].includes(contact.status) &&
-    isBlank(contact.child_name)
-  );
-}
-
-function getLastActivity(contact) {
-  return contact.updated_at || contact.first_contact_at || contact.created_at;
-}
-
-function getDaysSince(value) {
-  if (!value) return null;
-
-  return Math.max(Math.floor((Date.now() - new Date(value).getTime()) / 86400000), 0);
-}
-
-function getTab(contact) {
-  if (contact.archived_at) return "archived";
-  if (isTriage(contact)) return "triage";
-  if (contact.status === CONTACT_STATUS.WAITING_LIST) return "waiting";
-  if (contact.status === CONTACT_STATUS.ENROLLED) return "enrolled";
-  if (CLOSED_STATUSES.includes(contact.status)) return "closed";
-  if (ACTIVE_STATUSES.includes(contact.status)) return "active";
-
-  return "other";
-}
-
-function isStale(contact) {
-  return getTab(contact) === "active" && getDaysSince(getLastActivity(contact)) >= STALE_DAYS;
-}
-
 function normalizeText(value) {
   return String(value || "")
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase();
-}
-
-function sourceLabel(source) {
-  if (!source) return null;
-
-  const key = source.toLowerCase();
-
-  return SOURCE_LABEL[key] ?? EXTRA_SOURCE_LABEL[key] ?? source;
 }
 
 function formatDaysAgo(days) {
@@ -164,7 +99,12 @@ export default function Contacts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [tab, setTab] = useState("active");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState(() =>
+    TABS.some((item) => item.value === searchParams.get("aba"))
+      ? searchParams.get("aba")
+      : "active",
+  );
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
