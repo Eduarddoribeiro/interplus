@@ -31,14 +31,15 @@ export async function getTrialOptions(categoryId, unitId = null) {
 }
 
 /**
- * Locais ativos, para a preferência na lista de interesse.
+ * Locais com turma (aberta ou fechada) da categoria, para a
+ * preferência na lista de interesse.
  */
-export async function getPublicLocations() {
-  const { data, error } = await supabase
-    .from("locations")
-    .select("id, name, unit_id")
-    .eq("active", true)
-    .order("name");
+export async function getCategoryLocations(categoryId) {
+  if (!categoryId) return [];
+
+  const { data, error } = await supabase.rpc("public_category_locations", {
+    p_category_id: categoryId,
+  });
 
   if (error) throw error;
 

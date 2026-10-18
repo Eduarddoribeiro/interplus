@@ -5,7 +5,7 @@ import { WEEKDAY_LABELS } from "../../../constants/weekdays";
 
 import {
   getTrialOptions,
-  getPublicLocations,
+  getCategoryLocations,
   groupTrialOptions,
 } from "../../../services/publicRegistration";
 
@@ -26,7 +26,8 @@ function formatNextDate(iso) {
  * Mostra as turmas ABERTAS da categoria do atleta, cada uma com
  * modalidade, local, endereço e os horários com a próxima data.
  * Sem turma aberta (ou todos os horários lotados), oferece a lista
- * de interesse com preferência de local opcional.
+ * de interesse; a preferência de local só lista locais que têm
+ * turma da categoria (com um local só, ele já vem marcado).
  */
 export default function ScheduleSelector({
   form,
@@ -56,14 +57,30 @@ export default function ScheduleSelector({
 
         const [options, locationsData] = await Promise.all([
           getTrialOptions(category.id),
-          getPublicLocations(),
+          // A preferência de local é opcional: se falhar, segue sem ela
+          getCategoryLocations(category.id).catch((error) => {
+            console.error("Erro ao buscar locais:", error);
+            return [];
+          }),
         ]);
 
         setGroups(groupTrialOptions(options));
         setLocations(locationsData);
+
+        // Um local só: já fica como preferência, sem perguntar.
+        // Com vários, mantém a escolha anterior se ainda valer.
+        const kept = locationsData.find(
+          (location) => location.id === form.preferred_location?.id,
+        );
+
+        updateField(
+          "preferred_location",
+          locationsData.length === 1 ? locationsData[0] : kept ?? null,
+        );
       } catch (error) {
         console.error("Erro ao buscar turmas:", error);
         setGroups([]);
+        setLocations([]);
         setLoadError(true);
       } finally {
         setLoading(false);
@@ -243,6 +260,13 @@ export default function ScheduleSelector({
             Deixe seus dados na lista de interesse e avisaremos assim que
             surgir uma vaga para a categoria {category.name}.
           </p>
+
+          {locations.length === 1 && (
+            <p className="mt-3 flex items-center gap-2 text-sm text-neutral-600">
+              <MapPin size={16} className="shrink-0" />
+              Turma {category.name}: {locations[0].name}
+            </p>
+          )}
 
           {locations.length > 1 && (
             <div className="mt-5">
