@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Benefits from "./pages/Benefits";
+import Landing from "./pages/Landing";
 import PublicRegistration from "./pages/PublicRegistration";
 import CoachSession from "./pages/CoachSession";
 
@@ -34,7 +35,10 @@ export default function App() {
 
         {/* SITE PÚBLICO */}
 
-        <Route path="/" element={<Benefits />} />
+        <Route path="/" element={<Landing />} />
+
+        {/* Clube de benefícios (ainda não lançado) */}
+        <Route path="/beneficios" element={<Benefits />} />
 
         <Route
           path="/experimental"
