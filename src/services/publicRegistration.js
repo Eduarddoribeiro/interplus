@@ -1,54 +1,29 @@
 import { supabase } from "../lib/supabase";
-import { getNextOccurrence } from "../utils/generateAvailableDates";
 
 /**
  * Serviço dedicado ao fluxo público de agendamento de aula
  * experimental.
  *
- * Segue a nova arquitetura de Turmas:
+ *   Unidade (cidade) -> Local (ginásio/arena) -> Turma -> Horário
  *
- *   Modalidade -> Categoria -> Unidade -> Turma (training_groups) -> Horário (training_group_schedules)
- *
- * Não consulta mais categories.weekday / start_time / end_time /
- * experimental_limit / trial_status.
- *
- * A disponibilidade de vagas NÃO depende mais de
- * training_group_schedules.current_experimentals — é calculada em
- * tempo real contando experimental_sessions para
- * (training_group_schedule_id + experimental_date).
+ * O site público não lê as tabelas de contatos nem de sessões:
+ * tudo passa pelas funções public_trial_options e public_register.
  */
 
 /**
- * Busca as turmas (training_groups) ativas para uma combinação de
- * modalidade + categoria, já trazendo a unidade e o professor.
+ * Opções de aula experimental para uma categoria: um item por
+ * horário de turma ABERTA, já com local, endereço, próxima data e
+ * vagas restantes (null = sem limite).
  *
- * Usado para montar as etapas de Unidade e Turma do formulário
- * público.
+ * Turmas em destaque vêm primeiro.
  */
-export async function getTrainingGroupsForPublic(modalityId, categoryId) {
-  if (!modalityId || !categoryId) return [];
+export async function getTrialOptions(categoryId, unitId = null) {
+  if (!categoryId) return [];
 
-  const { data, error } = await supabase
-    .from("training_groups")
-    .select(
-      `
-      id,
-      name,
-      active,
-      unit:units (
-        id,
-        name
-      ),
-      coach:coaches (
-        id,
-        name
-      )
-    `,
-    )
-    .eq("modality_id", modalityId)
-    .eq("category_id", categoryId)
-    .eq("active", true)
-    .order("name");
+  const { data, error } = await supabase.rpc("public_trial_options", {
+    p_category_id: categoryId,
+    p_unit_id: unitId,
+  });
 
   if (error) throw error;
 
@@ -56,63 +31,49 @@ export async function getTrainingGroupsForPublic(modalityId, categoryId) {
 }
 
 /**
- * Busca os horários com vaga disponível para aula experimental de
- * uma turma específica.
- *
- * Para cada horário ativo (active + allow_trial), calcula a
- * próxima ocorrência (next_date) e verifica a ocupação real em
- * experimental_sessions para essa data, comparando com
- * experimental_limit.
- *
- * Horários sem vaga na próxima data não são retornados.
+ * Locais com turma (aberta ou fechada) da categoria, para a
+ * preferência na lista de interesse.
  */
-export async function getAvailableSchedules(trainingGroupId) {
-  if (!trainingGroupId) return [];
+export async function getCategoryLocations(categoryId) {
+  if (!categoryId) return [];
 
-  const { data: scheduleRows, error } = await supabase
-    .from("training_group_schedules")
-    .select("*")
-    .eq("training_group_id", trainingGroupId)
-    .eq("active", true)
-    .eq("allow_trial", true)
-    .order("weekday")
-    .order("start_time");
+  const { data, error } = await supabase.rpc("public_category_locations", {
+    p_category_id: categoryId,
+  });
 
   if (error) throw error;
 
-  const schedules = scheduleRows ?? [];
+  return data ?? [];
+}
 
-  const withAvailability = await Promise.all(
-    schedules.map(async (scheduleRow) => {
-      const next = getNextOccurrence(scheduleRow.weekday);
+/**
+ * Agrupa as opções por turma, mantendo a ordem devolvida pelo
+ * banco (destaque primeiro).
+ */
+export function groupTrialOptions(options) {
+  const groups = new Map();
 
-      if (!next) return null;
-
-      // O site público não lê experimental_sessions: a função
-      // devolve só a quantidade de vagas ocupadas.
-      const { data: count, error: countError } = await supabase.rpc(
-        "public_trial_occupancy",
-        {
-          p_schedule_id: scheduleRow.id,
-          p_date: next.iso,
+  options.forEach((option) => {
+    if (!groups.has(option.training_group_id)) {
+      groups.set(option.training_group_id, {
+        id: option.training_group_id,
+        name: option.group_name,
+        featured: option.featured,
+        modality: { id: option.modality_id, name: option.modality_name },
+        location: {
+          id: option.location_id,
+          name: option.location_name,
+          address: option.location_address,
         },
-      );
+        unit: { id: option.unit_id, name: option.unit_name },
+        schedules: [],
+      });
+    }
 
-      if (countError) throw countError;
+    groups.get(option.training_group_id).schedules.push(option);
+  });
 
-      const limit = scheduleRow.experimental_limit ?? 0;
-      const occupied = count ?? 0;
-
-      if (limit > 0 && occupied >= limit) return null;
-
-      return {
-        ...scheduleRow,
-        next_date: next.iso,
-      };
-    }),
-  );
-
-  return withAvailability.filter(Boolean);
+  return [...groups.values()];
 }
 
 /**

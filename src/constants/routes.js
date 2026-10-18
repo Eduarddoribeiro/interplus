@@ -16,9 +16,6 @@ export const ROUTES = {
   NEW_TRAINING_GROUP:
     "/admin/administration/training-groups/new",
 
-  WHATSAPP:
-    "/admin/administration/whatsapp",
-
   USERS:
     "/admin/administration/users",
 

@@ -1,133 +1,190 @@
 import {
-  CalendarCheck,
+  CalendarDays,
+  CalendarPlus,
   CheckCircle2,
+  Clock,
+  MapPin,
   MessageCircle,
-  ShieldCheck,
+  Navigation,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function SuccessScreen({ type = "scheduled" }) {
+import { WEEKDAY_LABELS } from "../../../constants/weekdays";
+import { SCHOOL } from "../../../constants/school";
+import { downloadIcs, googleCalendarUrl, mapsUrl } from "../../../utils/calendar";
+
+const formatTime = (time) => time?.slice(0, 5);
+
+function formatDate(iso) {
+  if (!iso) return "";
+
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+  });
+}
+
+// O calçado muda conforme o piso
+function whatToBring(modalityName = "") {
+  const isFutsal = /futsal/i.test(modalityName);
+
+  return [
+    "Roupa confortável para treinar",
+    isFutsal
+      ? "Tênis de futsal (sola lisa) ou tênis comum"
+      : "Chuteira society ou tênis",
+    "Garrafinha de água",
+    "Chegar 10 minutos antes",
+  ];
+}
+
+export default function SuccessScreen({ type = "scheduled", form }) {
   const isWaitingList = type === "waiting_list";
+  const firstName = form?.child_name?.trim().split(" ")[0];
+
+  const schedule = form?.schedule;
+  const location = form?.location;
+
+  const event = schedule && {
+    title: `Aula experimental — ${firstName ?? "Escola do Inter"}`,
+    date: form.experimental_date,
+    start: schedule.start_time,
+    end: schedule.end_time,
+    location: [location?.name, location?.address].filter(Boolean).join(", "),
+    details: `${SCHOOL.name}\n${form.training_group?.name ?? ""}\nLeve: ${whatToBring(form.modality?.name).join(", ")}.`,
+  };
+
+  const whatsappUrl = SCHOOL.whatsapp
+    ? `https://wa.me/${SCHOOL.whatsapp}?text=${encodeURIComponent(
+        `Olá! Acabei de agendar a aula experimental de ${firstName ?? "meu filho"}.`,
+      )}`
+    : null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 25 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="py-12"
+      transition={{ duration: 0.4 }}
+      className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm"
     >
-      <div className="mx-auto max-w-3xl overflow-hidden rounded-[32px] border border-white/10 bg-white shadow-[0_30px_80px_rgba(0,0,0,.18)]">
+      {/* CABEÇALHO */}
+      <div className="px-5 pt-8 text-center sm:px-8">
+        <CheckCircle2 className="mx-auto h-14 w-14 text-green-600" />
 
-        {/* HEADER */}
+        <h2 className="mt-4 text-2xl font-bold text-neutral-900 sm:text-3xl">
+          {isWaitingList ? "Interesse registrado!" : "Aula solicitada!"}
+        </h2>
 
-        <div
-          className="relative overflow-hidden px-10 py-12 text-center text-white"
-          style={{
-            background:
-              "linear-gradient(135deg,#170507 0%,#2a0810 45%,#8b0a1c 100%)",
-          }}
-        >
-          <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-red-500/20 blur-[120px]" />
+        <p className="mx-auto mt-2 max-w-md text-neutral-600">
+          {isWaitingList
+            ? `Assim que abrir vaga para ${form?.category?.name ?? "a categoria"}, avisamos pelo WhatsApp.`
+            : "Vamos confirmar pelo WhatsApp informado. Enquanto isso, já deixe na agenda."}
+        </p>
+      </div>
 
-          <div className="relative z-10">
+      <div className="space-y-5 p-5 sm:p-8">
 
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/10 backdrop-blur">
-              <CheckCircle2 className="h-12 w-12 text-green-400" />
-            </div>
-
-            <span className="mt-8 block text-xs uppercase tracking-[0.25em] text-white/60">
-              {isWaitingList
-                ? "INTERESSE REGISTRADO"
-                : "SOLICITAÇÃO RECEBIDA"}
-            </span>
-
-            <h2 className="mt-3 font-display text-5xl font-black uppercase leading-none">
-              {isWaitingList
-                ? "Turma em formação"
-                : "Agendamento enviado"}
-            </h2>
-
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-white/75">
-              {isWaitingList
-                ? "Seu interesse foi registrado com sucesso. Assim que a nova turma estiver pronta para iniciar os treinamentos, nossa equipe entrará em contato para agendar a primeira aula experimental."
-                : "Recebemos sua solicitação de aula experimental. Em breve nossa equipe entrará em contato para confirmar a disponibilidade do horário escolhido."}
+        {/* RESUMO DA AULA */}
+        {!isWaitingList && schedule && (
+          <div className="rounded-2xl border border-red-100 bg-red-50/60 p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-600">
+              {form.modality?.name} · {form.category?.name}
             </p>
 
-          </div>
-        </div>
+            <ul className="mt-3 space-y-2 text-neutral-800">
+              <li className="flex items-center gap-2">
+                <CalendarDays size={17} className="text-neutral-400" />
+                <span className="font-semibold">
+                  {WEEKDAY_LABELS[schedule.weekday]}, {formatDate(form.experimental_date)}
+                </span>
+              </li>
 
-        {/* CONTEÚDO */}
+              <li className="flex items-center gap-2">
+                <Clock size={17} className="text-neutral-400" />
+                {formatTime(schedule.start_time)} às {formatTime(schedule.end_time)}
+              </li>
 
-        <div className="bg-neutral-50 p-10">
+              <li className="flex items-start gap-2">
+                <MapPin size={17} className="mt-0.5 shrink-0 text-neutral-400" />
+                <span>
+                  <span className="font-semibold">{location?.name}</span>
+                  {location?.address && (
+                    <span className="block text-sm text-neutral-600">
+                      {location.address}
+                    </span>
+                  )}
+                </span>
+              </li>
+            </ul>
 
-          <div className="grid gap-6 md:grid-cols-3">
+            <div className="mt-5 grid gap-2 sm:grid-cols-3">
+              <a
+                href={googleCalendarUrl(event)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700"
+              >
+                <CalendarPlus size={16} />
+                Google Agenda
+              </a>
 
-            <div className="rounded-2xl border border-neutral-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+              <button
+                type="button"
+                onClick={() => downloadIcs(event)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
+              >
+                <CalendarPlus size={16} />
+                Agenda do iPhone
+              </button>
 
-              <MessageCircle className="h-8 w-8 text-red-600" />
-
-              <h3 className="mt-5 text-lg font-bold text-neutral-900">
-                {isWaitingList
-                  ? "Entraremos em contato"
-                  : "Aguarde nosso contato"}
-              </h3>
-
-              <p className="mt-3 text-sm leading-7 text-neutral-500">
-                {isWaitingList
-                  ? "Assim que a turma atingir o número necessário de atletas, avisaremos você pelo WhatsApp."
-                  : "Nossa equipe entrará em contato pelo WhatsApp informado para confirmar seu agendamento."}
-              </p>
-
+              <a
+                href={mapsUrl(location?.name, location?.address)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
+              >
+                <Navigation size={16} />
+                Como chegar
+              </a>
             </div>
-
-            <div className="rounded-2xl border border-neutral-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-
-              <CalendarCheck className="h-8 w-8 text-red-600" />
-
-              <h3 className="mt-5 text-lg font-bold text-neutral-900">
-                {isWaitingList
-                  ? "Você terá prioridade"
-                  : "Prepare-se para o treino"}
-              </h3>
-
-              <p className="mt-3 text-sm leading-7 text-neutral-500">
-                {isWaitingList
-                  ? "Os responsáveis que registrarem interesse serão os primeiros avisados quando a nova turma abrir."
-                  : "Utilize roupas confortáveis e leve chuteira ou tênis apropriado para a atividade."}
-              </p>
-
-            </div>
-
-            <div className="rounded-2xl border border-neutral-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-
-              <ShieldCheck className="h-8 w-8 text-red-600" />
-
-              <h3 className="mt-5 text-lg font-bold text-neutral-900">
-                Bem-vindo à Escola
-              </h3>
-
-              <p className="mt-3 text-sm leading-7 text-neutral-500">
-                Estamos felizes em receber sua família na Escola Oficial do Inter Viamão.
-              </p>
-
-            </div>
-
           </div>
+        )}
 
-          <div className="mt-12 flex justify-center">
+        {/* O QUE LEVAR */}
+        {!isWaitingList && (
+          <div className="rounded-2xl border border-neutral-200 p-5">
+            <h3 className="font-bold text-neutral-900">O que levar</h3>
 
-            <button
-              onClick={() => window.location.reload()}
-              className="rounded-xl bg-red-600 px-8 py-4 font-semibold text-white transition-all duration-300 hover:-translate-y-1 hover:bg-red-700 hover:shadow-[0_18px_40px_rgba(200,16,46,.35)]"
-            >
-              {isWaitingList
-                ? "Registrar outro interesse"
-                : "Fazer novo agendamento"}
-            </button>
-
+            <ul className="mt-3 space-y-2 text-sm text-neutral-700">
+              {whatToBring(form?.modality?.name).map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <CheckCircle2 size={16} className="shrink-0 text-green-600" />
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
+        )}
 
-        </div>
+        {whatsappUrl && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3.5 font-semibold text-white hover:bg-green-700"
+          >
+            <MessageCircle size={18} />
+            Falar com a escola no WhatsApp
+          </a>
+        )}
+
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mx-auto block text-sm font-semibold text-neutral-500 underline-offset-2 hover:underline"
+        >
+          {isWaitingList ? "Registrar outro atleta" : "Agendar outro atleta"}
+        </button>
 
       </div>
     </motion.div>

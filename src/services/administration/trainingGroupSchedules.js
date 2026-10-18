@@ -3,7 +3,12 @@ import { supabase } from "../../lib/supabase";
 export async function getSchedulesByTrainingGroup(trainingGroupId) {
   const { data, error } = await supabase
     .from("training_group_schedules")
-    .select("*")
+    .select(`
+      *,
+      coaches:training_group_schedule_coaches(
+        coach:coaches(id, name)
+      )
+    `)
     .eq("training_group_id", trainingGroupId)
     .order("weekday")
     .order("start_time");
@@ -58,6 +63,30 @@ export async function deleteSchedule(id) {
     .from("training_group_schedules")
     .delete()
     .eq("id", id);
+
+  if (error) throw error;
+}
+/**
+ * Substitui os professores de um horário.
+ */
+export async function setScheduleCoaches(scheduleId, coachIds) {
+  const { error: deleteError } = await supabase
+    .from("training_group_schedule_coaches")
+    .delete()
+    .eq("schedule_id", scheduleId);
+
+  if (deleteError) throw deleteError;
+
+  if (!coachIds.length) return;
+
+  const { error } = await supabase
+    .from("training_group_schedule_coaches")
+    .insert(
+      coachIds.map((coachId) => ({
+        schedule_id: scheduleId,
+        coach_id: coachId,
+      })),
+    );
 
   if (error) throw error;
 }

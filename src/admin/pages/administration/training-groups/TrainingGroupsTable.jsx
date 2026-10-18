@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Pencil } from "lucide-react";
 
+import TrainingGroupStatusBadge from "../components/TrainingGroupStatusBadge";
+import { getTrainingGroupCategoryNames } from "../../../../services/administration/trainingGroups";
+
 export default function TrainingGroupsTable({
   groups,
   loading,
@@ -29,7 +32,7 @@ export default function TrainingGroupsTable({
             </th>
 
             <th className="px-6 py-4 text-left">
-              Categoria
+              Categorias
             </th>
 
             <th className="px-6 py-4 text-left">
@@ -37,12 +40,9 @@ export default function TrainingGroupsTable({
             </th>
 
             <th className="px-6 py-4 text-left">
-              Unidade
+              Local
             </th>
 
-            <th className="px-6 py-4 text-left">
-              Professor
-            </th>
 
             <th className="px-6 py-4 text-left">
               Status
@@ -63,7 +63,7 @@ export default function TrainingGroupsTable({
             <tr>
 
               <td
-                colSpan={7}
+                colSpan={6}
                 className="px-6 py-16 text-center text-neutral-500"
               >
                 Nenhuma turma cadastrada.
@@ -85,7 +85,7 @@ export default function TrainingGroupsTable({
                 </td>
 
                 <td className="px-6 py-5">
-                  {group.category?.name}
+                  {getTrainingGroupCategoryNames(group)}
                 </td>
 
                 <td className="px-6 py-5">
@@ -93,24 +93,25 @@ export default function TrainingGroupsTable({
                 </td>
 
                 <td className="px-6 py-5">
-                  {group.unit?.name}
+                  {group.location?.name ?? "-"}
+                  {group.unit?.name && (
+                    <span className="block text-xs text-neutral-500">
+                      {group.unit.name}
+                    </span>
+                  )}
                 </td>
 
-                <td className="px-6 py-5">
-                  {group.coach?.name ?? "-"}
-                </td>
 
                 <td className="px-6 py-5">
 
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${
-                      group.active
-                        ? "bg-green-100 text-green-700"
-                        : "bg-neutral-200 text-neutral-600"
-                    }`}
-                  >
-                    {group.active ? "Ativa" : "Inativa"}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <TrainingGroupStatusBadge status={group.status} />
+                    {group.featured && (
+                      <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+                        Destaque
+                      </span>
+                    )}
+                  </div>
 
                 </td>
 

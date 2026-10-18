@@ -4,19 +4,25 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import SectionTitle from "../../../components/common/SectionTitle";
 
-import { getTrainingGroup } from "../../../../services/administration/trainingGroups";
+import {
+  getTrainingGroup,
+  getTrainingGroupCategoryNames,
+} from "../../../../services/administration/trainingGroups";
+import { getActiveCoaches } from "../../../../services/administration/coaches";
 import {
   getSchedulesByTrainingGroup,
   createSchedule,
   updateSchedule,
   toggleSchedule,
   deleteSchedule,
+  setScheduleCoaches,
 } from "../../../../services/administration/trainingGroupSchedules";
 
 import { WEEKDAY_LABELS } from "../../../../constants/weekdays";
 
 import CrudTable from "../components/CrudTable";
 import StatusBadge from "../components/StatusBadge";
+import TrainingGroupStatusBadge from "../components/TrainingGroupStatusBadge";
 import ConfirmDialog from "../components/ConfirmDialog";
 
 import ScheduleModal from "../schedules/ScheduleModal";
@@ -27,7 +33,12 @@ const EMPTY_FORM = {
   end_time: "",
   allow_trial: true,
   experimental_limit: 0,
+  coach_ids: [],
 };
+
+function getScheduleCoaches(schedule) {
+  return (schedule.coaches ?? []).map((item) => item.coach).filter(Boolean);
+}
 
 export default function TrainingGroupDetails() {
   const { id } = useParams();
@@ -36,6 +47,8 @@ export default function TrainingGroupDetails() {
   const [group, setGroup] = useState(null);
 
   const [schedules, setSchedules] = useState([]);
+
+  const [coaches, setCoaches] = useState([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -55,13 +68,15 @@ export default function TrainingGroupDetails() {
     try {
       setLoading(true);
 
-      const [groupData, schedulesData] = await Promise.all([
+      const [groupData, schedulesData, coachesData] = await Promise.all([
         getTrainingGroup(id),
         getSchedulesByTrainingGroup(id),
+        getActiveCoaches(),
       ]);
 
       setGroup(groupData);
       setSchedules(schedulesData);
+      setCoaches(coachesData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -98,6 +113,7 @@ export default function TrainingGroupDetails() {
       end_time: schedule.end_time,
       allow_trial: schedule.allow_trial,
       experimental_limit: schedule.experimental_limit,
+      coach_ids: getScheduleCoaches(schedule).map((coach) => coach.id),
     });
 
     setOpen(true);
@@ -114,11 +130,11 @@ export default function TrainingGroupDetails() {
         experimental_limit: Number(form.experimental_limit) || 0,
       };
 
-      if (editing) {
-        await updateSchedule(editing.id, payload);
-      } else {
-        await createSchedule(payload);
-      }
+      const saved = editing
+        ? await updateSchedule(editing.id, payload)
+        : await createSchedule(payload);
+
+      await setScheduleCoaches(saved.id, form.coach_ids);
 
       setOpen(false);
 
@@ -165,17 +181,41 @@ export default function TrainingGroupDetails() {
         Voltar
       </button>
 
-      <SectionTitle
-        title={group.name}
-        subtitle="Gerencie os dados e horários desta turma."
-      />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <SectionTitle
+          title={group.name}
+          subtitle="Gerencie os dados e horários desta turma."
+        />
 
-      <div className="grid grid-cols-2 gap-6 rounded-2xl border border-neutral-200 bg-white p-6 md:grid-cols-4">
+        <button
+          onClick={() =>
+            navigate(`/admin/administration/training-groups/${group.id}/edit`)
+          }
+          className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-3 font-medium hover:bg-neutral-50"
+        >
+          <Pencil size={18} />
+          Editar turma
+        </button>
+      </div>
 
-        <Info label="Categoria" value={group.category?.name} />
+      <div className="grid grid-cols-2 gap-6 rounded-2xl border border-neutral-200 bg-white p-6 md:grid-cols-3">
+
+        <Info label="Categorias" value={getTrainingGroupCategoryNames(group)} />
         <Info label="Modalidade" value={group.modality?.name} />
-        <Info label="Professor" value={group.coach?.name} />
+        <Info label="Local" value={group.location?.name} />
         <Info label="Unidade" value={group.unit?.name} />
+
+        <div>
+          <p className="text-sm text-neutral-500">Situação</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <TrainingGroupStatusBadge status={group.status} />
+            {group.featured && (
+              <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+                Destaque
+              </span>
+            )}
+          </div>
+        </div>
 
       </div>
 
@@ -200,6 +240,7 @@ export default function TrainingGroupDetails() {
           "Dia",
           "Hora inicial",
           "Hora final",
+          "Professores",
           "Limite de experimentais",
           "Permite experimental",
           "Status",
@@ -226,6 +267,12 @@ export default function TrainingGroupDetails() {
 
             <td className="px-6 py-4">
               {schedule.end_time}
+            </td>
+
+            <td className="px-6 py-4">
+              {getScheduleCoaches(schedule)
+                .map((coach) => coach.name)
+                .join(", ") || "-"}
             </td>
 
             <td className="px-6 py-4">
@@ -278,7 +325,16 @@ export default function TrainingGroupDetails() {
         open={open}
         editing={editing}
         form={form}
+        coaches={coaches}
         onChange={handleChange}
+        onToggleCoach={(coachId) =>
+          setForm((old) => ({
+            ...old,
+            coach_ids: old.coach_ids.includes(coachId)
+              ? old.coach_ids.filter((item) => item !== coachId)
+              : [...old.coach_ids, coachId],
+          }))
+        }
         onClose={() => setOpen(false)}
         onSave={handleSave}
       />

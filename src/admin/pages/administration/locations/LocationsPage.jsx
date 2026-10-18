@@ -1,139 +1,238 @@
-import { useState } from "react";
-import { ArrowLeft, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
-import SectionTitle from "../../../components/common/SectionTitle";
+import CrudPage from "../components/CrudPage";
+import CrudTable from "../components/CrudTable";
+import CrudModal from "../components/CrudModal";
+import FormField from "../components/FormField";
+import StatusBadge from "../components/StatusBadge";
 
+import {
+  getLocations,
+  createLocation,
+  updateLocation,
+} from "../../../../services/administration/locations";
+import { getUnits } from "../../../../services/administration/units";
+
+const EMPTY_FORM = {
+  unit_id: "",
+  name: "",
+  address: "",
+  active: true,
+};
+
+/*
+ * Locais = ginásios e arenas onde acontecem os treinos.
+ * Cada local pertence a uma unidade (cidade) e aparece para os
+ * pais no formulário público, junto com o endereço.
+ */
 export default function LocationsPage() {
-  const navigate = useNavigate();
+  const [locations, setLocations] = useState([]);
+  const [units, setUnits] = useState([]);
 
-  const [locations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      setLoading(true);
+
+      const [locationsData, unitsData] = await Promise.all([
+        getLocations(),
+        getUnits(),
+      ]);
+
+      setLocations(locationsData);
+      setUnits(unitsData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleCreate() {
+    setEditing(null);
+    setError("");
+
+    setForm({
+      ...EMPTY_FORM,
+      unit_id: units.length === 1 ? units[0].id : "",
+    });
+
+    setOpen(true);
+  }
+
+  function handleEdit(location) {
+    setEditing(location);
+    setError("");
+
+    setForm({
+      unit_id: location.unit_id ?? "",
+      name: location.name ?? "",
+      address: location.address ?? "",
+      active: location.active,
+    });
+
+    setOpen(true);
+  }
+
+  async function handleSave() {
+    if (!form.unit_id || !form.name.trim()) {
+      setError("Informe a unidade e o nome do local.");
+      return;
+    }
+
+    const payload = {
+      unit_id: form.unit_id,
+      name: form.name.trim(),
+      address: form.address.trim() || null,
+      active: form.active,
+    };
+
+    try {
+      if (editing) {
+        await updateLocation(editing.id, payload);
+      } else {
+        await createLocation(payload);
+      }
+
+      setOpen(false);
+
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      setError("Não foi possível salvar o local.");
+    }
+  }
 
   return (
-    <div className="space-y-8">
-
-      <button
-        onClick={() => navigate("/admin/administration")}
-        className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900"
+    <>
+      <CrudPage
+        title="Locais"
+        subtitle="Ginásios e arenas onde acontecem os treinos. O endereço aparece para os pais no formulário."
+        createLabel="Novo Local"
+        onCreate={handleCreate}
       >
-        <ArrowLeft size={18} />
-        Voltar para Administração
-      </button>
-
-      <div className="flex items-center justify-between">
-
-        <SectionTitle
-          title="Localizações"
-          subtitle="Gerencie as quadras e ginásios onde acontecem os treinamentos."
-        />
-
-        <button
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-medium text-white transition hover:bg-red-700"
+        <CrudTable
+          columns={[
+            "Local",
+            "Unidade",
+            "Endereço",
+            "Status",
+            "Ações",
+          ]}
+          emptyMessage={
+            loading
+              ? "Carregando..."
+              : "Nenhum local cadastrado."
+          }
         >
-          <Plus size={18} />
-          Nova Localização
-        </button>
+          {locations.map((location) => (
+            <tr
+              key={location.id}
+              className="border-b border-neutral-100"
+            >
+              <td className="px-6 py-4 font-medium">
+                {location.name}
+              </td>
 
-      </div>
+              <td className="px-6 py-4">
+                {location.unit?.name}
+              </td>
 
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+              <td className="px-6 py-4">
+                {location.address || (
+                  <span className="text-neutral-400">Sem endereço</span>
+                )}
+              </td>
 
-        <table className="min-w-full">
+              <td className="px-6 py-4">
+                <StatusBadge active={location.active} />
+              </td>
 
-          <thead className="border-b border-neutral-200 bg-neutral-50">
-
-            <tr>
-
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                Unidade
-              </th>
-
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                Localização
-              </th>
-
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                Endereço
-              </th>
-
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                Status
-              </th>
-
-              <th className="px-6 py-4 text-right text-sm font-semibold">
-                Ações
-              </th>
-
+              <td className="px-6 py-4 text-right">
+                <button
+                  onClick={() => handleEdit(location)}
+                  className="rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
+                >
+                  Editar
+                </button>
+              </td>
             </tr>
+          ))}
+        </CrudTable>
+      </CrudPage>
 
-          </thead>
+      <CrudModal
+        open={open}
+        title={editing ? "Editar Local" : "Novo Local"}
+        onClose={() => setOpen(false)}
+        onSave={handleSave}
+      >
+        <FormField label="Unidade">
+          <select
+            value={form.unit_id}
+            onChange={(e) =>
+              setForm({ ...form, unit_id: e.target.value })
+            }
+            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+          >
+            <option value="">Selecione...</option>
 
-          <tbody>
+            {units.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.name}
+              </option>
+            ))}
+          </select>
+        </FormField>
 
-            {locations.length === 0 ? (
+        <FormField label="Nome">
+          <input
+            value={form.name}
+            onChange={(e) =>
+              setForm({ ...form, name: e.target.value })
+            }
+            placeholder="Ex.: Ginásio do Krahe"
+            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+          />
+        </FormField>
 
-              <tr>
+        <FormField label="Endereço">
+          <input
+            value={form.address}
+            onChange={(e) =>
+              setForm({ ...form, address: e.target.value })
+            }
+            placeholder="Rua, número, bairro"
+            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+          />
+        </FormField>
 
-                <td
-                  colSpan={5}
-                  className="px-6 py-16 text-center text-neutral-500"
-                >
-                  Nenhuma localização cadastrada.
-                </td>
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={form.active}
+            onChange={(e) =>
+              setForm({ ...form, active: e.target.checked })
+            }
+          />
 
-              </tr>
+          <span>Local ativo</span>
+        </label>
 
-            ) : (
-
-              locations.map((location) => (
-                <tr
-                  key={location.id}
-                  className="border-b border-neutral-100"
-                >
-
-                  <td className="px-6 py-4">
-                    {location.unit?.name}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {location.name}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {location.address}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {location.active ? (
-                      <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                        Ativa
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-neutral-200 px-3 py-1 text-xs font-medium text-neutral-600">
-                        Inativa
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="px-6 py-4 text-right">
-
-                    <button className="rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100">
-                      Editar
-                    </button>
-
-                  </td>
-
-                </tr>
-              ))
-
-            )}
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </div>
+        {error && (
+          <p className="text-sm font-medium text-red-600">{error}</p>
+        )}
+      </CrudModal>
+    </>
   );
 }

@@ -130,6 +130,11 @@ export default function App() {
   path="administration/training-groups/:id"
   element={<TrainingGroupDetails />}
 />
+
+<Route
+  path="administration/training-groups/:id/edit"
+  element={<TrainingGroupForm />}
+/>
           
         </Route>
 
