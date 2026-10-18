@@ -58,6 +58,7 @@ export async function getDashboardData() {
         )
       `,
       )
+      .is("archived_at", null)
       .eq("experimental_date", today)
       .in("status", [
         "pending_confirmation",
@@ -76,6 +77,7 @@ export async function getDashboardData() {
         count: "exact",
         head: true,
       })
+      .is("archived_at", null)
       .eq("status", "pending_confirmation")
       .gte("experimental_date", today),
 
@@ -94,6 +96,7 @@ export async function getDashboardData() {
         experimental_date
       `,
       )
+      .is("archived_at", null)
       .eq("status", "follow_up")
       .order("follow_up_date", {
         ascending: true,
@@ -107,6 +110,7 @@ export async function getDashboardData() {
         count: "exact",
         head: true,
       })
+      .is("archived_at", null)
       .eq("status", "enrolled")
       .gte("enrolled_at", startOfMonth),
   ]);

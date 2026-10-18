@@ -4,6 +4,7 @@ import { CONTACT_STATUS } from "../constants/contactStatus";
 import { LOST_REASON } from "../constants/lostReasons";
 import { ENROLLMENT_STATUS } from "../constants/enrollmentStatus";
 import { EXPERIMENTAL_STATUS } from "../constants/experimentalStatus";
+import { ARCHIVE_REASON } from "../constants/archiveReasons";
 
 import {
   appendInternalNote,
@@ -532,6 +533,82 @@ export async function updateContact(contactId, updates) {
   }
 
   return ensureUpdated(data);
+}
+
+/* =========================================================
+ * ARQUIVO (triagem)
+ * =======================================================*/
+
+/*
+ * Arquiva vários contatos de uma vez (ex.: pais de alunos que
+ * entraram automaticamente pelo WhatsApp). Não apaga nada.
+ */
+export async function archiveContacts(contactIds, reason) {
+  if (!contactIds?.length) {
+    throw new Error("Nenhum contato selecionado.");
+  }
+
+  if (!Object.values(ARCHIVE_REASON).includes(reason)) {
+    throw new Error("Motivo de arquivamento inválido.");
+  }
+
+  const { error } = await supabase
+    .from("contacts")
+    .update({
+      archived_at: nowISO(),
+      archive_reason: reason,
+      ...withUpdatedAt(),
+    })
+    .in("id", contactIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+}
+
+export async function restoreContacts(contactIds) {
+  if (!contactIds?.length) {
+    throw new Error("Nenhum contato selecionado.");
+  }
+
+  const { error } = await supabase
+    .from("contacts")
+    .update({
+      archived_at: null,
+      archive_reason: null,
+      ...withUpdatedAt(),
+    })
+    .in("id", contactIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+}
+
+/*
+ * "É lead": contato criado automaticamente pelo WhatsApp (status
+ * "new", fora do funil) passa a ser um novo contato de verdade.
+ */
+export async function promoteToLead(contactId) {
+  const { data, error } = await supabase
+    .from("contacts")
+    .update({
+      status: CONTACT_STATUS.NEW_CONTACT,
+      ...withUpdatedAt(),
+    })
+    .eq("id", contactId)
+    .eq("status", "new")
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.[0] ?? null;
 }
 
 export async function addContactInternalNote(contactId, note) {
@@ -1106,6 +1183,7 @@ export async function getFollowUps() {
     .from("contacts")
     .select(CONTACT_WITH_CATEGORY)
     .eq("status", CONTACT_STATUS.FOLLOW_UP)
+    .is("archived_at", null)
     .not("follow_up_date", "is", null)
     .order("follow_up_date", {
       ascending: true,
@@ -1193,6 +1271,7 @@ export async function getWaitingList() {
     .from("contacts")
     .select(CONTACT_WITH_CATEGORY)
     .eq("status", CONTACT_STATUS.WAITING_LIST)
+    .is("archived_at", null)
     .order("waiting_list_at", {
       ascending: true,
       nullsFirst: false,
@@ -1444,6 +1523,7 @@ export async function getFollowUpCenter() {
       .from("contacts")
       .select(CONTACT_WITH_CATEGORY)
       .eq("status", CONTACT_STATUS.FOLLOW_UP)
+      .is("archived_at", null)
       .not("follow_up_date", "is", null)
       .order("follow_up_date", {
         ascending: true,
@@ -1453,6 +1533,7 @@ export async function getFollowUpCenter() {
       .from("contacts")
       .select(CONTACT_WITH_CATEGORY)
       .eq("status", CONTACT_STATUS.WAITING_LIST)
+      .is("archived_at", null)
       .order("waiting_list_at", {
         ascending: true,
         nullsFirst: false,

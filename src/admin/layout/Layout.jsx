@@ -10,6 +10,10 @@ export default function Layout() {
   const [newContactOpen, setNewContactOpen] =
     useState(false);
 
+  // Muda a cada contato criado, para as páginas recarregarem
+  const [contactsVersion, setContactsVersion] =
+    useState(0);
+
   return (
     <div className="flex">
       <Sidebar />
@@ -22,7 +26,12 @@ export default function Layout() {
         />
 
         <main className="p-10">
-          <Outlet />
+          <Outlet
+            context={{
+              openNewContact: () => setNewContactOpen(true),
+              contactsVersion,
+            }}
+          />
         </main>
       </div>
 
@@ -30,6 +39,9 @@ export default function Layout() {
         open={newContactOpen}
         onClose={() =>
           setNewContactOpen(false)
+        }
+        onCreated={() =>
+          setContactsVersion((current) => current + 1)
         }
       />
     </div>
