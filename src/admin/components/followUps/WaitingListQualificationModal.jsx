@@ -1,6 +1,8 @@
 // src/admin/components/followUps/WaitingListQualificationModal.jsx
 
 import { useMemo, useState } from "react";
+
+import { toast } from "../common/Toaster";
 import { AlertTriangle, CheckCircle2, X } from "lucide-react";
 
 import {
@@ -102,7 +104,7 @@ export default function WaitingListQualificationModal({
       qualificationStatus === INTEREST_QUALIFICATION.COMPLETE &&
       !canMarkComplete
     ) {
-      alert(
+      toast(
         `Para marcar como qualificado, complete: ${missingFields.join(", ")}.`,
       );
 

@@ -23,8 +23,4 @@ export const FOLLOW_UP_FILTER_OPTIONS = [
     value: FOLLOW_UP_FILTER.ALL,
     label: "Todos",
   },
-  {
-    value: FOLLOW_UP_FILTER.WAITING_LIST,
-    label: "Lista de interesse",
-  },
 ];

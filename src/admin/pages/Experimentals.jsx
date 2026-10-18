@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
+import { toast } from "../components/common/Toaster";
 import TrialSlotPicker from "../components/experimentals/TrialSlotPicker";
 import {
   buildCoachLinkUrl,
@@ -281,7 +282,7 @@ export default function Experimentals() {
         err
       );
 
-      alert(
+      toast(
         err?.message ||
           "Não foi possível atualizar a experimental."
       );
@@ -364,7 +365,7 @@ export default function Experimentals() {
         err
       );
 
-      alert(
+      toast(
         err?.message ||
           "Não foi possível salvar o resultado da experimental."
       );
@@ -418,7 +419,7 @@ export default function Experimentals() {
         err
       );
 
-      alert(
+      toast(
         err?.message ||
           "Não foi possível reagendar a experimental."
       );
@@ -459,7 +460,7 @@ export default function Experimentals() {
         err
       );
 
-      alert(
+      toast(
         err?.message ||
           "Não foi possível programar o retorno."
       );
@@ -504,7 +505,7 @@ export default function Experimentals() {
         err
       );
 
-      alert(
+      toast(
         err?.message ||
           "Não foi possível encerrar a oportunidade."
       );
@@ -1687,7 +1688,7 @@ function CoachNotesEditor({
         setSaved(false);
       }, 2000);
     } catch (err) {
-      alert(
+      toast(
         err?.message ||
           "Não foi possível salvar a observação."
       );
@@ -2392,7 +2393,7 @@ function ExperimentalResultModal({
       result === "follow_up" &&
       !followUpDate
     ) {
-      alert(
+      toast(
         "Informe a data do retorno."
       );
       return;
@@ -2402,7 +2403,7 @@ function ExperimentalResultModal({
       result === "lost" &&
       !lostReason
     ) {
-      alert(
+      toast(
         "Informe o motivo da não conversão."
       );
       return;
@@ -2723,7 +2724,7 @@ function NoShowFollowUpModal({
     event.preventDefault();
 
     if (!followUpDate) {
-      alert(
+      toast(
         "Informe a data do próximo contato."
       );
       return;
@@ -2833,7 +2834,7 @@ function CloseNoShowOpportunityModal({
     event.preventDefault();
 
     if (!lostReason) {
-      alert(
+      toast(
         "Informe o motivo do encerramento."
       );
       return;

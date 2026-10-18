@@ -70,9 +70,14 @@ export default function FollowUpActionModal({
   contact,
   type,
   saving,
+  // Erro vindo de quem salva (ex.: falha no banco)
+  error = "",
   onClose,
   onSave,
 }) {
+  const [formError, setFormError] =
+    useState("");
+
   const [followUpDate, setFollowUpDate] =
     useState("");
 
@@ -100,9 +105,7 @@ export default function FollowUpActionModal({
       type === FOLLOW_UP_ACTION.RESCHEDULE &&
       !followUpDate
     ) {
-      alert(
-        "Informe a nova data do retorno.",
-      );
+      setFormError("Informe a nova data do retorno.");
 
       return;
     }
@@ -111,12 +114,12 @@ export default function FollowUpActionModal({
       isClosingAction &&
       !lostReason
     ) {
-      alert(
-        "Informe o motivo do encerramento.",
-      );
+      setFormError("Informe o motivo do encerramento.");
 
       return;
     }
+
+    setFormError("");
 
     onSave({
       followUpDate,
@@ -313,6 +316,12 @@ export default function FollowUpActionModal({
           {/* =================================================
            * AÇÕES
            * =============================================== */}
+
+          {(formError || error) && (
+            <p className="mt-6 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">
+              {formError || error}
+            </p>
+          )}
 
           <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
