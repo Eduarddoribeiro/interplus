@@ -34,7 +34,9 @@ import {
 } from "../../services/contacts";
 
 import { WAITING_LIST_REASONS } from "../../constants/waitingListReasons";
+import { WEEKDAY_LABELS } from "../../constants/weekdays";
 import { supabase } from "../../lib/supabase";
+import TrialSlotPicker from "../components/experimentals/TrialSlotPicker";
 
 /* =========================================================
  * CONSTANTES
@@ -348,8 +350,7 @@ const [waitingForm, setWaitingForm] = useState({
 
   const [experimentalForm, setExperimentalForm] = useState({
     categoryId: "",
-    experimentalDate: "",
-    experimentalTime: "",
+    slot: null,
     notes: "",
   });
 
@@ -415,16 +416,9 @@ const [waitingForm, setWaitingForm] = useState({
           getContactExperimentalSessions(id),
           supabase
             .from("categories")
-            .select(`
-              id,
-              name,
-              weekday,
-              start_time,
-              end_time,
-              trial_status,
-              experimental_limit
-            `)
-            .order("name", { ascending: true }),
+            .select("id, name")
+            .eq("active", true)
+            .order("order_index", { ascending: true }),
         ]);
 
       if (categoriesResult.error) {
@@ -503,10 +497,9 @@ const [waitingForm, setWaitingForm] = useState({
 
   function openExperimentalModal() {
     setExperimentalForm({
-      categoryId: contact?.category_id || "",
-      experimentalDate: "",
-      experimentalTime:
-        contact?.category?.start_time?.slice(0, 5) || "",
+      categoryId:
+        contact?.category_id || contact?.interest_category_id || "",
+      slot: null,
       notes: "",
     });
 
@@ -682,8 +675,8 @@ const [waitingForm, setWaitingForm] = useState({
       return;
     }
 
-    if (!experimentalForm.experimentalDate) {
-      setError("Informe a data da experimental.");
+    if (!experimentalForm.slot) {
+      setError("Escolha a turma, o horário e a data.");
       return;
     }
 
@@ -691,10 +684,9 @@ const [waitingForm, setWaitingForm] = useState({
       () =>
         rescheduleExperimental(id, {
           categoryId: experimentalForm.categoryId,
-          experimentalDate:
-            experimentalForm.experimentalDate,
-          experimentalTime:
-            experimentalForm.experimentalTime || null,
+          trainingGroupScheduleId:
+            experimentalForm.slot.scheduleId,
+          experimentalDate: experimentalForm.slot.date,
           notes: experimentalForm.notes,
         }),
       "Experimental agendada com sucesso."
@@ -1086,6 +1078,15 @@ const [waitingForm, setWaitingForm] = useState({
               />
 
               <Field
+                label={
+                  contact.status === "waiting_list"
+                    ? "Local de preferência"
+                    : "Local"
+                }
+                value={contact.location?.name || "—"}
+              />
+
+              <Field
                 label="Resultado comercial"
                 value={
                   STATUS_LABELS[
@@ -1199,6 +1200,9 @@ const [waitingForm, setWaitingForm] = useState({
                       <p className="mt-1 text-sm text-neutral-500">
                         {session.category?.name ||
                           "Categoria não informada"}
+                        {session.schedule?.training_group
+                          ? ` · ${session.schedule.training_group.location?.name ?? ""} · ${session.schedule.training_group.name}`
+                          : ""}
                       </p>
 
                       {session.notes ? (
@@ -1610,6 +1614,7 @@ const [waitingForm, setWaitingForm] = useState({
         title="Agendar / reagendar experimental"
         description="Uma nova sessão será criada. Experimentais anteriores permanecerão no histórico."
         onClose={closeModal}
+        maxWidth="max-w-2xl"
       >
         <form
           onSubmit={handleExperimental}
@@ -1622,28 +1627,13 @@ const [waitingForm, setWaitingForm] = useState({
 
             <select
               value={experimentalForm.categoryId}
-              onChange={(event) => {
-                const categoryId = event.target.value;
-
-                const selectedCategory =
-                  categories.find(
-                    (category) =>
-                      String(category.id) ===
-                      String(categoryId)
-                  );
-
+              onChange={(event) =>
                 setExperimentalForm((current) => ({
                   ...current,
-                  categoryId,
-                  experimentalTime:
-                    selectedCategory?.start_time?.slice(
-                      0,
-                      5
-                    ) ||
-                    current.experimentalTime ||
-                    "",
-                }));
-              }}
+                  categoryId: event.target.value,
+                  slot: null,
+                }))
+              }
               className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
             >
               <option value="">
@@ -1661,48 +1651,33 @@ const [waitingForm, setWaitingForm] = useState({
             </select>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
-                Data *
-              </label>
+          <div>
+            <p className="mb-2 block text-sm font-semibold text-neutral-700">
+              Turma, horário e data *
+            </p>
 
-              <input
-                type="date"
-                value={
-                  experimentalForm.experimentalDate
-                }
-                onChange={(event) =>
-                  setExperimentalForm((current) => ({
-                    ...current,
-                    experimentalDate:
-                      event.target.value,
-                  }))
-                }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
-              />
-            </div>
+            <TrialSlotPicker
+              categoryId={experimentalForm.categoryId}
+              value={experimentalForm.slot}
+              onChange={(slot) =>
+                setExperimentalForm((current) => ({
+                  ...current,
+                  slot,
+                }))
+              }
+            />
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
-                Horário
-              </label>
-
-              <input
-                type="time"
-                value={
-                  experimentalForm.experimentalTime
-                }
-                onChange={(event) =>
-                  setExperimentalForm((current) => ({
-                    ...current,
-                    experimentalTime:
-                      event.target.value,
-                  }))
-                }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
-              />
-            </div>
+            {experimentalForm.slot && (
+              <p className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm text-neutral-700">
+                Selecionado:{" "}
+                <strong>
+                  {experimentalForm.slot.group.location?.name} ·{" "}
+                  {WEEKDAY_LABELS[experimentalForm.slot.weekday]}{" "}
+                  {formatDate(experimentalForm.slot.date)} às{" "}
+                  {formatTime(experimentalForm.slot.start_time)}
+                </strong>
+              </p>
+            )}
           </div>
 
           <div>

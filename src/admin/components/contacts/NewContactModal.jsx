@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   CalendarDays,
   CheckCircle2,
-  Clock3,
   GraduationCap,
   ListPlus,
   Loader2,
@@ -14,6 +13,9 @@ import {
 
 import { supabase } from "../../../lib/supabase";
 import { createContact } from "../../../services/contacts";
+import { getActiveLocations } from "../../../services/administration/locations";
+import TrialSlotPicker from "../experimentals/TrialSlotPicker";
+import { WEEKDAY_LABELS } from "../../../constants/weekdays";
 import { WAITING_LIST_REASONS } from "../../../constants/waitingListReasons";
 import { PREFERRED_SHIFT_OPTIONS } from "../../../constants/preferredShift";
 import DaySelector from "../common/DaySelector";
@@ -75,9 +77,12 @@ export default function NewContactModal({ open, onClose, onCreated }) {
 
   const [categoryLoading, setCategoryLoading] = useState(false);
 
-  const [experimentalDate, setExperimentalDate] = useState("");
+  // Turma + horário + data escolhidos no TrialSlotPicker
+  const [slot, setSlot] = useState(null);
 
-  const [experimentalTime, setExperimentalTime] = useState("");
+  const [locations, setLocations] = useState([]);
+
+  const [preferredLocationId, setPreferredLocationId] = useState("");
 
   const [waitingReason, setWaitingReason] = useState("");
 
@@ -109,6 +114,10 @@ export default function NewContactModal({ open, onClose, onCreated }) {
     if (!open) return;
 
     resetForm();
+
+    getActiveLocations()
+      .then(setLocations)
+      .catch((err) => console.error("Erro ao carregar locais:", err));
   }, [open]);
 
   /*
@@ -118,9 +127,10 @@ export default function NewContactModal({ open, onClose, onCreated }) {
   useEffect(() => {
     if (!open) return;
 
+    setSlot(null);
+
     if (!birthDate) {
       setCategory(null);
-      setExperimentalTime("");
       return;
     }
 
@@ -134,20 +144,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
 
       const { data, error } = await supabase
         .from("categories")
-        .select(
-          `
-          id,
-          name,
-          min_birth_date,
-          max_birth_date,
-          active,
-          weekday,
-          start_time,
-          end_time,
-          experimental_limit,
-          trial_status
-        `,
-        )
+        .select("id, name, min_birth_date, max_birth_date, active")
         .lte("min_birth_date", date)
         .gte("max_birth_date", date)
         .eq("active", true)
@@ -158,17 +155,10 @@ export default function NewContactModal({ open, onClose, onCreated }) {
       }
 
       setCategory(data || null);
-
-      if (data?.start_time) {
-        setExperimentalTime(data.start_time.slice(0, 5));
-      } else {
-        setExperimentalTime("");
-      }
     } catch (err) {
       console.error("Erro ao identificar categoria:", err);
 
       setCategory(null);
-      setExperimentalTime("");
     } finally {
       setCategoryLoading(false);
     }
@@ -259,8 +249,8 @@ export default function NewContactModal({ open, onClose, onCreated }) {
         return;
       }
 
-      if (!experimentalDate) {
-        setError("Informe a data da aula experimental.");
+      if (!slot) {
+        setError("Escolha a turma, o horário e a data da experimental.");
         return;
       }
     }
@@ -336,10 +326,10 @@ export default function NewContactModal({ open, onClose, onCreated }) {
       if (destination === "experimental") {
         payload.status = "pending_confirmation";
 
-        payload.experimental_date = experimentalDate;
+        // Horário, turma e local vêm do horário escolhido (createContact)
+        payload.training_group_schedule_id = slot.scheduleId;
 
-        payload.experimental_time =
-          experimentalTime || category?.start_time || null;
+        payload.experimental_date = slot.date;
 
         payload.waiting_list_reason = null;
         payload.waiting_list_notes = null;
@@ -360,6 +350,8 @@ export default function NewContactModal({ open, onClose, onCreated }) {
         payload.waiting_list_notes = waitingNotes.trim() || null;
 
         payload.waiting_list_at = new Date().toISOString();
+
+        payload.location_id = preferredLocationId || null;
 
         payload.experimental_date = null;
         payload.experimental_time = null;
@@ -403,8 +395,8 @@ export default function NewContactModal({ open, onClose, onCreated }) {
     setPreferredShift("");
     setPreferredDays([]);
 
-    setExperimentalDate("");
-    setExperimentalTime("");
+    setSlot(null);
+    setPreferredLocationId("");
 
     setWaitingReason("");
     setWaitingNotes("");
@@ -627,13 +619,6 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                         </p>
                       </div>
 
-                      <div className="text-sm text-neutral-600">
-                        {category.weekday && <span>{category.weekday}</span>}
-
-                        {category.start_time && (
-                          <span> • {formatTime(category.start_time)}</span>
-                        )}
-                      </div>
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
@@ -842,46 +827,25 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                       </p>
                     </div>
                   ) : (
-                    <>
-                      <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                        <Field label="Data da experimental" required>
-                          <input
-                            type="date"
-                            min={firstContactAt || undefined}
-                            value={experimentalDate}
-                            onChange={(event) =>
-                              setExperimentalDate(event.target.value)
-                            }
-                            className={inputClass}
-                          />
-                        </Field>
+                    <div className="mt-4">
+                      <TrialSlotPicker
+                        categoryId={category.id}
+                        value={slot}
+                        onChange={setSlot}
+                      />
 
-                        <Field label="Horário">
-                          <div className="relative">
-                            <Clock3
-                              size={17}
-                              className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
-                            />
-
-                            <input
-                              type="time"
-                              value={experimentalTime}
-                              onChange={(event) =>
-                                setExperimentalTime(event.target.value)
-                              }
-                              className={`${inputClass} pl-11`}
-                            />
-                          </div>
-                        </Field>
-                      </div>
-
-                      <p className="mt-4 text-xs text-neutral-500">
-                        Turma: <strong>{category.name}</strong>
-                        {category.weekday && ` • ${category.weekday}`}
-                        {category.start_time &&
-                          ` • ${formatTime(category.start_time)}`}
-                      </p>
-                    </>
+                      {slot && (
+                        <p className="mt-4 rounded-xl bg-white p-3 text-sm text-neutral-700">
+                          Selecionado:{" "}
+                          <strong>
+                            {slot.group.location?.name} ·{" "}
+                            {WEEKDAY_LABELS[slot.weekday]}{" "}
+                            {formatDate(slot.date)} às{" "}
+                            {formatTime(slot.start_time)}
+                          </strong>
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -931,6 +895,28 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                       </select>
                     </Field>
                   </div>
+
+                  {locations.length > 1 && (
+                    <div className="mt-5">
+                      <Field label="Local de preferência">
+                        <select
+                          value={preferredLocationId}
+                          onChange={(event) =>
+                            setPreferredLocationId(event.target.value)
+                          }
+                          className={inputClass}
+                        >
+                          <option value="">Qualquer local</option>
+
+                          {locations.map((location) => (
+                            <option key={location.id} value={location.id}>
+                              {location.name}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                    </div>
+                  )}
 
                   <div className="mt-5">
                     <Field label="Turno preferido">
@@ -1205,6 +1191,13 @@ function formatTime(time) {
   if (!time) return "-";
 
   return time.slice(0, 5);
+}
+
+// "2026-10-20" -> "20/10"
+function formatDate(iso) {
+  const [, month, day] = iso.split("-");
+
+  return `${day}/${month}`;
 }
 
 function getTodayISO() {
