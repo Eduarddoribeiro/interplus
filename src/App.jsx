@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Benefits from "./pages/Benefits";
 import PublicRegistration from "./pages/PublicRegistration";
+import CoachSession from "./pages/CoachSession";
 
 import Layout from "./admin/layout/Layout";
 import ProtectedRoute from "./admin/components/ProtectedRoute";
@@ -38,6 +39,12 @@ export default function App() {
         <Route
           path="/experimental"
           element={<PublicRegistration />}
+        />
+
+        {/* Professores: presença das experimentais (link sem login) */}
+        <Route
+          path="/aula/:token"
+          element={<CoachSession />}
         />
 
         {/* LOGIN */}
