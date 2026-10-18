@@ -1,29 +1,30 @@
 import { useState } from "react";
 
-import { SOURCE_OPTIONS } from "../../../constants/school";
+import { SCHOOL, SOURCE_OPTIONS } from "../../../constants/school";
 
-const POSITION_OPTIONS = [
-  {
-    value: "",
-    label: "Ainda não possui posição definida",
-  },
-  {
-    value: "goalkeeper",
-    label: "Goleiro",
-  },
-  {
-    value: "fixo",
-    label: "Fixo",
-  },
-  {
-    value: "ala",
-    label: "Ala",
-  },
-  {
-    value: "pivo",
-    label: "Pivô",
-  },
-];
+function YesNo({ value, onChange }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {[
+        { label: "Não", selected: !value, next: false },
+        { label: "Sim", selected: value, next: true },
+      ].map((option) => (
+        <button
+          key={option.label}
+          type="button"
+          onClick={() => onChange(option.next)}
+          className={`rounded-xl border px-4 py-3 font-semibold transition ${
+            option.selected
+              ? "border-red-600 bg-red-50 text-red-700"
+              : "border-neutral-300"
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function ResponsibleForm({
   form,
@@ -114,7 +115,8 @@ export default function ResponsibleForm({
 
   const canContinue =
     form.responsible_name.trim().length > 0 &&
-    form.phone.replace(/\D/g, "").length === 11;
+    form.phone.replace(/\D/g, "").length === 11 &&
+    form.consent;
 
   return (
     <div className="space-y-6">
@@ -206,23 +208,6 @@ export default function ResponsibleForm({
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-neutral-800">
-              E-mail
-            </label>
-
-            <input
-              type="email"
-              autoComplete="email"
-              value={form.email}
-              onChange={(e) =>
-                updateField("email", e.target.value)
-              }
-              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-              placeholder="email@exemplo.com"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-800">
               Bairro
             </label>
 
@@ -241,28 +226,42 @@ export default function ResponsibleForm({
             />
           </div>
 
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-neutral-800">
+              Como conheceu a escola?
+            </label>
+
+            <select
+              value={form.source}
+              onChange={(e) =>
+                handleSource(e.target.value)
+              }
+              className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
+            >
+              <option value="">Selecione...</option>
+
+              {SOURCE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
         </div>
 
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-neutral-800">
-            Como conheceu a escola?
+        {/* Anti-robô: escondido de pessoas, robôs preenchem */}
+        <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+          <label>
+            Site
+            <input
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={form.website}
+              onChange={(e) => updateField("website", e.target.value)}
+            />
           </label>
-
-          <select
-            value={form.source}
-            onChange={(e) =>
-              handleSource(e.target.value)
-            }
-            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-          >
-            <option value="">Selecione...</option>
-
-            {SOURCE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
         </div>
 
       </section>
@@ -417,28 +416,18 @@ export default function ResponsibleForm({
             <div>
 
               <label className="mb-2 block text-sm font-semibold text-neutral-800">
-                Posição preferida
+                Costuma jogar no gol?
               </label>
 
-              <select
-                value={form.preferred_position}
-                onChange={(e) =>
+              <YesNo
+                value={form.preferred_position === "goalkeeper"}
+                onChange={(isGoalkeeper) =>
                   updateField(
                     "preferred_position",
-                    e.target.value
+                    isGoalkeeper ? "goalkeeper" : ""
                   )
                 }
-                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-red-600"
-              >
-                {POSITION_OPTIONS.map((position) => (
-                  <option
-                    key={position.value}
-                    value={position.value}
-                  >
-                    {position.label}
-                  </option>
-                ))}
-              </select>
+              />
 
             </div>
 
@@ -489,6 +478,22 @@ export default function ResponsibleForm({
         </>
 
       )}
+
+      {/* CONSENTIMENTO (LGPD) */}
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+        <input
+          type="checkbox"
+          checked={form.consent}
+          onChange={(e) => updateField("consent", e.target.checked)}
+          className="mt-1 h-5 w-5 shrink-0 accent-red-600"
+        />
+
+        <span className="text-sm leading-relaxed text-neutral-700">
+          Autorizo a {SCHOOL.name} a entrar em contato pelo WhatsApp e a usar
+          estes dados somente para agendar e acompanhar a aula do atleta. *
+        </span>
+      </label>
 
       {/* NAVEGAÇÃO */}
 

@@ -28,8 +28,11 @@ const INITIAL_FORM = {
 
   responsible_name: "",
   phone: "",
-  email: "",
   neighborhood: "",
+
+  // LGPD: autorização obrigatória; website é o campo anti-robô
+  consent: false,
+  website: "",
 
   trained_elsewhere: false,
   previous_club: "",
@@ -92,10 +95,12 @@ export default function RegistrationForm() {
 
       responsible_name: form.responsible_name,
       phone: form.phone,
-      email: form.email,
       neighborhood: form.neighborhood,
 
       source: form.source || null,
+
+      consent: form.consent,
+      website: form.website,
 
       category_id: form.category?.id,
     };

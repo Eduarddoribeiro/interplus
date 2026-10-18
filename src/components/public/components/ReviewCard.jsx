@@ -1,12 +1,6 @@
 import { WEEKDAY_LABELS } from "../../../constants/weekdays";
-import { SOURCE_LABEL } from "../../../constants/school";
+import { SCHOOL, SOURCE_LABEL } from "../../../constants/school";
 
-const POSITION_LABEL = {
-  goalkeeper: "Goleiro",
-  fixo: "Fixo",
-  ala: "Ala",
-  pivo: "Pivô",
-};
 
 export default function ReviewCard({
   form,
@@ -86,13 +80,10 @@ export default function ReviewCard({
   />
 )}
 
-{form.preferred_position && (
+{form.preferred_position === "goalkeeper" && (
   <Info
-    label="Posição preferida"
-    value={
-  POSITION_LABEL[form.preferred_position] ??
-  form.preferred_position
-}
+    label="Costuma jogar no gol"
+    value="Sim"
   />
 )}
 
@@ -242,6 +233,17 @@ export default function ReviewCard({
           className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
         >
           {error}
+
+          {SCHOOL.whatsapp && (
+            <a
+              href={`https://wa.me/${SCHOOL.whatsapp}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 block font-semibold underline underline-offset-2"
+            >
+              Falar com a escola no WhatsApp
+            </a>
+          )}
         </div>
       )}
 
