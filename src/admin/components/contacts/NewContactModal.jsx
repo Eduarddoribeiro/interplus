@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 
-import { supabase } from "../../../lib/supabase";
+import { getCategoryByBirthDate } from "../../../services/categories";
 import { createContact } from "../../../services/contacts";
 import { getActiveLocations } from "../../../services/administration/locations";
 import TrialSlotPicker from "../experimentals/TrialSlotPicker";
@@ -142,17 +142,8 @@ export default function NewContactModal({ open, onClose, onCreated }) {
       setCategoryLoading(true);
       setCategory(null);
 
-      const { data, error } = await supabase
-        .from("categories")
-        .select("id, name, min_birth_date, max_birth_date, active")
-        .lte("min_birth_date", date)
-        .gte("max_birth_date", date)
-        .eq("active", true)
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
+      // Mesma regra do formulário público: idade que completa no ano
+      const data = await getCategoryByBirthDate(date);
 
       setCategory(data || null);
     } catch (err) {

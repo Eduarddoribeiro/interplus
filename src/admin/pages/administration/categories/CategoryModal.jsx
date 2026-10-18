@@ -1,6 +1,8 @@
 import CrudModal from "../components/CrudModal";
 import FormField from "../components/FormField";
 
+import { birthYearsOf, currentYear } from "../../../../helpers/categoryAge";
+
 export default function CategoryModal({
   open,
   editing,
@@ -9,6 +11,11 @@ export default function CategoryModal({
   onClose,
   onSave,
 }) {
+  const years =
+    form.min_age !== "" && form.max_age !== ""
+      ? birthYearsOf({ min_age: Number(form.min_age), max_age: Number(form.max_age) })
+      : null;
+
   return (
     <CrudModal
       open={open}
@@ -31,27 +38,42 @@ export default function CategoryModal({
 
       <div className="grid grid-cols-2 gap-5">
 
-        <FormField label="Data mínima de nascimento">
+        <FormField label="Idade no ano: de">
           <input
-            type="date"
-            name="min_birth_date"
-            value={form.min_birth_date}
+            type="number"
+            min="0"
+            name="min_age"
+            value={form.min_age}
             onChange={onChange}
             className="w-full rounded-xl border border-neutral-300 px-4 py-3"
           />
         </FormField>
 
-        <FormField label="Data máxima de nascimento">
+        <FormField label="até">
           <input
-            type="date"
-            name="max_birth_date"
-            value={form.max_birth_date}
+            type="number"
+            min="0"
+            name="max_age"
+            value={form.max_age}
             onChange={onChange}
             className="w-full rounded-xl border border-neutral-300 px-4 py-3"
           />
         </FormField>
 
       </div>
+
+      <p className="-mt-2 text-sm text-neutral-500">
+        Idade que o atleta completa no ano (ex.: Sub-09 = 8 a 9).
+        {years && (
+          <>
+            {" "}Em {currentYear()}: nascidos em{" "}
+            <strong>
+              {years.from === years.to ? years.from : `${years.from} a ${years.to}`}
+            </strong>
+            . Muda sozinho na virada do ano.
+          </>
+        )}
+      </p>
 
       <FormField label="Ordem">
         <input
