@@ -1,153 +1,31 @@
-import { supabase } from "../lib/supabase";
+import { getContacts, getExperimentals } from "./contacts";
+import { getOpenTrialOptionsByCategory } from "./administration/trialSlots";
 
-function getLocalDateString(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+import { CONTACT_STATUS } from "../constants/contactStatus";
+import { getInterestCategory } from "../helpers/waitingListRules";
+import { buildDashboard } from "../helpers/dashboardSummary";
 
-  return `${year}-${month}-${day}`;
-}
-
-function getStartOfMonthISO() {
-  const now = new Date();
-
-  const startOfMonth = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    1,
-    0,
-    0,
-    0,
-    0,
-  );
-
-  return startOfMonth.toISOString();
-}
-
+/**
+ * Visão geral: pendências do dia, agenda, retornos e resultado do mês.
+ *
+ * Busca experimentais e contatos uma vez e calcula tudo em
+ * helpers/dashboardSummary.js (sem SQL novo).
+ */
 export async function getDashboardData() {
-  const today = getLocalDateString();
-  const startOfMonth = getStartOfMonthISO();
-
-  const [
-    todayExperimentalsResult,
-    pendingConfirmationResult,
-    followUpsResult,
-    monthEnrollmentsResult,
-  ] = await Promise.all([
-    // 1. Agenda de hoje
-    supabase
-      .from("contacts")
-      .select(
-        `
-        id,
-        child_name,
-        birth_date,
-        responsible_name,
-        phone,
-        source,
-        neighborhood,
-        status,
-        experimental_date,
-        experimental_time,
-        category:categories!contacts_category_id_fkey (
-          id,
-          name,
-          weekday,
-          start_time,
-          end_time
-        )
-      `,
-      )
-      .is("archived_at", null)
-      .eq("experimental_date", today)
-      .in("status", [
-        "pending_confirmation",
-        "confirmed",
-        "attended",
-        "no_show",
-      ])
-      .order("experimental_time", {
-        ascending: true,
-      }),
-
-    // 2. Experimentais futuras aguardando confirmação
-    supabase
-      .from("contacts")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .is("archived_at", null)
-      .eq("status", "pending_confirmation")
-      .gte("experimental_date", today),
-
-    // 3. Retornos pendentes
-    supabase
-      .from("contacts")
-      .select(
-        `
-        id,
-        child_name,
-        responsible_name,
-        phone,
-        status,
-        follow_up_date,
-        internal_notes,
-        experimental_date
-      `,
-      )
-      .is("archived_at", null)
-      .eq("status", "follow_up")
-      .order("follow_up_date", {
-        ascending: true,
-        nullsFirst: false,
-      }),
-
-    // 4. Matrículas realizadas no mês atual
-    supabase
-      .from("contacts")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .is("archived_at", null)
-      .eq("status", "enrolled")
-      .gte("enrolled_at", startOfMonth),
+  const [sessions, contacts] = await Promise.all([
+    getExperimentals(),
+    getContacts(),
   ]);
 
-  if (todayExperimentalsResult.error) {
-    throw todayExperimentalsResult.error;
-  }
+  // Vagas abertas por categoria, para "lista: podem agendar agora"
+  const waitingCategoryIds = contacts
+    .filter(
+      (contact) =>
+        !contact.archived_at && contact.status === CONTACT_STATUS.WAITING_LIST,
+    )
+    .map((contact) => getInterestCategory(contact)?.id);
 
-  if (pendingConfirmationResult.error) {
-    throw pendingConfirmationResult.error;
-  }
+  const availability = await getOpenTrialOptionsByCategory(waitingCategoryIds);
 
-  if (followUpsResult.error) {
-    throw followUpsResult.error;
-  }
-
-  if (monthEnrollmentsResult.error) {
-    throw monthEnrollmentsResult.error;
-  }
-
-  const todayExperimentals = todayExperimentalsResult.data ?? [];
-
-  const followUps = followUpsResult.data ?? [];
-
-  return {
-    stats: {
-      todayExperimentals: todayExperimentals.length,
-
-      pendingConfirmation: pendingConfirmationResult.count ?? 0,
-
-      pendingFollowUps: followUps.length,
-
-      monthEnrollments: monthEnrollmentsResult.count ?? 0,
-    },
-
-    todayExperimentals,
-
-    followUps,
-  };
+  return buildDashboard({ sessions, contacts, availability });
 }

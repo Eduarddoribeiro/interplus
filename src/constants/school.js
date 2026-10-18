@@ -27,6 +27,25 @@ export const SOURCE_LABEL = Object.fromEntries(
   SOURCE_OPTIONS.map((option) => [option.value, option.label]),
 );
 
+// Origens antigas do cadastro manual
+const LEGACY_SOURCE_LABEL = {
+  franchisor_site: "Site da Franqueadora",
+  unit_site: "Site da Unidade",
+  presential: "Presencial",
+};
+
+/**
+ * Rótulo de uma origem gravada no contato (aceita valores antigos
+ * e com maiúsculas, ex.: "WhatsApp").
+ */
+export function getSourceLabel(source) {
+  if (!source) return null;
+
+  const key = source.toLowerCase();
+
+  return LEGACY_SOURCE_LABEL[key] ?? SOURCE_LABEL[key] ?? source;
+}
+
 // Apelidos aceitos no link (?origem=ig)
 const SOURCE_ALIASES = {
   ig: "instagram",

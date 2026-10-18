@@ -178,6 +178,7 @@ const SESSION_WITH_CONTACT = `
     waiting_list_at,
     entry_channel,
     first_contact_at,
+    archived_at,
     created_at,
     updated_at
   )

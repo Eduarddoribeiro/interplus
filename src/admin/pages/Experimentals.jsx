@@ -56,6 +56,8 @@ const FILTERS = [
   { value: "today", label: "Hoje" },
   { value: "future", label: "Todos futuros" },
   { value: "history", label: "Histórico" },
+  // Já passaram e ainda estão "aguardando" ou "confirmado"
+  { value: "overdue", label: "Sem baixa" },
 ];
 
 const LOST_REASONS = [
@@ -105,7 +107,14 @@ export default function Experimentals() {
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
 
-  const [activeFilter, setActiveFilter] = useState("week");
+  // A Visão geral pode abrir direto num filtro (?filtro=history)
+  const [activeFilter, setActiveFilter] = useState(() => {
+    const filter = new URLSearchParams(window.location.search).get("filtro");
+
+    return FILTERS.some((item) => item.value === filter)
+      ? filter
+      : "week";
+  });
   const [weekAnchor, setWeekAnchor] = useState(getTodayISO());
 
   /*
@@ -720,6 +729,19 @@ export default function Experimentals() {
                 (item) =>
                   item.experimental_date <
                   today
+              );
+            break;
+
+          case "overdue":
+            result =
+              scopedExperimentals.filter(
+                (item) =>
+                  item.experimental_date <
+                    today &&
+                  [
+                    "pending_confirmation",
+                    "confirmed",
+                  ].includes(item.status)
               );
             break;
 
@@ -3398,6 +3420,13 @@ function EmptyState({ filter }) {
         "Nenhum histórico encontrado",
       description:
         "Ainda não existem experimentais anteriores registradas.",
+    },
+
+    overdue: {
+      title:
+        "Nenhuma presença pendente",
+      description:
+        "Todas as experimentais que já passaram têm 'compareceu' ou 'não compareceu'.",
     },
   };
 
