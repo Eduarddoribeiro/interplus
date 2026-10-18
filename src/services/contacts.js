@@ -503,6 +503,7 @@ export async function updateContact(contactId, updates) {
     "observations",
     "internal_notes",
     "first_contact_at",
+    "location_id",
   ];
 
   const payload = {};
@@ -1203,6 +1204,37 @@ export async function getWaitingList() {
 
   return data || [];
 }
+/*
+ * Registra que a equipe chamou a família da lista de interesse
+ * pelo WhatsApp (evita chamar duas vezes a mesma família).
+ */
+export async function markWaitingListContacted(contactId, note = "") {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  const current = await getContactById(contactId);
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update({
+      waiting_list_contacted_at: nowISO(),
+      internal_notes: appendInternalNote(
+        current.internal_notes,
+        note || "Chamado pela lista de interesse (WhatsApp).",
+      ),
+      ...withUpdatedAt(),
+    })
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
 export async function addToWaitingList(
   contactId,
   {

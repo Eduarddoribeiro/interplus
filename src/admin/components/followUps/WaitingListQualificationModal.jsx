@@ -20,10 +20,16 @@ import {
 export default function WaitingListQualificationModal({
   contact,
   categories = [],
+  // Quando informado, permite editar o local de preferência
+  locations = null,
   saving = false,
   onClose,
   onSave,
 }) {
+  const [locationId, setLocationId] = useState(
+    contact.location_id ? String(contact.location_id) : "",
+  );
+
   const initialCategoryId =
     contact.interest_category_id ||
     contact.interest_category?.id ||
@@ -104,6 +110,8 @@ export default function WaitingListQualificationModal({
     }
 
 onSave({
+  ...(locations ? { location_id: locationId || null } : {}),
+
   child_name: childName.trim() || null,
 
   responsible_name:
@@ -267,6 +275,34 @@ onSave({
                 />
               </div>
             </div>
+            {/* LOCAL */}
+
+            {locations && (
+              <div>
+                <label
+                  htmlFor="qualification-location"
+                  className="text-sm font-semibold text-neutral-900"
+                >
+                  Local de preferência
+                </label>
+
+                <select
+                  id="qualification-location"
+                  value={locationId}
+                  onChange={(event) => setLocationId(event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                >
+                  <option value="">Qualquer local</option>
+
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* TURNO */}
 
             <div>

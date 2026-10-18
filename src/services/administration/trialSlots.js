@@ -42,6 +42,32 @@ function nextDates(weekday, count) {
   });
 }
 
+/**
+ * Turmas ABERTAS com a próxima data e vagas, por categoria
+ * (mesma regra do formulário público). Usado na lista de
+ * interesse para saber quem já pode ser chamado.
+ *
+ * Retorna { [categoryId]: opções de public_trial_options }.
+ */
+export async function getOpenTrialOptionsByCategory(categoryIds) {
+  const ids = [...new Set(categoryIds.filter(Boolean))];
+
+  const results = await Promise.all(
+    ids.map(async (categoryId) => {
+      const { data, error } = await supabase.rpc("public_trial_options", {
+        p_category_id: categoryId,
+        p_unit_id: null,
+      });
+
+      if (error) throw error;
+
+      return [categoryId, data ?? []];
+    }),
+  );
+
+  return Object.fromEntries(results);
+}
+
 export async function getTrialSlots(categoryId, { weeks = 4 } = {}) {
   if (!categoryId) return [];
 
