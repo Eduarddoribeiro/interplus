@@ -29,6 +29,8 @@ import {
 
 import SectionTitle from "../components/common/SectionTitle";
 import { toast } from "../components/common/Toaster";
+import { getSessionMessages } from "../../helpers/whatsappMessages";
+import { isAwaitingResult } from "../../helpers/experimentalRules";
 import TrialSlotPicker from "../components/experimentals/TrialSlotPicker";
 import {
   buildCoachLinkUrl,
@@ -59,6 +61,8 @@ const FILTERS = [
   { value: "history", label: "Histórico" },
   // Já passaram e ainda estão "aguardando" ou "confirmado"
   { value: "overdue", label: "Sem baixa" },
+  // Compareceu e a família ainda não decidiu (sem matrícula/retorno/perda)
+  { value: "no_result", label: "Sem resultado" },
 ];
 
 const LOST_REASONS = [
@@ -733,6 +737,13 @@ export default function Experimentals() {
               );
             break;
 
+          case "no_result":
+            result =
+              scopedExperimentals.filter(
+                isAwaitingResult
+              );
+            break;
+
           case "overdue":
             result =
               scopedExperimentals.filter(
@@ -1395,6 +1406,9 @@ const isReschedule =
   const trainingGroup =
     item.schedule?.training_group;
 
+  const messages =
+    getSessionMessages(item);
+
   const commercialResult =
     contact.experimental_result;
 
@@ -1497,6 +1511,29 @@ const isReschedule =
             <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-800">
               {item.coach_feedback}
             </p>
+          </div>
+        )}
+
+        {/* MENSAGENS PRONTAS */}
+
+        {messages.length > 0 && (
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-neutral-400">
+              Mensagem pronta:
+            </span>
+
+            {messages.map((message) => (
+              <a
+                key={message.key}
+                href={message.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-800 transition hover:bg-green-100"
+              >
+                <MessageCircle size={14} />
+                {message.label}
+              </a>
+            ))}
           </div>
         )}
 
@@ -3421,6 +3458,13 @@ function EmptyState({ filter }) {
         "Nenhum histórico encontrado",
       description:
         "Ainda não existem experimentais anteriores registradas.",
+    },
+
+    no_result: {
+      title:
+        "Nenhum resultado pendente",
+      description:
+        "Todas as famílias que vieram na experimental já têm uma decisão registrada.",
     },
 
     overdue: {

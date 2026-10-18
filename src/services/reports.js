@@ -21,7 +21,12 @@ const CONTACT_SELECT = `
   category:categories!contacts_category_id_fkey (
   id,
   name
-)
+),
+  location_id,
+  location:locations (
+    id,
+    name
+  )
 `;
 
 export async function getReportsData() {

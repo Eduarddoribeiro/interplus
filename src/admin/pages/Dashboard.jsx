@@ -131,6 +131,13 @@ export default function Dashboard() {
       to: "/admin/follow-ups",
     },
     {
+      key: "awaitingResult",
+      value: pending.awaitingResult,
+      title: "Resultado da aula",
+      text: "Vieram na experimental e a família ainda não decidiu.",
+      to: "/admin/experimentals?filtro=no_result",
+    },
+    {
       key: "waitingNow",
       value: pending.waitingNow,
       title: "Lista: podem agendar agora",
