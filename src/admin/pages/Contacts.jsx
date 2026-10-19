@@ -157,9 +157,13 @@ export default function Contacts() {
     return counts;
   }, [contacts]);
 
-  // Telefones repetidos entre contatos não arquivados
-  const duplicatePhones = useMemo(() => {
-    const counts = new Map();
+  /*
+   * Possíveis duplicados: mesmo telefone E mesma criança (primeiro
+   * nome igual, ou um dos dois sem nome, como os que entram pelo
+   * WhatsApp). Irmãos com o mesmo responsável não são marcados.
+   */
+  const duplicateIds = useMemo(() => {
+    const byPhone = new Map();
 
     contacts.forEach((contact) => {
       if (contact.archived_at) return;
@@ -167,10 +171,28 @@ export default function Contacts() {
       const phone = normalizePhone(contact.phone).slice(-11);
       if (phone.length < 10) return;
 
-      counts.set(phone, (counts.get(phone) ?? 0) + 1);
+      if (!byPhone.has(phone)) byPhone.set(phone, []);
+      byPhone.get(phone).push(contact);
     });
 
-    return new Set([...counts].filter(([, count]) => count > 1).map(([phone]) => phone));
+    const firstName = (contact) => normalizeText(contact.child_name).trim().split(/\s+/)[0] || "";
+    const ids = new Set();
+
+    byPhone.forEach((group) => {
+      group.forEach((contact, index) => {
+        group.slice(index + 1).forEach((other) => {
+          const a = firstName(contact);
+          const b = firstName(other);
+
+          if (!a || !b || a === b) {
+            ids.add(contact.id);
+            ids.add(other.id);
+          }
+        });
+      });
+    });
+
+    return ids;
   }, [contacts]);
 
   const categories = useMemo(
@@ -553,7 +575,7 @@ export default function Contacts() {
               contact={contact}
               tab={tab}
               checked={selected.has(contact.id)}
-              duplicate={duplicatePhones.has(normalizePhone(contact.phone).slice(-11))}
+              duplicate={duplicateIds.has(contact.id)}
               onToggle={() => toggle(contact.id)}
               onOpen={() => navigate(`/admin/contacts/${contact.id}`)}
               onPromote={() => handlePromote(contact)}
@@ -658,7 +680,7 @@ function ContactRow({
           {subtitle}, <span className="tabular-nums">{contact.phone ? formatPhone(contact.phone) : "sem telefone"}</span>
         </span>
         {duplicate && (
-          <span className="block text-sm text-attention-text">Telefone repetido em outro contato</span>
+          <span className="block text-sm text-attention-text">Possível cadastro duplicado (mesmo telefone e nome)</span>
         )}
       </button>
 
