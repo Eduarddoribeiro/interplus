@@ -282,7 +282,7 @@ export default function FollowUps() {
         filteredFollowUps.length === 0 ? (
           <EmptyState type={activeFilter} />
         ) : (
-          <Panel className="overflow-hidden">
+          <Panel>
             {filteredFollowUps.map((item) => (
               <FollowUpCard
                 key={item.id}
