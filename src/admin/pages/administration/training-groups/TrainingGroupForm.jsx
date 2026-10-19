@@ -155,7 +155,7 @@ export default function TrainingGroupForm() {
 
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900"
+        className="flex items-center gap-2 text-sm text-muted hover:text-ink"
       >
         <ArrowLeft size={18} />
         Voltar
@@ -172,7 +172,7 @@ export default function TrainingGroupForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="rounded-2xl border border-neutral-200 bg-white p-8 space-y-6"
+        className="rounded-xl border border-line bg-white p-8 space-y-6"
       >
 
         <div>
@@ -227,8 +227,8 @@ export default function TrainingGroupForm() {
                   onClick={() => toggleCategory(category.id)}
                   className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                     selected
-                      ? "border-red-600 bg-red-50 text-red-700"
-                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
+                      ? "border-red-600 bg-alert-soft text-alert-text"
+                      : "border-line text-neutral-600 hover:border-neutral-300"
                   }`}
                 >
                   {category.name}
@@ -237,7 +237,7 @@ export default function TrainingGroupForm() {
             })}
           </div>
 
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-2 text-sm text-muted">
             Marque mais de uma quando a turma juntar categorias (ex.: Sub-15 e Sub-17).
           </p>
         </fieldset>
@@ -255,8 +255,8 @@ export default function TrainingGroupForm() {
                   key={option.value}
                   className={`cursor-pointer rounded-xl border p-4 transition ${
                     selected
-                      ? "border-red-600 bg-red-50"
-                      : "border-neutral-200 hover:border-neutral-300"
+                      ? "border-red-600 bg-alert-soft"
+                      : "border-line hover:border-neutral-300"
                   }`}
                 >
                   <input
@@ -268,11 +268,11 @@ export default function TrainingGroupForm() {
                     className="sr-only"
                   />
 
-                  <span className="block font-semibold text-neutral-900">
+                  <span className="block font-semibold text-ink">
                     {option.label}
                   </span>
 
-                  <span className="mt-1 block text-sm text-neutral-500">
+                  <span className="mt-1 block text-sm text-muted">
                     {option.description}
                   </span>
                 </label>
@@ -292,7 +292,7 @@ export default function TrainingGroupForm() {
 
           <span>
             <span className="block">Destacar no formulário</span>
-            <span className="block text-sm text-neutral-500">
+            <span className="block text-sm text-muted">
               Turmas em destaque aparecem primeiro para os pais.
             </span>
           </span>
@@ -305,7 +305,7 @@ export default function TrainingGroupForm() {
         <div className="flex justify-end">
           <button
             disabled={saving}
-            className="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-white disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-inter-red px-6 py-3 text-white disabled:opacity-50"
           >
             <Save size={18} />
             {saving ? "Salvando..." : "Salvar Turma"}

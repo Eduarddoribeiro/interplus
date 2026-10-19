@@ -12,18 +12,18 @@ export default function TrainingGroupsTable({
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-neutral-200 bg-white p-12 text-center">
+      <div className="rounded-xl border border-line bg-white p-12 text-center">
         Carregando...
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+    <div className="overflow-hidden rounded-xl border border-line bg-white">
 
       <table className="min-w-full">
 
-        <thead className="border-b border-neutral-200 bg-neutral-50">
+        <thead className="border-b border-line bg-canvas">
 
           <tr>
 
@@ -64,7 +64,7 @@ export default function TrainingGroupsTable({
 
               <td
                 colSpan={6}
-                className="px-6 py-16 text-center text-neutral-500"
+                className="px-6 py-16 text-center text-muted"
               >
                 Nenhuma turma cadastrada.
               </td>
@@ -77,7 +77,7 @@ export default function TrainingGroupsTable({
 
               <tr
                 key={group.id}
-                className="border-b border-neutral-100 last:border-0"
+                className="border-b border-line last:border-0"
               >
 
                 <td className="px-6 py-5 font-medium">
@@ -95,7 +95,7 @@ export default function TrainingGroupsTable({
                 <td className="px-6 py-5">
                   {group.location?.name ?? "-"}
                   {group.unit?.name && (
-                    <span className="block text-xs text-neutral-500">
+                    <span className="block text-xs text-muted">
                       {group.unit.name}
                     </span>
                   )}
@@ -107,7 +107,7 @@ export default function TrainingGroupsTable({
                   <div className="flex flex-wrap items-center gap-2">
                     <TrainingGroupStatusBadge status={group.status} />
                     {group.featured && (
-                      <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+                      <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-alert-text">
                         Destaque
                       </span>
                     )}
@@ -123,7 +123,7 @@ export default function TrainingGroupsTable({
                         `/admin/administration/training-groups/${group.id}`
                       )
                     }
-                    className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:bg-neutral-50"
+                    className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:bg-canvas"
                   >
                     <Pencil size={16} />
                     Editar

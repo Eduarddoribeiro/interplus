@@ -4,11 +4,11 @@ export default function CrudTable({
   emptyMessage = "Nenhum registro encontrado.",
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+    <div className="overflow-hidden rounded-xl border border-line bg-white">
 
       <table className="min-w-full">
 
-        <thead className="border-b border-neutral-200 bg-neutral-50">
+        <thead className="border-b border-line bg-canvas">
 
           <tr>
             {columns.map((column) => (
@@ -29,7 +29,7 @@ export default function CrudTable({
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-6 py-16 text-center text-neutral-500"
+                className="px-6 py-16 text-center text-muted"
               >
                 {emptyMessage}
               </td>

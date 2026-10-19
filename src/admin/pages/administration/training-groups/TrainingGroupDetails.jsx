@@ -175,7 +175,7 @@ export default function TrainingGroupDetails() {
 
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900"
+        className="flex items-center gap-2 text-sm text-muted hover:text-ink"
       >
         <ArrowLeft size={18} />
         Voltar
@@ -191,14 +191,14 @@ export default function TrainingGroupDetails() {
           onClick={() =>
             navigate(`/admin/administration/training-groups/${group.id}/edit`)
           }
-          className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-3 font-medium hover:bg-neutral-50"
+          className="flex items-center gap-2 rounded-xl border border-line bg-white px-5 py-3 font-medium hover:bg-canvas"
         >
           <Pencil size={18} />
           Editar turma
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 rounded-2xl border border-neutral-200 bg-white p-6 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-6 rounded-xl border border-line bg-white p-6 md:grid-cols-3">
 
         <Info label="Categorias" value={getTrainingGroupCategoryNames(group)} />
         <Info label="Modalidade" value={group.modality?.name} />
@@ -206,11 +206,11 @@ export default function TrainingGroupDetails() {
         <Info label="Unidade" value={group.unit?.name} />
 
         <div>
-          <p className="text-sm text-neutral-500">Situação</p>
+          <p className="text-sm text-muted">Situação</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <TrainingGroupStatusBadge status={group.status} />
             {group.featured && (
-              <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+              <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-alert-text">
                 Destaque
               </span>
             )}
@@ -227,7 +227,7 @@ export default function TrainingGroupDetails() {
 
         <button
           onClick={handleCreate}
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-medium text-white hover:bg-red-700"
+          className="flex items-center gap-2 rounded-xl bg-inter-red px-5 py-3 font-medium text-white hover:bg-inter-red-dark"
         >
           <Plus size={18} />
           Novo Horário
@@ -255,7 +255,7 @@ export default function TrainingGroupDetails() {
         {schedules.map((schedule) => (
           <tr
             key={schedule.id}
-            className="border-b border-neutral-100 last:border-0"
+            className="border-b border-line last:border-0"
           >
             <td className="px-6 py-4">
               {WEEKDAY_LABELS[schedule.weekday]}
@@ -292,7 +292,7 @@ export default function TrainingGroupDetails() {
 
                 <button
                   onClick={() => handleEdit(schedule)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
+                  className="inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2 text-sm hover:bg-neutral-100"
                 >
                   <Pencil size={16} />
                   Editar
@@ -300,7 +300,7 @@ export default function TrainingGroupDetails() {
 
                 <button
                   onClick={() => handleToggle(schedule)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
+                  className="inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2 text-sm hover:bg-neutral-100"
                 >
                   <Power size={16} />
                   {schedule.active ? "Desativar" : "Reativar"}
@@ -308,7 +308,7 @@ export default function TrainingGroupDetails() {
 
                 <button
                   onClick={() => setScheduleToDelete(schedule)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  className="inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2 text-sm text-red-600 hover:bg-alert-soft"
                 >
                   <Trash2 size={16} />
                   Excluir
@@ -354,7 +354,7 @@ export default function TrainingGroupDetails() {
 function Info({ label, value }) {
   return (
     <div>
-      <p className="text-sm text-neutral-500">{label}</p>
+      <p className="text-sm text-muted">{label}</p>
       <p className="font-semibold">{value ?? "-"}</p>
     </div>
   );

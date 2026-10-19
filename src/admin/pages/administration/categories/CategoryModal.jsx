@@ -62,7 +62,7 @@ export default function CategoryModal({
 
       </div>
 
-      <p className="-mt-2 text-sm text-neutral-500">
+      <p className="-mt-2 text-sm text-muted">
         Idade que o atleta completa no ano (ex.: Sub-09 = 8 a 9).
         {years && (
           <>

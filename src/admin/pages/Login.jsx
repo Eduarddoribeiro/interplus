@@ -33,18 +33,18 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-neutral-100 px-4">
-      <div className="w-full max-w-md rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
+      <div className="w-full max-w-md rounded-xl border border-line bg-white p-8">
 
         <div className="mb-8">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-red-600">
+          <span className="text-sm font-medium text-muted">
             Escola do Inter • Viamão
           </span>
 
-          <h1 className="mt-3 text-3xl font-bold text-neutral-900">
+          <h1 className="mt-3 text-3xl font-bold text-ink">
             Acesso Administrativo
           </h1>
 
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-2 text-sm text-muted">
             Entre com suas credenciais para acessar o painel.
           </p>
         </div>
@@ -67,7 +67,7 @@ export default function Login() {
                 setEmail(e.target.value)
               }
               placeholder="seu@email.com"
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none transition focus:border-red-600"
+              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none transition focus:border-ink"
             />
           </div>
 
@@ -85,12 +85,12 @@ export default function Login() {
                 setPassword(e.target.value)
               }
               placeholder="••••••••"
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none transition focus:border-red-600"
+              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none transition focus:border-ink"
             />
           </div>
 
           {error && (
-            <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <div className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </div>
           )}
@@ -98,7 +98,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-inter-red px-6 py-3 font-semibold text-white transition hover:bg-inter-red-dark disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading
               ? "Entrando..."

@@ -1,63 +1,61 @@
-import SectionTitle from "../components/common/SectionTitle";
-import { ADMINISTRATION_SECTIONS } from "../../constants/administrationSections";
 import { useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 
+import SectionTitle from "../components/common/SectionTitle";
+import { Panel } from "../ui";
+import { ADMINISTRATION_SECTIONS } from "../../constants/administrationSections";
+
+/*
+ * Cadastros da escola. Os itens "em breve" aparecem apagados no fim.
+ */
 export default function Administration() {
   const navigate = useNavigate();
-  return (
-    
-    <div className="space-y-8">
-      <SectionTitle
-        title="Administração"
-        subtitle="Gerencie todas as configurações do sistema."
-      />
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {ADMINISTRATION_SECTIONS.map((section) => {
+  const sections = [...ADMINISTRATION_SECTIONS].sort(
+    (a, b) => Number(b.enabled) - Number(a.enabled),
+  );
+
+  return (
+    <div className="space-y-5">
+      <SectionTitle title="Administração" />
+
+      <Panel as="ul" className="max-w-3xl divide-y divide-line overflow-hidden">
+        {sections.map((section) => {
           const Icon = section.icon;
 
           return (
-            <button
-  key={section.id}
-  disabled={!section.enabled}
-  onClick={() => navigate(section.path)}
-  className={`rounded-3xl border p-6 text-left transition ${
-    section.enabled
-      ? "border-neutral-200 bg-white hover:-translate-y-1 hover:shadow-lg"
-      : "cursor-not-allowed border-dashed border-neutral-300 bg-neutral-50 opacity-70"
-  }`}
->
-              <div className="flex items-center gap-3">
-                <div
-                  className={`rounded-2xl p-3 ${
-                    section.enabled
-                      ? "bg-red-50 text-red-600"
-                      : "bg-neutral-200 text-neutral-500"
-                  }`}
-                >
-                  <Icon size={24} />
-                </div>
+            <li key={section.id}>
+              <button
+                type="button"
+                disabled={!section.enabled}
+                onClick={() => navigate(section.path)}
+                className="flex w-full items-center gap-4 px-4 py-4 text-left transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:hover:bg-white"
+              >
+                <Icon
+                  size={20}
+                  aria-hidden="true"
+                  className={section.enabled ? "text-ink" : "text-neutral-300"}
+                />
 
-                <div>
-                  <h3 className="font-semibold text-neutral-900">
+                <span className="min-w-0 flex-1">
+                  <span className={`block font-semibold ${section.enabled ? "" : "text-muted"}`}>
                     {section.title}
-                  </h3>
+                    {!section.enabled && (
+                      <span className="ml-2 text-sm font-normal">(em breve)</span>
+                    )}
+                  </span>
 
-                  {!section.enabled && (
-                    <span className="text-xs text-neutral-500">
-                      Em breve
-                    </span>
-                  )}
-                </div>
-              </div>
+                  <span className="block text-sm text-muted">{section.description}</span>
+                </span>
 
-              <p className="mt-5 text-sm text-neutral-500">
-                {section.description}
-              </p>
-            </button>
+                {section.enabled && (
+                  <ChevronRight size={18} aria-hidden="true" className="text-neutral-300" />
+                )}
+              </button>
+            </li>
           );
         })}
-      </div>
+      </Panel>
     </div>
   );
 }

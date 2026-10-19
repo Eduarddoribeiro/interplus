@@ -35,7 +35,7 @@ export default function ProtectedRoute({ children }) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-neutral-500">
+        <p className="text-muted">
           Carregando...
         </p>
       </div>

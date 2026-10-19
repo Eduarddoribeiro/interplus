@@ -44,7 +44,7 @@ export default function Toaster() {
         <div
           key={item.id}
           role="alert"
-          className="flex w-full max-w-md items-start gap-3 rounded-2xl bg-neutral-900 px-4 py-3 text-sm text-white shadow-2xl"
+          className="flex w-full max-w-md items-start gap-3 rounded-xl bg-ink px-4 py-3 text-sm text-white shadow-2xl"
         >
           {item.type === "success" ? (
             <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-green-400" />
@@ -59,7 +59,7 @@ export default function Toaster() {
             onClick={() =>
               setItems((current) => current.filter((other) => other.id !== item.id))
             }
-            className="text-neutral-400 hover:text-white"
+            className="text-muted hover:text-white"
             aria-label="Fechar aviso"
           >
             <X size={16} />

@@ -24,8 +24,6 @@ import {
 export default function WaitingListFilters({
   categories = [],
   filters,
-  resultCount = 0,
-  totalCount = 0,
   onChange,
   onClear,
 }) {
@@ -100,102 +98,7 @@ export default function WaitingListFilters({
 
   return (
     <div>
-      {/* =================================================
-       * CABEÇALHO OPERACIONAL
-       * =============================================== */}
-
-      <div
-        className="
-          flex
-          flex-col
-          gap-4
-          sm:flex-row
-          sm:items-end
-          sm:justify-between
-        "
-      >
-        <div>
-          <p
-            className="
-              text-xs
-              font-bold
-              uppercase
-              tracking-[0.14em]
-              text-inter-red
-            "
-          >
-            Encontrar oportunidades
-          </p>
-
-          <h2
-            className="
-              mt-1
-              text-lg
-              font-bold
-              text-neutral-900
-            "
-          >
-            Filtrar famílias
-          </h2>
-
-          <p
-            className="
-              mt-1
-              text-sm
-              text-neutral-500
-            "
-          >
-            Combine categoria, turno, dia e qualificação.
-          </p>
-        </div>
-
-        {/* CONTADOR */}
-
-        <div
-          className="
-            shrink-0
-            rounded-xl
-            bg-neutral-900
-            px-4
-            py-3
-            text-white
-          "
-        >
-          <div className="flex items-baseline gap-2">
-            <span
-              className="
-                text-2xl
-                font-bold
-                leading-none
-              "
-            >
-              {resultCount}
-            </span>
-
-            <span
-              className="
-                text-sm
-                font-medium
-                text-neutral-300
-              "
-            >
-              {resultCount === 1 ? "família" : "famílias"}
-            </span>
-          </div>
-
-          {hasActiveFilters && (
-            <p
-              className="
-                mt-1
-                text-xs
-                text-neutral-400
-              "
-            >
-              de {totalCount} na lista
-            </p>
-          )}
-        </div>
-      </div>
+      <h2 className="mb-2 font-semibold">Filtrar famílias</h2>
 
       {/* =================================================
        * FILTROS
@@ -310,7 +213,7 @@ export default function WaitingListFilters({
             items-center
             gap-2
             border-t
-            border-neutral-100
+            border-line
             pt-4
           "
         >
@@ -319,7 +222,7 @@ export default function WaitingListFilters({
               mr-1
               text-xs
               font-semibold
-              text-neutral-400
+              text-muted
             "
           >
             Filtros ativos:
@@ -335,7 +238,7 @@ export default function WaitingListFilters({
                 items-center
                 gap-2
                 rounded-full
-                bg-red-50
+                bg-alert-soft
                 px-3
                 py-1.5
                 text-xs
@@ -368,7 +271,7 @@ export default function WaitingListFilters({
                 ml-1
                 text-xs
                 font-semibold
-                text-neutral-500
+                text-muted
                 underline-offset-4
                 transition
                 hover:text-inter-red
@@ -393,13 +296,7 @@ function FilterField({ label, id, children }) {
     <div>
       <label
         htmlFor={id}
-        className="
-          text-xs
-          font-semibold
-          uppercase
-          tracking-wide
-          text-neutral-500
-        "
+className="text-sm text-muted"
       >
         {label}
       </label>
@@ -418,16 +315,16 @@ const selectClass = `
   w-full
   rounded-xl
   border
-  border-neutral-200
+  border-line
   bg-white
   px-4
   py-3
   text-sm
   font-medium
-  text-neutral-800
+  text-ink
   outline-none
   transition
-  focus:border-inter-red
+  focus:border-ink
   focus:ring-2
-  focus:ring-red-100
+  focus:ring-neutral-200
 `;

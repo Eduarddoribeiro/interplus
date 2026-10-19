@@ -82,8 +82,8 @@ export default function ScheduleModal({
                 onClick={() => onToggleCoach?.(coach.id)}
                 className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                   selected
-                    ? "border-red-600 bg-red-50 text-red-700"
-                    : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
+                    ? "border-red-600 bg-alert-soft text-alert-text"
+                    : "border-line text-neutral-600 hover:border-neutral-300"
                 }`}
               >
                 {coach.name}
@@ -92,7 +92,7 @@ export default function ScheduleModal({
           })}
 
           {coaches.length === 0 && (
-            <p className="text-sm text-neutral-500">Nenhum professor ativo cadastrado.</p>
+            <p className="text-sm text-muted">Nenhum professor ativo cadastrado.</p>
           )}
         </div>
       </FormField>
@@ -116,7 +116,7 @@ export default function ScheduleModal({
           value={form.experimental_limit}
           onChange={onChange}
           disabled={!form.allow_trial}
-          className="w-full rounded-xl border border-neutral-300 px-4 py-3 disabled:bg-neutral-100 disabled:text-neutral-400"
+          className="w-full rounded-xl border border-neutral-300 px-4 py-3 disabled:bg-neutral-100 disabled:text-muted"
         />
       </FormField>
     </CrudModal>

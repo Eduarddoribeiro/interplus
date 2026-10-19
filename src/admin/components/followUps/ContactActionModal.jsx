@@ -130,22 +130,22 @@ export default function FollowUpActionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
         {/* =================================================
          * HEADER
          * =============================================== */}
 
-        <div className="flex items-start justify-between border-b border-neutral-100 p-6">
+        <div className="flex items-start justify-between border-b border-line p-6">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
+            <p className="text-sm font-medium text-muted">
               {config.eyebrow}
             </p>
 
-            <h2 className="mt-2 text-2xl font-bold text-neutral-900">
+            <h2 className="mt-2 text-2xl font-bold text-ink">
               {contact.child_name}
             </h2>
 
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-muted">
               {config.description}
             </p>
           </div>
@@ -154,7 +154,7 @@ export default function FollowUpActionModal({
             type="button"
             disabled={saving}
             onClick={onClose}
-            className="rounded-xl p-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-50"
+            className="rounded-xl p-2 text-muted transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-50"
           >
             <X size={20} />
           </button>
@@ -171,19 +171,19 @@ export default function FollowUpActionModal({
           {/* MATRÍCULA */}
 
           {type === FOLLOW_UP_ACTION.ENROLL && (
-            <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+            <div className="rounded-xl border border-ok/30 bg-ok-soft p-4">
               <div className="flex gap-3">
                 <CircleCheckBig
                   size={20}
-                  className="mt-0.5 shrink-0 text-green-700"
+                  className="mt-0.5 shrink-0 text-ok"
                 />
 
                 <div>
-                  <p className="font-semibold text-green-900">
+                  <p className="font-semibold text-ok">
                     Confirmar matrícula
                   </p>
 
-                  <p className="mt-1 text-sm text-green-700">
+                  <p className="mt-1 text-sm text-ok">
                     O contato sairá da fila de
                     retornos e será registrado
                     como matriculado.
@@ -198,7 +198,7 @@ export default function FollowUpActionModal({
           {type ===
             FOLLOW_UP_ACTION.RESCHEDULE && (
             <div>
-              <label className="text-sm font-semibold text-neutral-900">
+              <label className="text-sm font-semibold text-ink">
                 Nova data do retorno
               </label>
 
@@ -216,13 +216,13 @@ export default function FollowUpActionModal({
                   w-full
                   rounded-xl
                   border
-                  border-neutral-200
+                  border-line
                   px-4
                   py-3
                   outline-none
-                  focus:border-red-500
+                  focus:border-ink
                   focus:ring-2
-                  focus:ring-red-100
+                  focus:ring-neutral-200
                 "
               />
             </div>
@@ -232,7 +232,7 @@ export default function FollowUpActionModal({
 
           {isClosingAction && (
             <div>
-              <label className="text-sm font-semibold text-neutral-900">
+              <label className="text-sm font-semibold text-ink">
                 Motivo
               </label>
 
@@ -248,14 +248,14 @@ export default function FollowUpActionModal({
                   w-full
                   rounded-xl
                   border
-                  border-neutral-200
+                  border-line
                   bg-white
                   px-4
                   py-3
                   outline-none
-                  focus:border-red-500
+                  focus:border-ink
                   focus:ring-2
-                  focus:ring-red-100
+                  focus:ring-neutral-200
                 "
               >
                 <option value="">
@@ -281,10 +281,10 @@ export default function FollowUpActionModal({
            * =============================================== */}
 
           <div className="mt-6">
-            <label className="text-sm font-semibold text-neutral-900">
+            <label className="text-sm font-semibold text-ink">
               Observação
 
-              <span className="ml-1 font-normal text-neutral-400">
+              <span className="ml-1 font-normal text-muted">
                 (opcional)
               </span>
             </label>
@@ -302,13 +302,13 @@ export default function FollowUpActionModal({
                 resize-none
                 rounded-xl
                 border
-                border-neutral-200
+                border-line
                 px-4
                 py-3
                 outline-none
-                focus:border-red-500
+                focus:border-ink
                 focus:ring-2
-                focus:ring-red-100
+                focus:ring-neutral-200
               "
             />
           </div>
@@ -318,7 +318,7 @@ export default function FollowUpActionModal({
            * =============================================== */}
 
           {(formError || error) && (
-            <p className="mt-6 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">
+            <p className="mt-6 rounded-xl bg-alert-soft p-3 text-sm font-semibold text-alert-text">
               {formError || error}
             </p>
           )}
@@ -328,7 +328,7 @@ export default function FollowUpActionModal({
               type="button"
               disabled={saving}
               onClick={onClose}
-              className="rounded-xl border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+              className="rounded-xl border border-line px-5 py-3 text-sm font-semibold text-neutral-700 hover:bg-canvas disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -336,7 +336,7 @@ export default function FollowUpActionModal({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              className="rounded-xl bg-inter-red px-6 py-3 text-sm font-semibold text-white hover:bg-inter-red-dark disabled:opacity-50"
             >
               {saving
                 ? "Salvando..."
