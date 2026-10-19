@@ -13,6 +13,8 @@ export default function RegistrationHero() {
       <img
         src="/logo-vermelho.png"
         alt="Escola do Inter Viamão"
+        width={176}
+        height={64}
         className="mx-auto h-16 w-44 object-cover sm:h-20 sm:w-56"
       />
 
@@ -36,7 +38,7 @@ export default function RegistrationHero() {
 function Chip({ icon: Icon, children }) {
   return (
     <li className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5">
-      <Icon size={14} className="text-red-600" />
+      <Icon size={14} aria-hidden="true" className="text-red-600" />
       {children}
     </li>
   );

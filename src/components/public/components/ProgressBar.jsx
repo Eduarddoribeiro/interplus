@@ -13,7 +13,15 @@ export default function ProgressBar({ current, total }) {
         <span className="text-neutral-500">{STEPS[current - 1]}</span>
       </div>
 
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-neutral-100">
+      <div
+        role="progressbar"
+        aria-label="Progresso do agendamento"
+        aria-valuemin={1}
+        aria-valuemax={total}
+        aria-valuenow={current}
+        aria-valuetext={`Etapa ${current} de ${total}: ${STEPS[current - 1]}`}
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-neutral-100"
+      >
         <div
           className="h-full rounded-full bg-red-600 transition-[width] duration-500 ease-out"
           style={{ width: `${Math.max(progress, 6)}%` }}

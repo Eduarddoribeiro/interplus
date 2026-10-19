@@ -52,6 +52,8 @@ export default function ScheduleSelector({
   const [groups, setGroups] = useState([]);
   const [locations, setLocations] = useState([]);
   const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [pickError, setPickError] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -98,7 +100,8 @@ export default function ScheduleSelector({
     }
 
     load();
-  }, [category?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category?.id, reloadKey]);
 
   function handleSelectSchedule(group, schedule) {
     updateField("schedule", schedule);
@@ -109,6 +112,16 @@ export default function ScheduleSelector({
     updateField("experimental_date", schedule.next_date ?? "");
     updateField("experimental_time", schedule.start_time);
     updateField("interest_reason", null);
+    setPickError(false);
+  }
+
+  function handleNext() {
+    if (!form.schedule) {
+      setPickError(true);
+      return;
+    }
+
+    onNext();
   }
 
   function handleJoinInterestList(reason) {
@@ -125,7 +138,11 @@ export default function ScheduleSelector({
           Não foi possível identificar a categoria do atleta.
         </p>
 
-        <button onClick={onBack} className="rounded-xl border px-6 py-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="rounded-xl border border-neutral-300 bg-white px-6 py-3 font-semibold text-neutral-800 transition hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-red-600/30"
+        >
           Voltar
         </button>
       </div>
@@ -134,8 +151,8 @@ export default function ScheduleSelector({
 
   if (loading) {
     return (
-      <div className="py-20 text-center text-neutral-500">
-        Carregando turmas disponíveis...
+      <div role="status" className="py-20 text-center text-neutral-500">
+        Carregando turmas disponíveis…
       </div>
     );
   }
@@ -154,7 +171,7 @@ export default function ScheduleSelector({
           {category.name}
         </span>
 
-        <h2 className="mt-1 text-2xl font-bold text-neutral-900 sm:text-3xl">
+        <h2 className="mt-1 text-2xl font-bold text-neutral-900 outline-none sm:text-3xl">
           Escolha o dia da aula
         </h2>
 
@@ -164,9 +181,22 @@ export default function ScheduleSelector({
       </div>
 
       {loadError && (
-        <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-neutral-700">
-          Não foi possível carregar as turmas agora. Tente novamente em
-          alguns instantes.
+        <div
+          role="alert"
+          className="rounded-2xl border border-red-100 bg-red-50 p-6 text-neutral-700"
+        >
+          <p>
+            Não foi possível carregar as turmas agora. Confira sua internet e
+            tente de novo.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setReloadKey((key) => key + 1)}
+            className="mt-4 rounded-xl bg-red-600 px-5 py-2.5 font-semibold text-white transition hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-600/40 focus-visible:ring-offset-2"
+          >
+            Tentar de novo
+          </button>
         </div>
       )}
 
@@ -193,7 +223,7 @@ export default function ScheduleSelector({
 
             {group.featured && (
               <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
-                <Star size={14} />
+                <Star size={14} aria-hidden="true" />
                 Novas turmas
               </span>
             )}
@@ -202,7 +232,7 @@ export default function ScheduleSelector({
           {group.location?.address && (
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-neutral-600">
               <span className="flex items-start gap-2">
-                <MapPin size={16} className="mt-0.5 shrink-0" />
+                <MapPin size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
                 {group.location.address}
               </span>
 
@@ -210,9 +240,9 @@ export default function ScheduleSelector({
                 href={mapsUrl(group.location.name, group.location.address)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-neutral-200 px-3 py-1 font-semibold text-neutral-800 hover:border-red-300"
+                className="inline-flex items-center gap-1 rounded-full border border-neutral-200 px-3 py-1 font-semibold text-neutral-800 hover:border-red-300 focus-visible:ring-2 focus-visible:ring-red-600/30"
               >
-                <Navigation size={13} />
+                <Navigation size={13} aria-hidden="true" />
                 Como chegar
               </a>
             </div>
@@ -228,8 +258,9 @@ export default function ScheduleSelector({
                   key={schedule.schedule_id}
                   type="button"
                   disabled={full}
+                  aria-pressed={selected}
                   onClick={() => handleSelectSchedule(group, schedule)}
-                  className={`rounded-xl border p-4 text-left transition-all ${
+                  className={`rounded-xl border p-4 text-left transition-[border-color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-red-600/30 ${
                     selected
                       ? "border-red-600 bg-red-50 shadow-sm"
                       : full
@@ -242,13 +273,13 @@ export default function ScheduleSelector({
                   </p>
 
                   <p className="mt-1 flex items-center gap-2 text-sm text-neutral-600">
-                    <Clock size={14} />
+                    <Clock size={14} aria-hidden="true" />
                     {formatTime(schedule.start_time)} às{" "}
                     {formatTime(schedule.end_time)}
                   </p>
 
                   <p className="mt-1 flex items-center gap-2 text-sm text-neutral-600">
-                    <CalendarDays size={14} />
+                    <CalendarDays size={14} aria-hidden="true" />
                     {full
                       ? "Sem vagas nesta data"
                       : `Próxima aula: ${formatNextDate(schedule.next_date)}`}
@@ -256,7 +287,7 @@ export default function ScheduleSelector({
 
                   {schedule.coach_names?.length > 0 && (
                     <p className="mt-1 flex items-center gap-2 text-sm text-neutral-600">
-                      <User size={14} />
+                      <User size={14} aria-hidden="true" />
                       {formatCoaches(schedule.coach_names)}
                     </p>
                   )}
@@ -283,18 +314,23 @@ export default function ScheduleSelector({
 
           {locations.length === 1 && (
             <p className="mt-3 flex items-center gap-2 text-sm text-neutral-600">
-              <MapPin size={16} className="shrink-0" />
+              <MapPin size={16} aria-hidden="true" className="shrink-0" />
               Turma {category.name}: {locations[0].name}
             </p>
           )}
 
           {locations.length > 1 && (
             <div className="mt-5">
-              <label className="mb-2 block text-sm font-semibold text-neutral-900">
+              <label
+                htmlFor="schedule-preferred_location"
+                className="mb-2 block text-sm font-semibold text-neutral-900"
+              >
                 Local de preferência
               </label>
 
               <select
+                id="schedule-preferred_location"
+                name="preferred_location"
                 value={form.preferred_location?.id ?? ""}
                 onChange={(e) =>
                   updateField(
@@ -322,31 +358,39 @@ export default function ScheduleSelector({
             onClick={() =>
               handleJoinInterestList(hasGroups ? "no_vacancy" : "future_class")
             }
-            className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700"
+            className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-600/40 focus-visible:ring-offset-2"
           >
             Entrar na lista de interesse
           </button>
         </div>
       )}
 
+      {pickError && !form.schedule && hasFreeSchedule && (
+        <p role="alert" className="text-right text-sm font-medium text-red-600">
+          Escolha um dos horários acima para continuar.
+        </p>
+      )}
+
       {/* Botões */}
-      <div className="flex justify-between">
+      <div className="flex justify-between gap-3">
         <button
           type="button"
           onClick={onBack}
-          className="rounded-xl border border-neutral-300 px-6 py-3 font-semibold"
+          className="rounded-xl border border-neutral-300 bg-white px-6 py-3 font-semibold text-neutral-800 transition hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-red-600/30"
         >
           Voltar
         </button>
 
-        <button
-          type="button"
-          disabled={!form.schedule}
-          onClick={onNext}
-          className="rounded-xl bg-red-600 px-8 py-3 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Continuar
-        </button>
+        {/* Sem horário livre o caminho é a lista de interesse */}
+        {hasFreeSchedule && (
+          <button
+            type="button"
+            onClick={handleNext}
+            className="rounded-xl bg-red-600 px-8 py-3 font-semibold text-white transition hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-600/40 focus-visible:ring-offset-2"
+          >
+            Continuar
+          </button>
+        )}
       </div>
     </div>
   );
