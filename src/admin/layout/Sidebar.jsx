@@ -13,43 +13,46 @@ import { NavLink, useNavigate } from "react-router-dom";
 
 import { signOut } from "../../services/auth";
 import { toast } from "../components/common/Toaster";
+import { Count } from "../ui";
+
+/*
+ * Contador de cada item do menu a partir das pendências da Visão
+ * geral. Vermelho = atrasado, âmbar = atenção, cinza = informativo.
+ */
+function menuCount(key, pending) {
+  if (!pending) return null;
+
+  switch (key) {
+    case "contacts":
+      return pending.triage ? { value: pending.triage } : null;
+    case "experimentals":
+      if (pending.overdue) return { value: pending.overdue, urgency: "alert" };
+      if (pending.toConfirm) return { value: pending.toConfirm, urgency: "attention" };
+      return null;
+    case "followUps":
+      return pending.followUpsDue ? { value: pending.followUpsDue, urgency: "alert" } : null;
+    case "waitingList":
+      return pending.waitingNow ? { value: pending.waitingNow } : null;
+    default:
+      return null;
+  }
+}
+
+const COUNT_TITLE = {
+  contacts: "contatos para triagem",
+  experimentals: "experimentais com pendência",
+  followUps: "retornos vencidos",
+  waitingList: "famílias podem agendar agora",
+};
 
 const menu = [
-  {
-    label: "Visão Geral",
-    icon: LayoutDashboard,
-    to: "/admin",
-  },
-  {
-    label: "Contatos",
-    icon: Users,
-    to: "/admin/contacts",
-  },
-  {
-    label: "Experimentais",
-    icon: CalendarDays,
-    to: "/admin/experimentals",
-  },
-  {
-    label: "Retornos",
-    icon: PhoneCall,
-    to: "/admin/follow-ups",
-  },
-  {
-    label: "Lista de Interesse",
-    icon: ListChecks,
-    to: "/admin/waiting-list",
-  },
-  {
-    label: "Relatórios",
-    icon: BarChart3,
-    to: "/admin/reports",
-  },
-  {
-    label: "Administração",
-    icon: ShieldCheck,
-    to: "/admin/administration",
-  },
+  { key: "dashboard", label: "Visão geral", icon: LayoutDashboard, to: "/admin" },
+  { key: "contacts", label: "Contatos", icon: Users, to: "/admin/contacts" },
+  { key: "experimentals", label: "Experimentais", icon: CalendarDays, to: "/admin/experimentals" },
+  { key: "followUps", label: "Retornos", icon: PhoneCall, to: "/admin/follow-ups" },
+  { key: "waitingList", label: "Lista de interesse", icon: ListChecks, to: "/admin/waiting-list" },
+  { key: "reports", label: "Relatórios", icon: BarChart3, to: "/admin/reports" },
+  { key: "administration", label: "Administração", icon: ShieldCheck, to: "/admin/administration" },
 ];
 
 /*
@@ -57,7 +60,7 @@ const menu = [
  * Computador: fixo à esquerda. Celular: gaveta aberta pelo botão
  * do topo (open / onClose).
  */
-export default function Sidebar({ open = false, onClose }) {
+export default function Sidebar({ open = false, onClose, pending }) {
   const navigate = useNavigate();
 
   async function handleSignOut() {
@@ -82,22 +85,24 @@ export default function Sidebar({ open = false, onClose }) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-neutral-200 bg-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-line bg-white transition-transform duration-200 motion-reduce:transition-none lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Logo */}
-        <div className="relative flex justify-center border-b border-neutral-100 px-8 py-6 lg:py-8">
+        <div className="flex items-center justify-between px-5 py-5">
           <img
-            src="/logo-vermelho.svg"
+            src="/logo-vermelho.png"
             alt="Escola Oficial do Inter"
-            className="h-24 w-auto lg:h-32"
+            width={136}
+            height={52}
+            className="h-[52px] w-[136px] object-cover"
           />
 
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-3 rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 lg:hidden"
+            className="rounded-lg p-2 text-muted hover:bg-neutral-100 lg:hidden"
             aria-label="Fechar menu"
           >
             <X size={20} />
@@ -105,55 +110,62 @@ export default function Sidebar({ open = false, onClose }) {
         </div>
 
         {/* Menu */}
-        <nav className="flex-1 overflow-y-auto px-5 pt-6">
-          <div className="space-y-1.5">
+        <nav aria-label="Painel" className="flex-1 overflow-y-auto px-3">
+          <ul className="space-y-0.5">
             {menu.map((item) => {
               const Icon = item.icon;
+              const count = menuCount(item.key, pending);
 
               return (
-                <NavLink
-                  key={item.label}
-                  to={item.to}
-                  end={item.to === "/admin"}
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-all duration-300 ${
-                      isActive
-                        ? "bg-inter-red text-white shadow-lg"
-                        : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-                    }`
-                  }
-                >
-                  <Icon size={20} />
+                <li key={item.key}>
+                  <NavLink
+                    to={item.to}
+                    end={item.to === "/admin"}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `flex h-10 w-full items-center gap-3 rounded-lg border-l-[3px] pl-2.5 pr-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink ${
+                        isActive
+                          ? "border-l-inter-red bg-neutral-100 text-ink"
+                          : "border-l-transparent text-muted hover:bg-neutral-50 hover:text-ink"
+                      }`
+                    }
+                  >
+                    <Icon size={18} aria-hidden="true" />
 
-                  <span className="font-medium">{item.label}</span>
-                </NavLink>
+                    <span className="flex-1">{item.label}</span>
+
+                    {count && (
+                      <span title={`${count.value} ${COUNT_TITLE[item.key]}`}>
+                        <Count value={count.value} urgency={count.urgency} />
+                        <span className="sr-only"> {COUNT_TITLE[item.key]}</span>
+                      </span>
+                    )}
+                  </NavLink>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </nav>
 
         {/* Usuário */}
-        <div className="border-t border-neutral-200 p-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-inter-red font-bold text-white">
-              E
-            </div>
+        <div className="flex items-center gap-3 border-t border-line px-5 py-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-sm font-semibold text-ink">
+            E
+          </div>
 
-            <div>
-              <h3 className="font-semibold text-neutral-900">Eduardo Ribeiro</h3>
-
-              <p className="text-sm text-neutral-500">Administrador</p>
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-ink">Eduardo Ribeiro</p>
+            <p className="text-xs text-muted">Administrador</p>
           </div>
 
           <button
             type="button"
             onClick={handleSignOut}
-            className="mt-5 flex items-center gap-2 text-sm text-neutral-500 transition-colors hover:text-inter-red"
+            className="rounded-lg p-2 text-muted transition-colors hover:bg-neutral-100 hover:text-ink"
+            aria-label="Sair"
+            title="Sair"
           >
-            <LogOut size={16} />
-            Sair
+            <LogOut size={18} />
           </button>
         </div>
       </aside>
