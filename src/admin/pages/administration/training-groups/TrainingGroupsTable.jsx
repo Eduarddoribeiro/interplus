@@ -107,7 +107,7 @@ export default function TrainingGroupsTable({
                   <div className="flex flex-wrap items-center gap-2">
                     <TrainingGroupStatusBadge status={group.status} />
                     {group.featured && (
-                      <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-alert-text">
+                      <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-ink">
                         Destaque
                       </span>
                     )}

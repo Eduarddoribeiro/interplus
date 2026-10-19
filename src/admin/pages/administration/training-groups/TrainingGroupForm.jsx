@@ -162,7 +162,7 @@ export default function TrainingGroupForm() {
       </button>
 
       <SectionTitle
-        title={isEditing ? "Editar Turma" : "Nova Turma"}
+        title={isEditing ? "Editar turma" : "Nova turma"}
         subtitle={
           isEditing
             ? "Altere os dados e a situação da turma."
