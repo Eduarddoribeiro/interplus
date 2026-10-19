@@ -5,9 +5,14 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
 import NewContactModal from "../components/contacts/NewContactModal";
+import Toaster from "../components/common/Toaster";
 
 export default function Layout() {
   const [newContactOpen, setNewContactOpen] =
+    useState(false);
+
+  // Gaveta do menu no celular
+  const [menuOpen, setMenuOpen] =
     useState(false);
 
   // Muda a cada contato criado, para as páginas recarregarem
@@ -15,17 +20,21 @@ export default function Layout() {
     useState(0);
 
   return (
-    <div className="flex">
-      <Sidebar />
+    <div className="flex min-h-screen">
+      <Sidebar
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+      />
 
-      <div className="min-h-screen flex-1 bg-neutral-50">
+      <div className="min-w-0 flex-1 bg-neutral-50">
         <Topbar
           onNewContact={() =>
             setNewContactOpen(true)
           }
+          onOpenMenu={() => setMenuOpen(true)}
         />
 
-        <main className="p-10">
+        <main className="p-4 sm:p-6 lg:p-10">
           <Outlet
             context={{
               openNewContact: () => setNewContactOpen(true),
@@ -44,6 +53,8 @@ export default function Layout() {
           setContactsVersion((current) => current + 1)
         }
       />
+
+      <Toaster />
     </div>
   );
 }

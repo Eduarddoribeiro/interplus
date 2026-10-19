@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import {
   AlertCircle,
+  ArrowRight,
   CalendarClock,
   CircleCheckBig,
-  ListPlus,
   PhoneCall,
   RefreshCw,
   UserRound,
@@ -13,9 +14,7 @@ import {
 import SectionTitle from "../components/common/SectionTitle";
 
 import FollowUpCard from "../components/followUps/FollowUpCard";
-import WaitingListCard from "../components/followUps/WaitingListCard";
 import FollowUpActionModal from "../components/followUps/ContactActionModal";
-import WaitingListQualificationModal from "../components/followUps/WaitingListQualificationModal";
 import { getTodayISO } from "../../helpers/contactPresentation";
 import {
   FOLLOW_UP_FILTER,
@@ -24,42 +23,31 @@ import {
 import { FOLLOW_UP_ACTION } from "../../constants/followUpActions";
 
 import { CONTACT_STATUS } from "../../constants/contactStatus";
-import { INITIAL_WAITING_LIST_FILTERS } from "../../constants/waitingListFilters";
-import WaitingListFilters from "../components/waitingList/WaitingListFilters";
 import {
   getFollowUpCenter,
   scheduleFollowUp,
   enrollFromFollowUp,
   loseFromFollowUp,
-  closeWaitingListContact,
-  updateContact,
-  addContactInternalNote,
 } from "../../services/contacts";
-import { filterWaitingList } from "../../helpers/waitingListFilters";
 
+/*
+ * Retornos: famílias que precisam de novo contato.
+ * A lista de interesse tem tela própria (/admin/waiting-list).
+ */
 export default function FollowUps() {
   const [followUps, setFollowUps] = useState([]);
-  const [waitingList, setWaitingList] = useState([]);
+  const [waitingCount, setWaitingCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const [activeFilter, setActiveFilter] = useState(FOLLOW_UP_FILTER.TODAY);
 
-  const [waitingListFilters, setWaitingListFilters] = useState(
-    INITIAL_WAITING_LIST_FILTERS,
-  );
-
   const [actionContact, setActionContact] = useState(null);
-
   const [actionType, setActionType] = useState(null);
-
+  const [actionError, setActionError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  const [
-  qualificationContact,
-  setQualificationContact,
-] = useState(null);
 
   const today = getTodayISO();
 
@@ -73,9 +61,20 @@ export default function FollowUps() {
       setError("");
 
       const data = await getFollowUpCenter();
+      const list = data.followUps || [];
 
-      setFollowUps(data.followUps || []);
-      setWaitingList(data.waitingList || []);
+      setFollowUps(list);
+      setWaitingCount((data.waitingList || []).length);
+
+      // Sem retorno hoje mas com atrasados: abre direto nos atrasados
+      const hasToday = list.some((item) => item.follow_up_date === today);
+      const hasOverdue = list.some(
+        (item) => item.follow_up_date && item.follow_up_date < today,
+      );
+
+      if (!hasToday && hasOverdue) {
+        setActiveFilter(FOLLOW_UP_FILTER.OVERDUE);
+      }
     } catch (err) {
       console.error("Erro ao carregar retornos:", err);
 
@@ -86,10 +85,7 @@ export default function FollowUps() {
   }
 
   function openAction(contact, type) {
-    if (type === FOLLOW_UP_ACTION.QUALIFY) {
-      setQualificationContact(contact);
-      return;
-    }
+    setActionError("");
     setActionContact(contact);
     setActionType(type);
   }
@@ -110,6 +106,7 @@ export default function FollowUps() {
 
     try {
       setSaving(true);
+      setActionError("");
 
       let updated;
 
@@ -134,11 +131,8 @@ export default function FollowUps() {
       }
 
       /*
-       * Se continuou sendo retorno,
-       * atualizamos o card.
-       *
-       * Se matriculou/perdeu,
-       * removemos da fila.
+       * Se continuou sendo retorno, atualizamos o card.
+       * Se matriculou/perdeu, removemos da fila.
        */
       if (updated?.status === CONTACT_STATUS.FOLLOW_UP) {
         setFollowUps((current) =>
@@ -150,78 +144,18 @@ export default function FollowUps() {
         );
       }
 
-      closeActionForce();
+      setNotice("Retorno atualizado.");
+      window.setTimeout(() => setNotice(""), 4000);
+
+      setActionContact(null);
+      setActionType(null);
     } catch (err) {
       console.error("Erro ao atualizar retorno:", err);
 
-      alert(err?.message || "Não foi possível atualizar o retorno.");
+      setActionError(err?.message || "Não foi possível atualizar o retorno.");
     } finally {
       setSaving(false);
     }
-  }
-
-  /*
-   * Encerra alguém que estava
-   * na lista de interesse.
-   */
-  async function handleCloseWaitingList(payload) {
-    if (!actionContact) return;
-
-    try {
-      setSaving(true);
-
-      await closeWaitingListContact(actionContact.id, {
-        lostReason: payload.lostReason,
-        notes: payload.notes,
-      });
-
-      setWaitingList((current) =>
-        current.filter((item) => item.id !== actionContact.id),
-      );
-
-      closeActionForce();
-    } catch (err) {
-      console.error("Erro ao encerrar lista de interesse:", err);
-
-      alert(err?.message || "Não foi possível encerrar o contato.");
-    } finally {
-      setSaving(false);
-    }
-  }
-  async function handleSaveQualification(payload) {
-    if (!qualificationContact) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      const { notes, ...contactUpdates } = payload;
-
-      await updateContact(qualificationContact.id, contactUpdates);
-
-      if (notes?.trim()) {
-        await addContactInternalNote(
-          qualificationContact.id,
-          `Qualificação da lista de interesse: ${notes.trim()}`,
-        );
-      }
-
-      setQualificationContact(null);
-
-      await loadData();
-    } catch (err) {
-      console.error("Erro ao salvar qualificação:", err);
-
-      alert(err?.message || "Não foi possível salvar a qualificação.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function closeActionForce() {
-    setActionContact(null);
-    setActionType(null);
   }
 
   /*
@@ -245,19 +179,14 @@ export default function FollowUps() {
       overdue,
       today: todayCount,
       upcoming,
-      waiting: waitingList.length,
     };
-  }, [followUps, waitingList, today]);
+  }, [followUps, today]);
 
   /*
    * FILTRO DA FILA
    */
 
   const filteredFollowUps = useMemo(() => {
-    if (activeFilter === FOLLOW_UP_FILTER.WAITING_LIST) {
-      return [];
-    }
-
     let result = [...followUps];
 
     if (activeFilter === FOLLOW_UP_FILTER.TODAY) {
@@ -281,40 +210,34 @@ export default function FollowUps() {
     );
   }, [followUps, activeFilter, today]);
 
-  const filteredWaitingList = useMemo(() => {
-    return filterWaitingList(waitingList, waitingListFilters);
-  }, [waitingList, waitingListFilters]);
-
-  const waitingListCategories = useMemo(() => {
-    const map = new Map();
-
-    waitingList.forEach((item) => {
-      const category = item.interest_category || item.category;
-
-      if (!category?.id) {
-        return;
-      }
-
-      map.set(String(category.id), category);
-    });
-
-    return Array.from(map.values()).sort((a, b) =>
-      (a.name || "").localeCompare(b.name || "", "pt-BR"),
-    );
-  }, [waitingList]);
-
   return (
     <div className="space-y-8">
-      {/* TÍTULO */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <SectionTitle
+          title="Retornos"
+          description="Famílias que precisam de um novo contato. Registre o próximo passo de cada uma."
+        />
 
-      <SectionTitle
-        title="Retornos"
-        description="Acompanhe oportunidades que precisam de novo contato e famílias aguardando vaga ou turma."
-      />
+        <button
+          type="button"
+          onClick={loadData}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+        >
+          <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
+          Atualizar
+        </button>
+      </div>
+
+      {notice && (
+        <div className="rounded-2xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white">
+          {notice}
+        </div>
+      )}
 
       {/* INDICADORES */}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
+      <div className="grid grid-cols-3 gap-3 lg:gap-6">
         <StatCard
           title="Atrasados"
           value={stats.overdue}
@@ -336,70 +259,27 @@ export default function FollowUps() {
           subtitle="Agendados"
           icon={CalendarClock}
         />
-
-        <StatCard
-          title="Lista de interesse"
-          value={stats.waiting}
-          subtitle="Aguardando oportunidade"
-          icon={ListPlus}
-        />
       </div>
 
-      {/* CABEÇALHO */}
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-neutral-900">
-            Central de oportunidades
-          </h2>
-
-          <p className="mt-1 text-sm text-neutral-500">
-            Veja quem precisa ser contatado e registre o próximo passo.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={loadData}
-          disabled={loading}
-          className="
-            flex
-            items-center
-            justify-center
-            gap-2
-            rounded-xl
-            border
-            border-neutral-200
-            bg-white
-            px-4
-            py-3
-            text-sm
-            font-semibold
-            text-neutral-700
-            transition
-            hover:bg-neutral-50
-            disabled:opacity-50
-          "
+      {waitingCount > 0 && (
+        <Link
+          to="/admin/waiting-list"
+          className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-600 transition hover:bg-neutral-50"
         >
-          <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
-          Atualizar
-        </button>
-      </div>
+          <span>
+            <strong className="text-neutral-900">{waitingCount}</strong>{" "}
+            famíli{waitingCount === 1 ? "a" : "as"} na lista de interesse
+          </span>
+
+          <span className="flex items-center gap-1 font-semibold text-neutral-900">
+            Abrir lista <ArrowRight size={15} />
+          </span>
+        </Link>
+      )}
 
       {/* FILTROS */}
 
-      <div
-        className="
-          flex
-          flex-wrap
-          gap-2
-          rounded-2xl
-          border
-          border-neutral-200
-          bg-white
-          p-3
-        "
-      >
+      <div className="flex flex-wrap gap-2 rounded-2xl border border-neutral-200 bg-white p-3">
         {FOLLOW_UP_FILTER_OPTIONS.map((filter) => {
           const active = activeFilter === filter.value;
 
@@ -408,19 +288,11 @@ export default function FollowUps() {
               key={filter.value}
               type="button"
               onClick={() => setActiveFilter(filter.value)}
-              className={`
-        rounded-xl
-        px-4
-        py-2.5
-        text-sm
-        font-semibold
-        transition
-        ${
-          active
-            ? "bg-neutral-900 text-white"
-            : "text-neutral-600 hover:bg-neutral-100"
-        }
-      `}
+              className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                active
+                  ? "bg-neutral-900 text-white"
+                  : "text-neutral-600 hover:bg-neutral-100"
+              }`}
             >
               {filter.label}
             </button>
@@ -458,75 +330,21 @@ export default function FollowUps() {
 
       {/* RETORNOS */}
 
-      {!loading && !error && activeFilter !== FOLLOW_UP_FILTER.WAITING_LIST && (
-        <>
-          {filteredFollowUps.length === 0 ? (
-            <EmptyState type={activeFilter} />
-          ) : (
-            <div className="space-y-4">
-              {filteredFollowUps.map((item) => (
-                <FollowUpCard
-                  key={item.id}
-                  item={item}
-                  today={today}
-                  onAction={openAction}
-                />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* LISTA DE INTERESSE */}
-      {/* LISTA DE INTERESSE */}
-
-      {!loading && !error && activeFilter === FOLLOW_UP_FILTER.WAITING_LIST && (
-        <div className="space-y-4">
-          <WaitingListFilters
-            categories={waitingListCategories}
-            filters={waitingListFilters}
-            onChange={setWaitingListFilters}
-            onClear={() =>
-              setWaitingListFilters({
-                ...INITIAL_WAITING_LIST_FILTERS,
-              })
-            }
-          />
-
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-sm text-neutral-500">
-              {filteredWaitingList.length === waitingList.length
-                ? `${waitingList.length} ${
-                    waitingList.length === 1 ? "família" : "famílias"
-                  } na lista`
-                : `${filteredWaitingList.length} de ${waitingList.length} famílias`}
-            </p>
-          </div>
-
-          {filteredWaitingList.length === 0 ? (
-            waitingList.length === 0 ? (
-              <EmptyState type={FOLLOW_UP_FILTER.WAITING_LIST} />
-            ) : (
-              <WaitingListFilteredEmptyState
-                onClear={() =>
-                  setWaitingListFilters({
-                    ...INITIAL_WAITING_LIST_FILTERS,
-                  })
-                }
+      {!loading && !error && (
+        filteredFollowUps.length === 0 ? (
+          <EmptyState type={activeFilter} />
+        ) : (
+          <div className="space-y-4">
+            {filteredFollowUps.map((item) => (
+              <FollowUpCard
+                key={item.id}
+                item={item}
+                today={today}
+                onAction={openAction}
               />
-            )
-          ) : (
-            <div className="space-y-4">
-              {filteredWaitingList.map((item) => (
-                <WaitingListCard
-                  key={item.id}
-                  item={item}
-                  onAction={openAction}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        )
       )}
 
       {/* MODAL */}
@@ -536,22 +354,9 @@ export default function FollowUps() {
           contact={actionContact}
           type={actionType}
           saving={saving}
+          error={actionError}
           onClose={closeAction}
-          onSave={
-            actionType === FOLLOW_UP_ACTION.CLOSE_WAITING_LIST
-              ? handleCloseWaitingList
-              : handleFollowUpAction
-          }
-        />
-      )}
-
-      {qualificationContact && (
-        <WaitingListQualificationModal
-          contact={qualificationContact}
-          categories={waitingListCategories}
-          saving={saving}
-          onClose={() => setQualificationContact(null)}
-          onSave={handleSaveQualification}
+          onSave={handleFollowUpAction}
         />
       )}
     </div>
@@ -636,11 +441,6 @@ function EmptyState({ type }) {
       icon: UserRound,
     },
 
-    [FOLLOW_UP_FILTER.WAITING_LIST]: {
-      title: "Lista de interesse vazia",
-      description: "Nenhuma família está aguardando vaga ou abertura de turma.",
-      icon: ListPlus,
-    },
   };
 
   const selected = content[type] || content[FOLLOW_UP_FILTER.ALL];
@@ -660,27 +460,3 @@ function EmptyState({ type }) {
   );
 }
 
-function WaitingListFilteredEmptyState({ onClear }) {
-  return (
-    <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
-      <UserRound size={32} className="mx-auto text-neutral-300" />
-
-      <h3 className="mt-4 text-lg font-bold text-neutral-900">
-        Nenhuma família encontrada
-      </h3>
-
-      <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">
-        Nenhum contato da lista de interesse corresponde aos filtros
-        selecionados.
-      </p>
-
-      <button
-        type="button"
-        onClick={onClear}
-        className="mt-5 text-sm font-semibold text-red-600 transition hover:text-red-700"
-      >
-        Limpar filtros
-      </button>
-    </div>
-  );
-}
