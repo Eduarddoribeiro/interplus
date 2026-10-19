@@ -1,279 +1,122 @@
 import { GraduationCap, MessageCircle, RotateCcw, XCircle } from "lucide-react";
 
-import FollowUpProgress from "./FollowUpProgress";
-import ContactInfo from "../contacts/ContactInfo";
+import { Button, urgencyRail, urgencyText } from "../../ui";
 
 import {
   createWhatsAppUrl,
   daysBetweenDates,
   formatContactDate,
 } from "../../../helpers/contactPresentation";
-
+import { formatPhone } from "../../../helpers/phoneHelpers";
 import { getFollowUpState } from "../../../helpers/followUpRules";
 
 import { FOLLOW_UP_ACTION } from "../../../constants/followUpActions";
 
-/* =========================================================
- * COMPONENTE
- * =======================================================*/
-
+/*
+ * Um retorno = uma linha: quem é, quando era o retorno, em que ponto
+ * do ciclo está (tentativas e dias) e as ações.
+ * Faixa vermelha = atrasado ou limite atingido; âmbar = para hoje.
+ */
 export default function FollowUpCard({ item, today, onAction }) {
   const whatsappUrl = createWhatsAppUrl(item.phone);
-
-  const followUpState = getFollowUpState(item);
+  const state = getFollowUpState(item);
 
   const isOverdue = Boolean(item.follow_up_date) && item.follow_up_date < today;
-
   const isToday = item.follow_up_date === today;
-
   const daysLate = isOverdue ? daysBetweenDates(item.follow_up_date, today) : 0;
+
+  const urgency = state.limitReached || isOverdue ? "alert" : isToday ? "attention" : undefined;
+
+  const when = state.limitReached
+    ? "Limite atingido: decidir"
+    : isOverdue
+      ? `Atrasado há ${daysLate} ${daysLate === 1 ? "dia" : "dias"}`
+      : isToday
+        ? "Para hoje"
+        : `Retorno em ${formatContactDate(item.follow_up_date)}`;
+
+  const attempt = Math.min(state.attempts + 1, state.maxAttempts);
 
   return (
     <article
-      className={`
-        overflow-hidden
-        rounded-2xl
-        border
-        bg-white
-        transition
-        hover:shadow-md
-        ${
-          followUpState.limitReached
-            ? "border-red-300"
-            : isOverdue
-              ? "border-red-200"
-              : "border-neutral-200"
-        }
-      `}
+      className={`grid gap-x-4 gap-y-2 border-b border-line px-4 py-3 last:border-b-0 lg:grid-cols-[minmax(0,1.4fr)_13rem_minmax(0,1.2fr)_29rem] lg:items-center ${urgencyRail(urgency)}`}
     >
-      <div className="p-5 sm:p-6">
-        {/* =================================================
-         * CABEÇALHO
-         * =============================================== */}
+      {/* QUEM */}
+      <div className="min-w-0">
+        <h3 className="truncate font-semibold">{item.child_name || "Sem nome"}</h3>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              {item.category?.name && (
-                <span className="text-sm font-semibold text-red-600">
-                  {item.category.name}
-                </span>
-              )}
+        <p className="truncate text-sm text-muted">
+          {item.responsible_name || "Responsável não informado"}
+          {item.phone && (
+            <>
+              , <span className="tabular-nums">{formatPhone(item.phone)}</span>
+            </>
+          )}
+        </p>
+      </div>
 
-              {item.experimental_date && (
-                <>
-                  <span className="text-neutral-300">•</span>
+      {/* TURMA */}
+      <p className="text-sm">
+        {item.category?.name ?? "Sem categoria"}
+        {item.experimental_date && (
+          <span className="block text-muted">
+            Aula experimental: {formatContactDate(item.experimental_date)}
+          </span>
+        )}
+      </p>
 
-                  <span className="text-sm text-neutral-500">
-                    Experimental em {formatContactDate(item.experimental_date)}
-                  </span>
-                </>
-              )}
-            </div>
+      {/* QUANDO + CICLO */}
+      <p className="text-sm">
+        <span className={`font-medium ${urgency ? urgencyText(urgency) : "text-ink"}`}>{when}</span>
+        <span className="block text-muted">
+          {state.limitReached
+            ? `${state.attempts} de ${state.maxAttempts} tentativas feitas`
+            : `${attempt}ª de ${state.maxAttempts} tentativas`}
+        </span>
+      </p>
 
-            <h3 className="mt-2 text-xl font-bold text-neutral-900">
-              {item.child_name}
-            </h3>
-          </div>
-
-          <FollowUpBadge
-            isOverdue={isOverdue}
-            isToday={isToday}
-            daysLate={daysLate}
-            date={item.follow_up_date}
-            limitReached={followUpState.limitReached}
-          />
-        </div>
-
-        {/* =================================================
-         * DADOS DO CONTATO
-         * =============================================== */}
-
-        <div className="mt-6 grid gap-5 border-t border-neutral-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-          <ContactInfo label="Responsável" value={item.responsible_name} />
-
-          <ContactInfo label="WhatsApp" value={item.phone} />
-
-          <ContactInfo
-            label="Retorno"
-            value={formatContactDate(item.follow_up_date)}
-          />
-
-          <ContactInfo label="Origem" value={item.source} />
-        </div>
-
-        {/* =================================================
-         * CICLO DE FOLLOW-UP
-         * =============================================== */}
-
-        <FollowUpProgress contact={item} />
-
-        {/* =================================================
-         * OBSERVAÇÕES
-         * =============================================== */}
-
-        {item.internal_notes && (
-          <div className="mt-5 rounded-2xl bg-neutral-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-              Observação
-            </p>
-
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-700">
-              {item.internal_notes}
-            </p>
-          </div>
+      {/* AÇÕES */}
+      <div className="flex flex-wrap gap-2 lg:justify-end">
+        {whatsappUrl && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`WhatsApp de ${item.responsible_name || item.child_name || "contato"}`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line text-whatsapp hover:border-whatsapp"
+          >
+            <MessageCircle size={17} aria-hidden="true" />
+          </a>
         )}
 
-        {/* =================================================
-         * AÇÕES
-         * =============================================== */}
+        <Button size="sm" onClick={() => onAction(item, FOLLOW_UP_ACTION.ENROLL)}>
+          <GraduationCap size={16} aria-hidden="true" className="text-ok" />
+          Matriculou
+        </Button>
 
-        <div className="mt-6 flex flex-col gap-2 border-t border-neutral-100 pt-5 sm:flex-row sm:flex-wrap">
-          {whatsappUrl && (
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="
-                flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                border
-                border-neutral-200
-                px-4
-                py-3
-                text-sm
-                font-semibold
-                text-neutral-700
-                transition
-                hover:bg-neutral-50
-              "
-            >
-              <MessageCircle size={17} />
-              WhatsApp
-            </a>
-          )}
+        {state.canReschedule && (
+          <Button size="sm" onClick={() => onAction(item, FOLLOW_UP_ACTION.RESCHEDULE)}>
+            <RotateCcw size={16} aria-hidden="true" />
+            Reagendar
+          </Button>
+        )}
 
-          <button
-            type="button"
-            onClick={() => onAction(item, FOLLOW_UP_ACTION.ENROLL)}
-            className="
-              flex
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              bg-green-600
-              px-4
-              py-3
-              text-sm
-              font-semibold
-              text-white
-              transition
-              hover:bg-green-700
-            "
-          >
-            <GraduationCap size={17} />
-            Matriculou
-          </button>
-
-          {followUpState.canReschedule && (
-            <button
-              type="button"
-              onClick={() => onAction(item, FOLLOW_UP_ACTION.RESCHEDULE)}
-              className="
-                flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                bg-neutral-900
-                px-4
-                py-3
-                text-sm
-                font-semibold
-                text-white
-                transition
-                hover:bg-neutral-800
-              "
-            >
-              <RotateCcw size={17} />
-              Reagendar retorno
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() =>
-  onAction(
-    item,
-    FOLLOW_UP_ACTION.LOSE,
-  )
-}
-            className="
-              flex
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              border
-              border-neutral-200
-              px-4
-              py-3
-              text-sm
-              font-semibold
-              text-neutral-700
-              transition
-              hover:bg-neutral-50
-            "
-          >
-            <XCircle size={17} />
-
-            {followUpState.limitReached
-              ? "Encerrar oportunidade"
-              : "Não converteu"}
-          </button>
-        </div>
+        <Button
+          size="sm"
+          variant={state.limitReached ? "secondary" : "quiet"}
+          onClick={() => onAction(item, FOLLOW_UP_ACTION.LOSE)}
+        >
+          <XCircle size={16} aria-hidden="true" />
+          {state.limitReached ? "Encerrar" : "Não converteu"}
+        </Button>
       </div>
+
+      {/* OBSERVAÇÃO */}
+      {item.internal_notes && (
+        <p className="truncate text-sm text-muted lg:col-span-4" title={item.internal_notes}>
+          {item.internal_notes.replace(/\s+/g, " ").trim()}
+        </p>
+      )}
     </article>
   );
 }
-
-/* =========================================================
- * BADGE
- * =======================================================*/
-
-function FollowUpBadge({ isOverdue, isToday, daysLate, date, limitReached }) {
-  if (limitReached) {
-    return (
-      <span className="w-fit rounded-full bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-700">
-        Limite atingido
-      </span>
-    );
-  }
-
-  if (isOverdue) {
-    return (
-      <span className="w-fit rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700">
-        {daysLate === 1 ? "Atrasado 1 dia" : `Atrasado ${daysLate} dias`}
-      </span>
-    );
-  }
-
-  if (isToday) {
-    return (
-      <span className="w-fit rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
-        Retorno hoje
-      </span>
-    );
-  }
-
-  return (
-    <span className="w-fit rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
-      {formatContactDate(date)}
-    </span>
-  );
-}
-

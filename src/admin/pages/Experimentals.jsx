@@ -247,7 +247,10 @@ export default function Experimentals() {
       const data =
         await getExperimentals();
 
-      setExperimentals(data || []);
+      // Contatos arquivados ficam fora (mesma conta da Visão geral e do menu)
+      setExperimentals(
+        (data || []).filter((item) => !item.contact?.archived_at),
+      );
     } catch (err) {
       console.error(
         "Erro ao carregar experimentais:",
