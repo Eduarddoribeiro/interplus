@@ -65,6 +65,7 @@ const LOST_LABELS = {
 export default function Reports() {
   const [contacts, setContacts] = useState([]);
   const [period, setPeriod] = useState("all");
+  const [location, setLocation] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -94,39 +95,60 @@ export default function Reports() {
     }
   }
 
+  // Locais presentes nos contatos (Krahe, Biguá...)
+  const locations = useMemo(() => {
+    const map = new Map();
+
+    contacts.forEach((contact) => {
+      if (contact.location?.id) {
+        map.set(String(contact.location.id), contact.location.name);
+      }
+    });
+
+    return [...map.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [contacts]);
+
   const filteredContacts = useMemo(() => {
-  if (period === "all") {
-    return contacts;
-  }
+    const byLocation =
+      location === "all"
+        ? contacts
+        : contacts.filter((contact) =>
+            location === "none"
+              ? !contact.location_id
+              : String(contact.location_id) === location
+          );
 
-  const limit = new Date();
-
-  limit.setDate(
-    limit.getDate() - Number(period)
-  );
-
-  limit.setHours(0, 0, 0, 0);
-
-  return contacts.filter((contact) => {
-    let contactDate = null;
-
-    if (contact.first_contact_at) {
-      contactDate = new Date(
-        `${contact.first_contact_at}T00:00:00`
-      );
-    } else if (contact.created_at) {
-      contactDate = new Date(
-        contact.created_at
-      );
+    if (period === "all") {
+      return byLocation;
     }
 
-    if (!contactDate) {
-      return false;
-    }
+    const limit = new Date();
 
-    return contactDate >= limit;
-  });
-}, [contacts, period]);
+    limit.setDate(
+      limit.getDate() - Number(period)
+    );
+
+    limit.setHours(0, 0, 0, 0);
+
+    return byLocation.filter((contact) => {
+      const raw =
+        contact.first_contact_at ||
+        contact.created_at;
+
+      if (!raw) {
+        return false;
+      }
+
+      // Data pura ("2026-10-18") ou data com hora
+      const contactDate = /^\d{4}-\d{2}-\d{2}$/.test(raw)
+        ? new Date(`${raw}T00:00:00`)
+        : new Date(raw);
+
+      return contactDate >= limit;
+    });
+  }, [contacts, period, location]);
 
   const report = useMemo(
     () => buildReport(filteredContacts),
@@ -179,6 +201,26 @@ export default function Reports() {
         />
 
         <div className="flex flex-wrap gap-2">
+          {locations.length > 0 && (
+            <select
+              value={location}
+              onChange={(event) =>
+                setLocation(event.target.value)
+              }
+              className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700"
+            >
+              <option value="all">Todos os locais</option>
+
+              {locations.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+
+              <option value="none">Sem local definido</option>
+            </select>
+          )}
+
           {PERIODS.map((item) => (
             <button
               key={item.value}
