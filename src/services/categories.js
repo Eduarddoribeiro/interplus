@@ -1,12 +1,24 @@
 import { supabase } from "../lib/supabase";
 
+import { ageInYear } from "../helpers/categoryAge";
+
+/**
+ * Categoria pela idade que o atleta completa no ano corrente
+ * (não depende de datas reescritas a cada janeiro).
+ */
 export async function getCategoryByBirthDate(birthDate) {
+  const age = ageInYear(birthDate);
+
+  if (age === null) return null;
+
   const { data, error } = await supabase
     .from("categories")
     .select("*")
-    .lte("min_birth_date", birthDate)
-    .gte("max_birth_date", birthDate)
+    .lte("min_age", age)
+    .gte("max_age", age)
     .eq("active", true)
+    .order("order_index")
+    .limit(1)
     .maybeSingle();
 
   if (error) throw error;

@@ -14,10 +14,12 @@ import {
 import CategoriesTable from "./CategoriesTable";
 import CategoryModal from "./CategoryModal";
 
+import { birthDatesFor } from "../../../../helpers/categoryAge";
+
 const EMPTY_FORM = {
   name: "",
-  min_birth_date: "",
-  max_birth_date: "",
+  min_age: "",
+  max_age: "",
   order_index: 0,
   active: true,
 };
@@ -78,8 +80,8 @@ export default function CategoriesPage() {
 
     setForm({
       name: category.name,
-      min_birth_date: category.min_birth_date ?? "",
-      max_birth_date: category.max_birth_date ?? "",
+      min_age: category.min_age ?? "",
+      max_age: category.max_age ?? "",
       order_index: category.order_index ?? 0,
       active: category.active,
     });
@@ -91,8 +93,10 @@ export default function CategoriesPage() {
     try {
       const payload = {
         name: form.name,
-        min_birth_date: form.min_birth_date,
-        max_birth_date: form.max_birth_date,
+        min_age: Number(form.min_age),
+        max_age: Number(form.max_age),
+        // Datas antigas mantidas em sincronia com as idades
+        ...birthDatesFor(Number(form.min_age), Number(form.max_age)),
         order_index: Number(form.order_index) || 0,
         active: form.active,
       };

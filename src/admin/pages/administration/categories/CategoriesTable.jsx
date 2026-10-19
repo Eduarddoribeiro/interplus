@@ -3,6 +3,8 @@ import { Pencil, Power, Trash2 } from "lucide-react";
 import CrudTable from "../components/CrudTable";
 import StatusBadge from "../components/StatusBadge";
 
+import { birthYearsOf } from "../../../../helpers/categoryAge";
+
 function formatDate(value) {
   if (!value) return "-";
 
@@ -43,8 +45,21 @@ export default function CategoriesTable({
           </td>
 
           <td className="px-6 py-4">
-            {formatDate(category.min_birth_date)} até{" "}
-            {formatDate(category.max_birth_date)}
+            {category.min_age != null ? (
+              <>
+                {birthYearsOf(category).from === birthYearsOf(category).to
+                  ? `Nascidos em ${birthYearsOf(category).from}`
+                  : `Nascidos em ${birthYearsOf(category).from} a ${birthYearsOf(category).to}`}
+                <span className="block text-xs text-neutral-400">
+                  {category.min_age} a {category.max_age} anos no ano
+                </span>
+              </>
+            ) : (
+              <>
+                {formatDate(category.min_birth_date)} até{" "}
+                {formatDate(category.max_birth_date)}
+              </>
+            )}
           </td>
 
           <td className="px-6 py-4">
