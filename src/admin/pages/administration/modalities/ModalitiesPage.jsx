@@ -26,7 +26,7 @@ export default function ModalitiesPage() {
       >
         <ArrowLeft size={18} />
 
-        Voltar
+        Administração
       </button>
 
       <div className="flex items-center justify-between">
@@ -42,7 +42,7 @@ export default function ModalitiesPage() {
         >
           <Plus size={18} />
 
-          Nova Modalidade
+          Nova modalidade
         </button>
 
       </div>

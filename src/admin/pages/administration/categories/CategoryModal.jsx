@@ -21,8 +21,8 @@ export default function CategoryModal({
       open={open}
       title={
         editing
-          ? "Editar Categoria"
-          : "Nova Categoria"
+          ? "Editar categoria"
+          : "Nova categoria"
       }
       onClose={onClose}
       onSave={onSave}

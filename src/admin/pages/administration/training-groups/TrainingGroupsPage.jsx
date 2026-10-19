@@ -37,7 +37,7 @@ export default function TrainingGroupsPage() {
         className="flex items-center gap-2 text-sm text-muted hover:text-ink"
       >
         <ArrowLeft size={18} />
-        Voltar para Administração
+        Administração
       </button>
 
       <div className="flex items-center justify-between">
@@ -54,7 +54,7 @@ export default function TrainingGroupsPage() {
           className="flex items-center gap-2 rounded-xl bg-inter-red px-5 py-3 font-medium text-white hover:bg-inter-red-dark"
         >
           <Plus size={18} />
-          Nova Turma
+          Nova turma
         </button>
 
       </div>

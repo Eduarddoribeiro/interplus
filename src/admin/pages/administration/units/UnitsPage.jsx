@@ -90,7 +90,7 @@ export default function UnitsPage() {
       <CrudPage
         title="Unidades"
         subtitle="Cidades onde a escola atua. Os ginásios e arenas ficam em Locais."
-        createLabel="Nova Unidade"
+        createLabel="Nova unidade"
         onCreate={handleCreate}
       >
         <CrudTable
@@ -140,8 +140,8 @@ export default function UnitsPage() {
         open={open}
         title={
           editing
-            ? "Editar Unidade"
-            : "Nova Unidade"
+            ? "Editar unidade"
+            : "Nova unidade"
         }
         onClose={() => setOpen(false)}
         onSave={handleSave}

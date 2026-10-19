@@ -210,7 +210,7 @@ export default function TrainingGroupDetails() {
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <TrainingGroupStatusBadge status={group.status} />
             {group.featured && (
-              <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-alert-text">
+              <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-ink">
                 Destaque
               </span>
             )}
@@ -230,7 +230,7 @@ export default function TrainingGroupDetails() {
           className="flex items-center gap-2 rounded-xl bg-inter-red px-5 py-3 font-medium text-white hover:bg-inter-red-dark"
         >
           <Plus size={18} />
-          Novo Horário
+          Novo horário
         </button>
 
       </div>

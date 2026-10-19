@@ -16,19 +16,19 @@ export const TRAINING_GROUP_STATUS_OPTIONS = [
     value: TRAINING_GROUP_STATUS.OPEN,
     label: "Aberta",
     description: "Aparece no formulário e aceita aula experimental.",
-    badge: "bg-green-100 text-green-700",
+    badge: "bg-ok-soft text-ok",
   },
   {
     value: TRAINING_GROUP_STATUS.CLOSED,
     label: "Fechada",
     description: "Só alunos atuais. Não aparece no formulário.",
-    badge: "bg-amber-100 text-amber-700",
+    badge: "bg-attention-soft text-attention-text",
   },
   {
     value: TRAINING_GROUP_STATUS.INACTIVE,
     label: "Inativa",
     description: "Turma encerrada.",
-    badge: "bg-neutral-200 text-neutral-600",
+    badge: "bg-neutral-100 text-muted",
   },
 ];
 

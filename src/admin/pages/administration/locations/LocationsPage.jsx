@@ -118,7 +118,7 @@ export default function LocationsPage() {
       <CrudPage
         title="Locais"
         subtitle="Ginásios e arenas onde acontecem os treinos. O endereço aparece para os pais no formulário."
-        createLabel="Novo Local"
+        createLabel="Novo local"
         onCreate={handleCreate}
       >
         <CrudTable
@@ -173,7 +173,7 @@ export default function LocationsPage() {
 
       <CrudModal
         open={open}
-        title={editing ? "Editar Local" : "Novo Local"}
+        title={editing ? "Editar local" : "Novo local"}
         onClose={() => setOpen(false)}
         onSave={handleSave}
       >

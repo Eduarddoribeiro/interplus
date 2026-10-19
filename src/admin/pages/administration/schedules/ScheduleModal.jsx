@@ -18,8 +18,8 @@ export default function ScheduleModal({
       open={open}
       title={
         editing
-          ? "Editar Horário"
-          : "Novo Horário"
+          ? "Editar horário"
+          : "Novo horário"
       }
       onClose={onClose}
       onSave={onSave}
