@@ -138,7 +138,7 @@ export default function LocationsPage() {
           {locations.map((location) => (
             <tr
               key={location.id}
-              className="border-b border-neutral-100"
+              className="border-b border-line"
             >
               <td className="px-6 py-4 font-medium">
                 {location.name}
@@ -150,7 +150,7 @@ export default function LocationsPage() {
 
               <td className="px-6 py-4">
                 {location.address || (
-                  <span className="text-neutral-400">Sem endereço</span>
+                  <span className="text-muted">Sem endereço</span>
                 )}
               </td>
 
@@ -161,7 +161,7 @@ export default function LocationsPage() {
               <td className="px-6 py-4 text-right">
                 <button
                   onClick={() => handleEdit(location)}
-                  className="rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
+                  className="rounded-lg border border-line px-4 py-2 text-sm hover:bg-neutral-100"
                 >
                   Editar
                 </button>

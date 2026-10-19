@@ -1454,12 +1454,12 @@ function CoachNotesEditor({
               className="text-ink"
             />
 
-            <p className="text-sm font-bold text-neutral-900">
+            <p className="text-sm font-bold text-ink">
               Observação para professores
             </p>
           </div>
 
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="mt-1 text-xs text-muted">
             Apenas informações esportivas
             ou operacionais que podem ser
             compartilhadas com a comissão.
@@ -1489,14 +1489,14 @@ function CoachNotesEditor({
               {initialValue}
             </p>
           ) : (
-            <p className="mt-4 text-sm italic text-neutral-400">
+            <p className="mt-4 text-sm italic text-muted">
               Nenhuma observação para os
               professores.
             </p>
           )}
 
           {saved && (
-            <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-green-700">
+            <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-ok">
               <Check size={14} />
               Observação salva.
             </div>
@@ -1528,7 +1528,7 @@ function CoachNotesEditor({
                 );
                 setEditing(false);
               }}
-              className="rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
+              className="rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-semibold text-neutral-600 hover:bg-canvas disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -1676,17 +1676,17 @@ function CoachListModal({
 
   return (
     <ModalShell onClose={onClose}>
-      <div className="flex items-start justify-between border-b border-neutral-100 p-6">
+      <div className="flex items-start justify-between border-b border-line p-6">
         <div>
           <p className="text-sm font-semibold text-ink">
             Comissão técnica
           </p>
 
-          <h2 className="mt-2 text-2xl font-bold text-neutral-900">
+          <h2 className="mt-2 text-2xl font-bold text-ink">
             Lista dos professores
           </h2>
 
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-muted">
             Gere a relação de
             experimentais pronta para
             enviar no grupo do WhatsApp.
@@ -1699,7 +1699,7 @@ function CoachListModal({
       </div>
 
       <div className="p-6">
-        <label className="text-sm font-semibold text-neutral-900">
+        <label className="text-sm font-semibold text-ink">
           Dia do treino
         </label>
 
@@ -1712,15 +1712,15 @@ function CoachListModal({
             );
             setCopied(false);
           }}
-          className="mt-2 w-full rounded-lg border border-neutral-200 px-4 py-3 outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
+          className="mt-2 w-full rounded-lg border border-line px-4 py-3 outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
         />
 
-        <div className="mt-5 flex items-center justify-between rounded-lg bg-neutral-50 px-4 py-3">
+        <div className="mt-5 flex items-center justify-between rounded-lg bg-canvas px-4 py-3">
           <span className="text-sm text-neutral-600">
             Experimentais na lista
           </span>
 
-          <strong className="text-lg text-neutral-900">
+          <strong className="text-lg text-ink">
             {sessions.length}
           </strong>
         </div>
@@ -1737,7 +1737,7 @@ function CoachListModal({
               neste dia.
             </p>
 
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-muted">
               A lista considera aulas
               aguardando confirmação ou
               confirmadas.
@@ -1746,13 +1746,13 @@ function CoachListModal({
         ) : (
           <>
             {linkError && (
-              <p className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              <p className="mt-5 rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
                 {linkError}
               </p>
             )}
 
             {linkUrl && (
-              <p className="mt-5 rounded-lg bg-green-50 p-3 text-xs text-green-800">
+              <p className="mt-5 rounded-lg bg-ok-soft p-3 text-xs text-ok">
                 O link no fim da mensagem abre a lista no celular do
                 professor para marcar quem veio, sem login. Vale até
                 o fim do dia seguinte.
@@ -1760,12 +1760,12 @@ function CoachListModal({
             )}
 
             <div className="mt-5">
-              <p className="text-sm font-semibold text-neutral-900">
+              <p className="text-sm font-semibold text-ink">
                 Prévia da mensagem
               </p>
 
-              <div className="mt-2 max-h-[420px] overflow-y-auto rounded-lg border border-neutral-200 bg-neutral-50 p-5">
-                <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-6 text-neutral-800">
+              <div className="mt-2 max-h-[420px] overflow-y-auto rounded-lg border border-line bg-canvas p-5">
+                <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-6 text-ink">
                   {text}
                 </pre>
               </div>
@@ -1791,7 +1791,7 @@ function CoachListModal({
                 ${
                   copied
                     ? "bg-green-700"
-                    : "bg-neutral-900 hover:bg-neutral-800"
+                    : "bg-ink hover:bg-neutral-800"
                 }
               `}
             >
@@ -1838,19 +1838,19 @@ function NoShowActions({
           Ausência registrada.
         </div>
 
-        <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
+        <div className="mt-4 rounded-lg border border-line bg-canvas p-4 sm:p-5">
           <div className="flex items-start gap-3">
             <ArchiveX
               size={20}
-              className="mt-0.5 shrink-0 text-neutral-500"
+              className="mt-0.5 shrink-0 text-muted"
             />
 
             <div>
-              <p className="font-semibold text-neutral-900">
+              <p className="font-semibold text-ink">
                 Oportunidade encerrada
               </p>
 
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-1 text-sm text-muted">
                 Este contato não seguirá
                 no fluxo comercial.
               </p>
@@ -1930,12 +1930,12 @@ function NoShowActions({
       </div>
 
       <div className="mt-4 rounded-lg border border-line bg-white p-4 sm:p-5">
-        <p className="font-semibold text-neutral-900">
+        <p className="font-semibold text-ink">
           Não deixe essa oportunidade
           morrer.
         </p>
 
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-muted">
           Entre em contato com a família
           e defina o próximo passo.
         </p>
@@ -1969,7 +1969,7 @@ function NoShowActionButtons({
           href={whatsappUrl}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+          className="flex items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-canvas"
         >
           <MessageCircle size={17} />
           {followUpExists
@@ -1983,7 +1983,7 @@ function NoShowActionButtons({
       <button
         type="button"
         onClick={onReschedule}
-        className="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
+        className="flex items-center justify-center gap-2 rounded-lg bg-inter-red px-4 py-3 text-sm font-semibold text-white transition hover:bg-inter-red-dark"
       >
         <CalendarPlus size={17} />
         Reagendar experimental
@@ -2003,7 +2003,7 @@ function NoShowActionButtons({
       <button
         type="button"
         onClick={onCloseOpportunity}
-        className="flex items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+        className="flex items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-canvas"
       >
         <ArchiveX size={17} />
         Encerrar oportunidade
@@ -2028,7 +2028,7 @@ function AttendedActions({
     contact.status === "enrolled"
   ) {
     return (
-      <div className="flex items-center gap-2 text-sm font-semibold text-green-700">
+      <div className="flex items-center gap-2 text-sm font-semibold text-ok">
         <GraduationCap size={17} />
         Compareceu e matriculou.
       </div>
@@ -2047,7 +2047,7 @@ function AttendedActions({
         </div>
 
         {contact.follow_up_date && (
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted">
             Próximo contato:{" "}
             <strong>
               {formatShortDate(
@@ -2074,17 +2074,17 @@ function AttendedActions({
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-2 text-sm font-semibold text-green-700">
+      <div className="flex items-center gap-2 text-sm font-semibold text-ok">
         <UserCheck size={17} />
         Presença registrada.
       </div>
 
-      <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
-        <p className="font-semibold text-neutral-900">
+      <div className="mt-4 rounded-lg border border-line bg-canvas p-4 sm:p-5">
+        <p className="font-semibold text-ink">
           Aguardando decisão da família
         </p>
 
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-muted">
           Quando houver uma definição,
           registre o resultado comercial.
         </p>
@@ -2092,7 +2092,7 @@ function AttendedActions({
         <button
           type="button"
           onClick={onOpenResult}
-          className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-neutral-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
         >
           <GraduationCap size={17} />
           Registrar resultado
@@ -2186,7 +2186,7 @@ function ExperimentalResultModal({
         onSubmit={handleSubmit}
         className="p-6"
       >
-        <p className="text-sm font-semibold text-neutral-900">
+        <p className="text-sm font-semibold text-ink">
           Qual foi o resultado?
         </p>
 
@@ -2226,12 +2226,12 @@ function ExperimentalResultModal({
         </div>
 
         {result === "enrolled" && (
-          <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-4">
-            <p className="font-semibold text-green-900">
+          <div className="mt-6 rounded-xl border border-ok/30 bg-ok-soft p-4">
+            <p className="font-semibold text-ok">
               Matrícula realizada
             </p>
 
-            <p className="mt-1 text-sm text-green-700">
+            <p className="mt-1 text-sm text-ok">
               O contato será marcado como
               matriculado.
             </p>
@@ -2346,12 +2346,12 @@ function RescheduleExperimentalModal({
         onSubmit={handleSubmit}
         className="p-6"
       >
-        <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-red-600">
+        <div className="rounded-xl border border-alert/30 bg-alert-soft p-4">
+          <p className="text-sm font-medium text-muted">
             Tentativa anterior
           </p>
 
-          <p className="mt-2 font-semibold text-neutral-900">
+          <p className="mt-2 font-semibold text-ink">
             {formatShortDate(
               session.experimental_date
             )}
@@ -2362,7 +2362,7 @@ function RescheduleExperimentalModal({
               : ""}
           </p>
 
-          <p className="mt-1 text-sm text-red-700">
+          <p className="mt-1 text-sm text-alert-text">
             {session.status === "no_show"
               ? "Não compareceu"
               : "Será substituída pela nova data"}
@@ -2370,18 +2370,18 @@ function RescheduleExperimentalModal({
         </div>
 
         <div className="mt-6">
-          <label className="text-sm font-semibold text-neutral-900">
+          <label className="text-sm font-semibold text-ink">
             Categoria
           </label>
 
-          <div className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">
+          <div className="mt-2 rounded-xl border border-line bg-canvas px-4 py-3 text-sm font-semibold text-neutral-700">
             {session.category?.name ||
               "Categoria não informada"}
           </div>
         </div>
 
         <div className="mt-6">
-          <p className="text-sm font-semibold text-neutral-900">
+          <p className="text-sm font-semibold text-ink">
             Nova turma, horário e data
           </p>
 
@@ -2397,7 +2397,7 @@ function RescheduleExperimentalModal({
           </div>
 
           {slot && (
-            <p className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm text-neutral-700">
+            <p className="mt-3 rounded-xl bg-canvas p-3 text-sm text-neutral-700">
               Selecionado:{" "}
               <strong>
                 {slot.group.location?.name} ·{" "}
@@ -2409,7 +2409,7 @@ function RescheduleExperimentalModal({
           )}
 
           {formError && (
-            <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">
+            <p className="mt-3 rounded-xl bg-alert-soft p-3 text-sm font-semibold text-alert-text">
               {formError}
             </p>
           )}
@@ -2501,29 +2501,29 @@ function NoShowFollowUpModal({
         className="p-6"
       >
         {isNoShow ? (
-  <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
-    <p className="text-xs font-bold uppercase tracking-wide text-red-600">
+  <div className="rounded-xl border border-alert/30 bg-alert-soft p-4">
+    <p className="text-sm font-medium text-muted">
       Tentativa anterior
     </p>
 
-    <p className="mt-2 font-semibold text-neutral-900">
+    <p className="mt-2 font-semibold text-ink">
       {formatShortDate(session.experimental_date)}
       {session.experimental_time
         ? ` às ${formatTime(session.experimental_time)}`
         : ""}
     </p>
 
-    <p className="mt-1 text-sm text-red-700">
+    <p className="mt-1 text-sm text-alert-text">
       Não compareceu
     </p>
   </div>
 ) : (
-  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-    <p className="font-semibold text-blue-900">
+  <div className="rounded-xl border border-line bg-canvas p-4">
+    <p className="font-semibold text-ink">
       Remarcando experimental
     </p>
 
-    <p className="mt-1 text-sm text-blue-700">
+    <p className="mt-1 text-sm text-ink">
       A aula será movida para uma nova data.
     </p>
   </div>
@@ -2610,13 +2610,13 @@ function CloseNoShowOpportunityModal({
         onSubmit={handleSubmit}
         className="p-6"
       >
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="font-semibold text-amber-900">
+        <div className="rounded-xl border border-attention/40 bg-attention-soft p-4">
+          <p className="font-semibold text-attention-text">
             A experimental continuará
             como “Não compareceu”
           </p>
 
-          <p className="mt-1 text-sm text-amber-800">
+          <p className="mt-1 text-sm text-attention-text">
             Apenas a oportunidade
             comercial será encerrada.
           </p>
@@ -2671,7 +2671,7 @@ function ModalShell({
       onMouseDown={handleBackdrop}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
     >
-      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
         {children}
       </div>
     </div>
@@ -2686,17 +2686,17 @@ function ModalHeader({
   saving,
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-neutral-100 p-6">
+    <div className="flex items-start justify-between gap-4 border-b border-line p-6">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
+        <p className="text-sm font-medium text-muted">
           {eyebrow}
         </p>
 
-        <h2 className="mt-2 text-2xl font-bold text-neutral-900">
+        <h2 className="mt-2 text-2xl font-bold text-ink">
           {title}
         </h2>
 
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-muted">
           {description}
         </p>
       </div>
@@ -2718,7 +2718,7 @@ function CloseButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="rounded-xl p-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-50"
+      className="rounded-xl p-2 text-muted transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-50"
     >
       <X size={20} />
     </button>
@@ -2736,7 +2736,7 @@ function ModalActions({
         type="button"
         disabled={saving}
         onClick={onClose}
-        className="rounded-xl border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+        className="rounded-xl border border-line px-5 py-3 text-sm font-semibold text-neutral-700 hover:bg-canvas disabled:opacity-50"
       >
         Cancelar
       </button>
@@ -2744,7 +2744,7 @@ function ModalActions({
       <button
         type="submit"
         disabled={saving}
-        className="rounded-xl bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+        className="rounded-xl bg-inter-red px-6 py-3 text-sm font-semibold text-white hover:bg-inter-red-dark disabled:opacity-50"
       >
         {saving
           ? "Salvando..."
@@ -2762,7 +2762,7 @@ function FormDate({
 }) {
   return (
     <div className="mt-6">
-      <label className="text-sm font-semibold text-neutral-900">
+      <label className="text-sm font-semibold text-ink">
         {label}
       </label>
 
@@ -2773,7 +2773,7 @@ function FormDate({
         onChange={(event) =>
           onChange(event.target.value)
         }
-        className="mt-2 w-full rounded-xl border border-neutral-200 px-4 py-3 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+        className="mt-2 w-full rounded-xl border border-line px-4 py-3 outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
       />
     </div>
   );
@@ -2788,9 +2788,9 @@ function FormTextarea({
 }) {
   return (
     <div className="mt-6">
-      <label className="text-sm font-semibold text-neutral-900">
+      <label className="text-sm font-semibold text-ink">
         {label}
-        <span className="ml-1 font-normal text-neutral-400">
+        <span className="ml-1 font-normal text-muted">
           (opcional)
         </span>
       </label>
@@ -2802,11 +2802,11 @@ function FormTextarea({
         }
         rows={4}
         placeholder={placeholder}
-        className="mt-2 w-full resize-none rounded-xl border border-neutral-200 px-4 py-3 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+        className="mt-2 w-full resize-none rounded-xl border border-line px-4 py-3 outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
       />
 
       {helper && (
-        <p className="mt-2 text-xs text-neutral-400">
+        <p className="mt-2 text-xs text-muted">
           {helper}
         </p>
       )}
@@ -2821,7 +2821,7 @@ function LostReasonSelect({
 }) {
   return (
     <div className="mt-6">
-      <label className="text-sm font-semibold text-neutral-900">
+      <label className="text-sm font-semibold text-ink">
         {label}
       </label>
 
@@ -2830,7 +2830,7 @@ function LostReasonSelect({
         onChange={(event) =>
           onChange(event.target.value)
         }
-        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+        className="mt-2 w-full rounded-xl border border-line bg-white px-4 py-3 outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
       >
         <option value="">
           Selecione o motivo
@@ -2875,8 +2875,8 @@ function ResultOption({
         transition
         ${
           active
-            ? "border-red-600 bg-red-50 text-red-700"
-            : "border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+            ? "border-red-600 bg-alert-soft text-alert-text"
+            : "border-line bg-white text-neutral-600 hover:bg-canvas"
         }
       `}
     >

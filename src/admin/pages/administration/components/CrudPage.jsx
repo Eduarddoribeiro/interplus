@@ -17,7 +17,7 @@ export default function CrudPage({
 
       <button
         onClick={() => navigate("/admin/administration")}
-        className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900"
+        className="flex items-center gap-2 text-sm text-muted hover:text-ink"
       >
         <ArrowLeft size={18} />
         Voltar
@@ -32,7 +32,7 @@ export default function CrudPage({
 
         <button
           onClick={onCreate}
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-medium text-white hover:bg-red-700"
+          className="flex items-center gap-2 rounded-xl bg-inter-red px-5 py-3 font-medium text-white hover:bg-inter-red-dark"
         >
           <Plus size={18}/>
           {createLabel}

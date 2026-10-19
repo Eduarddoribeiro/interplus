@@ -137,22 +137,22 @@ onSave({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl">
         {/* =================================================
          * HEADER
          * =============================================== */}
 
-        <div className="flex items-start justify-between border-b border-neutral-100 p-6">
+        <div className="flex items-start justify-between border-b border-line p-6">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-purple-600">
+            <p className="text-sm font-medium text-muted">
               Qualificação comercial
             </p>
 
-            <h2 className="mt-2 text-2xl font-bold text-neutral-900">
+            <h2 className="mt-2 text-2xl font-bold text-ink">
               {contact.child_name || "Contato sem nome"}
             </h2>
 
-            <p className="mt-1 text-sm leading-6 text-neutral-500">
+            <p className="mt-1 text-sm leading-6 text-muted">
               Complete as informações que ajudam a identificar oportunidades na
               lista de interesse.
             </p>
@@ -163,7 +163,7 @@ onSave({
             disabled={saving}
             onClick={onClose}
             aria-label="Fechar"
-            className="rounded-xl p-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-50"
+            className="rounded-xl p-2 text-muted transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-50"
           >
             <X size={20} />
           </button>
@@ -180,7 +180,7 @@ onSave({
             <div>
               <label
                 htmlFor="qualification-category"
-                className="text-sm font-semibold text-neutral-900"
+                className="text-sm font-semibold text-ink"
               >
                 Categoria de interesse
               </label>
@@ -194,15 +194,15 @@ onSave({
                   w-full
                   rounded-xl
                   border
-                  border-neutral-200
+                  border-line
                   bg-white
                   px-4
                   py-3
                   text-sm
                   outline-none
-                  focus:border-purple-500
+                  focus:border-line
                   focus:ring-2
-                  focus:ring-purple-100
+                  focus:ring-line
                 "
               >
                 <option value="">Selecione</option>
@@ -218,7 +218,7 @@ onSave({
               <div>
                 <label
                   htmlFor="qualification-child-name"
-                  className="text-sm font-semibold text-neutral-900"
+                  className="text-sm font-semibold text-ink"
                 >
                   Nome da criança
                 </label>
@@ -234,14 +234,14 @@ onSave({
         w-full
         rounded-xl
         border
-        border-neutral-200
+        border-line
         px-4
         py-3
         text-sm
         outline-none
-        focus:border-purple-500
+        focus:border-line
         focus:ring-2
-        focus:ring-purple-100
+        focus:ring-line
       "
                 />
               </div>
@@ -249,7 +249,7 @@ onSave({
               <div>
                 <label
                   htmlFor="qualification-responsible-name"
-                  className="text-sm font-semibold text-neutral-900"
+                  className="text-sm font-semibold text-ink"
                 >
                   Responsável
                 </label>
@@ -265,14 +265,14 @@ onSave({
         w-full
         rounded-xl
         border
-        border-neutral-200
+        border-line
         px-4
         py-3
         text-sm
         outline-none
-        focus:border-purple-500
+        focus:border-line
         focus:ring-2
-        focus:ring-purple-100
+        focus:ring-line
       "
                 />
               </div>
@@ -283,7 +283,7 @@ onSave({
               <div>
                 <label
                   htmlFor="qualification-location"
-                  className="text-sm font-semibold text-neutral-900"
+                  className="text-sm font-semibold text-ink"
                 >
                   Local de preferência
                 </label>
@@ -292,7 +292,7 @@ onSave({
                   id="qualification-location"
                   value={locationId}
                   onChange={(event) => setLocationId(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  className="mt-2 w-full rounded-xl border border-line bg-white px-4 py-3 text-sm outline-none focus:border-line focus:ring-2 focus:ring-line"
                 >
                   <option value="">Qualquer local</option>
 
@@ -310,7 +310,7 @@ onSave({
             <div>
               <label
                 htmlFor="qualification-shift"
-                className="text-sm font-semibold text-neutral-900"
+                className="text-sm font-semibold text-ink"
               >
                 Turno preferido
               </label>
@@ -324,15 +324,15 @@ onSave({
                   w-full
                   rounded-xl
                   border
-                  border-neutral-200
+                  border-line
                   bg-white
                   px-4
                   py-3
                   text-sm
                   outline-none
-                  focus:border-purple-500
+                  focus:border-line
                   focus:ring-2
-                  focus:ring-purple-100
+                  focus:ring-line
                 "
               >
                 <option value="">Não informado</option>
@@ -350,7 +350,7 @@ onSave({
             <div>
               <label
                 htmlFor="qualification-birth-date"
-                className="text-sm font-semibold text-neutral-900"
+                className="text-sm font-semibold text-ink"
               >
                 Data de nascimento
               </label>
@@ -365,14 +365,14 @@ onSave({
                   w-full
                   rounded-xl
                   border
-                  border-neutral-200
+                  border-line
                   px-4
                   py-3
                   text-sm
                   outline-none
-                  focus:border-purple-500
+                  focus:border-line
                   focus:ring-2
-                  focus:ring-purple-100
+                  focus:ring-line
                 "
               />
             </div>
@@ -382,7 +382,7 @@ onSave({
             <div>
               <label
                 htmlFor="qualification-status"
-                className="text-sm font-semibold text-neutral-900"
+                className="text-sm font-semibold text-ink"
               >
                 Status da qualificação
               </label>
@@ -396,15 +396,15 @@ onSave({
                   w-full
                   rounded-xl
                   border
-                  border-neutral-200
+                  border-line
                   bg-white
                   px-4
                   py-3
                   text-sm
                   outline-none
-                  focus:border-purple-500
+                  focus:border-line
                   focus:ring-2
-                  focus:ring-purple-100
+                  focus:ring-line
                 "
               >
                 {Object.values(INTEREST_QUALIFICATION).map((status) => (
@@ -422,38 +422,38 @@ onSave({
 
           <div className="mt-6">
             {canMarkComplete ? (
-              <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+              <div className="rounded-xl border border-ok/30 bg-ok-soft p-4">
                 <div className="flex gap-3">
                   <CheckCircle2
                     size={19}
-                    className="mt-0.5 shrink-0 text-green-700"
+                    className="mt-0.5 shrink-0 text-ok"
                   />
 
                   <div>
-                    <p className="text-sm font-semibold text-green-900">
+                    <p className="text-sm font-semibold text-ok">
                       Dados essenciais preenchidos
                     </p>
 
-                    <p className="mt-1 text-sm leading-6 text-green-700">
+                    <p className="mt-1 text-sm leading-6 text-ok">
                       Este contato possui categoria, turno e data de nascimento.
                     </p>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <div className="rounded-xl border border-attention/40 bg-attention-soft p-4">
                 <div className="flex gap-3">
                   <AlertTriangle
                     size={19}
-                    className="mt-0.5 shrink-0 text-amber-700"
+                    className="mt-0.5 shrink-0 text-attention-text"
                   />
 
                   <div>
-                    <p className="text-sm font-semibold text-amber-900">
+                    <p className="text-sm font-semibold text-attention-text">
                       Cadastro ainda incompleto
                     </p>
 
-                    <p className="mt-1 text-sm leading-6 text-amber-800">
+                    <p className="mt-1 text-sm leading-6 text-attention-text">
                       Falta completar: {missingFields.join(", ")}.
                     </p>
                   </div>
@@ -469,10 +469,10 @@ onSave({
           <div className="mt-6">
             <label
               htmlFor="qualification-notes"
-              className="text-sm font-semibold text-neutral-900"
+              className="text-sm font-semibold text-ink"
             >
               Observação interna
-              <span className="ml-1 font-normal text-neutral-400">
+              <span className="ml-1 font-normal text-muted">
                 (opcional)
               </span>
             </label>
@@ -489,14 +489,14 @@ onSave({
                 resize-none
                 rounded-xl
                 border
-                border-neutral-200
+                border-line
                 px-4
                 py-3
                 text-sm
                 outline-none
-                focus:border-purple-500
+                focus:border-line
                 focus:ring-2
-                focus:ring-purple-100
+                focus:ring-line
               "
             />
           </div>
@@ -510,7 +510,7 @@ onSave({
               type="button"
               disabled={saving}
               onClick={onClose}
-              className="rounded-xl border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+              className="rounded-xl border border-line px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-canvas disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -518,7 +518,7 @@ onSave({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-purple-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-canvas px-6 py-3 text-sm font-semibold text-white transition hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? "Salvando..." : "Salvar qualificação"}
             </button>

@@ -2,7 +2,7 @@ export default function StatusBadge({
   active,
 }) {
   return active ? (
-    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+    <span className="rounded-full bg-ok-soft px-3 py-1 text-xs font-medium text-ok">
       Ativo
     </span>
   ) : (

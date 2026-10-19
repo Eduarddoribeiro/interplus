@@ -109,7 +109,7 @@ export default function UnitsPage() {
           {units.map((unit) => (
             <tr
               key={unit.id}
-              className="border-b border-neutral-100"
+              className="border-b border-line"
             >
               <td className="px-6 py-4">
                 {unit.name}
@@ -126,7 +126,7 @@ export default function UnitsPage() {
               <td className="px-6 py-4 text-right">
                 <button
                   onClick={() => handleEdit(unit)}
-                  className="rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
+                  className="rounded-lg border border-line px-4 py-2 text-sm hover:bg-neutral-100"
                 >
                   Editar
                 </button>

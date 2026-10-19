@@ -29,18 +29,18 @@ export default function WaitingListScheduleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-neutral-100 p-6">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-line p-6">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
+            <p className="text-sm font-medium text-muted">
               Agendar experimental
             </p>
 
-            <h2 className="mt-1 text-xl font-bold text-neutral-900">
+            <h2 className="mt-1 text-xl font-bold text-ink">
               {contact.child_name || "Sem nome"}
             </h2>
 
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-muted">
               {category?.name ?? "Sem categoria"} · prefere{" "}
               {contact.location?.name ?? "qualquer local"}
             </p>
@@ -50,7 +50,7 @@ export default function WaitingListScheduleModal({
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 disabled:opacity-50"
+            className="rounded-lg p-2 text-muted hover:bg-neutral-100 disabled:opacity-50"
           >
             <X size={20} />
           </button>
@@ -60,7 +60,7 @@ export default function WaitingListScheduleModal({
           <TrialSlotPicker categoryId={category?.id} value={slot} onChange={setSlot} />
 
           {slot && (
-            <p className="rounded-xl bg-neutral-50 p-3 text-sm text-neutral-700">
+            <p className="rounded-xl bg-canvas p-3 text-sm text-neutral-700">
               Selecionado:{" "}
               <strong>
                 {slot.group.location?.name} · {WEEKDAY_LABELS[slot.weekday]}{" "}
@@ -70,19 +70,19 @@ export default function WaitingListScheduleModal({
           )}
 
           <label className="block">
-            <span className="text-sm font-semibold text-neutral-800">Observação</span>
+            <span className="text-sm font-semibold text-ink">Observação</span>
 
             <textarea
               rows={3}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               placeholder="Ex.: Família confirmou pelo WhatsApp após aviso de vaga."
-              className="mt-2 w-full resize-none rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-red-500"
+              className="mt-2 w-full resize-none rounded-xl border border-line px-4 py-3 text-sm outline-none focus:border-ink"
             />
           </label>
 
           {error && (
-            <p className="rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>
+            <p className="rounded-xl bg-alert-soft p-3 text-sm font-semibold text-alert-text">{error}</p>
           )}
 
           <div className="flex justify-end gap-2">
@@ -90,7 +90,7 @@ export default function WaitingListScheduleModal({
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -99,7 +99,7 @@ export default function WaitingListScheduleModal({
               type="button"
               disabled={!slot || saving}
               onClick={() => onSave({ slot, notes })}
-              className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-inter-red px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 size={16} className="animate-spin" />

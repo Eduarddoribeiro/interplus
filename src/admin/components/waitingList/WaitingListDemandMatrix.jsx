@@ -3,8 +3,8 @@
  *
  * Linhas = categorias, colunas = locais (+ "qualquer local").
  * Cada célula mostra quantas famílias querem aquela combinação;
- * o ponto verde indica turma aberta com vaga agora. Clicar numa
- * célula filtra a lista abaixo.
+ * célula verde = turma aberta com vaga agora. Clicar numa célula
+ * filtra a lista abaixo.
  */
 export default function WaitingListDemandMatrix({
   matrix,
@@ -20,84 +20,76 @@ export default function WaitingListDemandMatrix({
   }
 
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
-            Quadro de demanda
-          </p>
+    <section aria-labelledby="demanda" className="rounded-xl border border-line bg-white p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="demanda" className="font-semibold">
+          Quantas famílias querem cada idade e local
+        </h2>
 
-          <h2 className="mt-1 text-lg font-bold text-neutral-900">
-            Quantas famílias querem cada idade e local
-          </h2>
-        </div>
-
-        <p className="flex items-center gap-1.5 text-xs text-neutral-500">
-          <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-          turma aberta com vaga agora
+        <p className="flex items-center gap-2 text-sm text-muted">
+          <span aria-hidden="true" className="h-3 w-5 rounded bg-ok-soft ring-1 ring-ok/40" />
+          Tem turma com vaga agora
         </p>
       </div>
 
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[480px] text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-neutral-400">
-              <th className="py-2 pr-3 font-semibold">Categoria</th>
+            <tr className="text-left text-muted">
+              <th scope="col" className="py-2 pr-3 font-medium">Categoria</th>
 
               {columns.map((column) => (
-                <th key={column.key} className="px-2 py-2 text-center font-semibold">
+                <th key={column.key} scope="col" className="px-2 py-2 text-center font-medium">
                   {column.name}
                 </th>
               ))}
 
-              <th className="px-2 py-2 text-center font-semibold">Total</th>
+              <th scope="col" className="px-2 py-2 text-center font-medium">Total</th>
             </tr>
           </thead>
 
           <tbody>
             {rows.map((row) => (
-              <tr key={row.key} className="border-t border-neutral-100">
-                <td className="py-1.5 pr-3 font-semibold text-neutral-800">
+              <tr key={row.key} className="border-t border-line">
+                <th scope="row" className="py-1.5 pr-3 text-left font-semibold">
                   {row.name}
-                </td>
+                </th>
 
                 {columns.map((column) => {
                   const count = row.cells[column.key] ?? 0;
                   const vacancy = row.hasVacancy[column.key];
                   const active = isSelected(row.key, column.key);
 
+                  if (!count) {
+                    return <td key={column.key} className="px-1 py-1" />;
+                  }
+
                   return (
                     <td key={column.key} className="px-1 py-1 text-center">
                       <button
                         type="button"
-                        disabled={!count}
+                        aria-pressed={active}
+                        aria-label={`${row.name}, ${column.name}: ${count} famílias${vacancy ? ", tem turma com vaga agora" : ""}`}
                         onClick={() =>
                           onSelect(
                             active ? null : { rowKey: row.key, columnKey: column.key },
                           )
                         }
-                        className={`relative w-full min-w-[56px] rounded-lg px-2 py-2 font-bold transition ${
+                        className={`h-9 w-full min-w-[56px] rounded-lg font-semibold tabular-nums transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink ${
                           active
-                            ? "bg-red-600 text-white"
-                            : count
-                              ? "bg-neutral-100 text-neutral-900 hover:bg-red-50"
-                              : "cursor-default text-neutral-300"
+                            ? "bg-ink text-white"
+                            : vacancy
+                              ? "bg-ok-soft text-ok ring-1 ring-ok/40 hover:bg-ok/15"
+                              : "bg-canvas hover:bg-neutral-200"
                         }`}
                       >
-                        {count || "–"}
-
-                        {vacancy && (
-                          <span
-                            title="Turma aberta com vaga agora"
-                            className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-green-500"
-                          />
-                        )}
+                        {count}
                       </button>
                     </td>
                   );
                 })}
 
-                <td className="px-2 py-1.5 text-center font-semibold text-neutral-500">
+                <td className="px-2 py-1.5 text-center tabular-nums text-muted">
                   {row.total}
                 </td>
               </tr>

@@ -436,7 +436,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
           max-w-3xl
           flex-col
           overflow-hidden
-          rounded-3xl
+          rounded-xl
           bg-white
           shadow-2xl
         "
@@ -450,7 +450,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
             justify-between
             gap-5
             border-b
-            border-neutral-100
+            border-line
             px-6
             py-5
             sm:px-8
@@ -469,11 +469,11 @@ export default function NewContactModal({ open, onClose, onCreated }) {
               CRM
             </p>
 
-            <h2 className="mt-1 text-2xl font-bold text-neutral-900">
+            <h2 className="mt-1 text-2xl font-bold text-ink">
               Novo contato
             </h2>
 
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-muted">
               Cadastre uma nova oportunidade.
             </p>
           </div>
@@ -485,7 +485,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
             className="
               rounded-xl
               p-2
-              text-neutral-400
+              text-muted
               transition
               hover:bg-neutral-100
               hover:text-neutral-700
@@ -546,10 +546,10 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                       flex
                       items-start
                       gap-3
-                      rounded-2xl
+                      rounded-xl
                       border
-                      border-amber-200
-                      bg-amber-50
+                      border-attention/40
+                      bg-attention-soft
                       p-4
                     "
                 >
@@ -558,16 +558,16 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                     className="
                         mt-0.5
                         shrink-0
-                        text-amber-700
+                        text-attention-text
                       "
                   />
 
                   <div>
-                    <p className="text-sm font-semibold text-amber-900">
+                    <p className="text-sm font-semibold text-attention-text">
                       Cadastro incompleto
                     </p>
 
-                    <p className="mt-1 text-xs leading-5 text-amber-700">
+                    <p className="mt-1 text-xs leading-5 text-attention-text">
                       Faltando: {missingData.join(", ")}. Isso não impede salvar
                       este lead.
                     </p>
@@ -580,7 +580,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
               {birthDate && (
                 <div className="mt-5">
                   {categoryLoading ? (
-                    <div className="flex items-center gap-3 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-500">
+                    <div className="flex items-center gap-3 rounded-xl bg-canvas p-4 text-sm text-muted">
                       <Loader2 size={18} className="animate-spin" />
                       Identificando categoria...
                     </div>
@@ -590,10 +590,10 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                         flex
                         flex-col
                         gap-3
-                        rounded-2xl
+                        rounded-xl
                         border
-                        border-red-100
-                        bg-red-50/50
+                        border-alert/30
+                        bg-alert-soft
                         p-4
                         sm:flex-row
                         sm:items-center
@@ -601,24 +601,24 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                       "
                     >
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                        <p className="text-sm font-medium text-muted">
                           Categoria identificada
                         </p>
 
-                        <p className="mt-1 text-lg font-bold text-neutral-900">
+                        <p className="mt-1 text-lg font-bold text-ink">
                           {category.name}
                         </p>
                       </div>
 
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                      <p className="text-sm font-semibold text-amber-800">
+                    <div className="rounded-xl border border-attention/40 bg-attention-soft p-4">
+                      <p className="text-sm font-semibold text-attention-text">
                         Nenhuma categoria ativa encontrada para esta data de
                         nascimento.
                       </p>
 
-                      <p className="mt-1 text-xs text-amber-700">
+                      <p className="mt-1 text-xs text-attention-text">
                         Ainda é possível cadastrar o contato ou adicioná-lo à
                         lista de interesse.
                       </p>
@@ -664,7 +664,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                 </Field>
               </div>
 
-              <p className="mt-3 text-xs text-neutral-400">
+              <p className="mt-3 text-xs text-muted">
                 O WhatsApp é obrigatório porque identifica o lead e permite
                 retomar o contato.
               </p>
@@ -703,7 +703,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                 </Field>
               </div>
 
-              <p className="mt-3 text-xs text-neutral-400">
+              <p className="mt-3 text-xs text-muted">
                 Para leads antigos, use a data da primeira conversa encontrada
                 no WhatsApp.
               </p>
@@ -732,15 +732,15 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                         setError("");
                       }}
                       className={`
-                          rounded-2xl
+                          rounded-xl
                           border
                           p-4
                           text-left
                           transition
                           ${
                             active
-                              ? "border-inter-red bg-red-50 ring-1 ring-inter-red"
-                              : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50"
+                              ? "border-inter-red bg-alert-soft ring-1 ring-inter-red"
+                              : "border-line bg-white hover:border-neutral-300 hover:bg-canvas"
                           }
                         `}
                     >
@@ -762,11 +762,11 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                         <Icon size={19} />
                       </div>
 
-                      <p className="mt-4 font-bold text-neutral-900">
+                      <p className="mt-4 font-bold text-ink">
                         {item.title}
                       </p>
 
-                      <p className="mt-1 text-xs leading-5 text-neutral-500">
+                      <p className="mt-1 text-xs leading-5 text-muted">
                         {item.description}
                       </p>
                     </button>
@@ -780,40 +780,40 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                 <div
                   className="
                     mt-5
-                    rounded-2xl
+                    rounded-xl
                     border
-                    border-neutral-200
-                    bg-neutral-50
+                    border-line
+                    bg-canvas
                     p-5
                   "
                 >
                   <div className="flex items-center gap-2">
                     <CalendarDays size={18} className="text-inter-red" />
 
-                    <h4 className="font-bold text-neutral-900">
+                    <h4 className="font-bold text-ink">
                       Agendar experimental
                     </h4>
                   </div>
 
                   {!birthDate ? (
-                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                      <p className="text-sm font-semibold text-amber-800">
+                    <div className="mt-4 rounded-xl border border-attention/40 bg-attention-soft p-4">
+                      <p className="text-sm font-semibold text-attention-text">
                         Informe a data de nascimento para identificar a
                         categoria.
                       </p>
                     </div>
                   ) : categoryLoading ? (
-                    <div className="mt-4 flex items-center gap-2 text-sm text-neutral-500">
+                    <div className="mt-4 flex items-center gap-2 text-sm text-muted">
                       <Loader2 size={17} className="animate-spin" />
                       Identificando categoria...
                     </div>
                   ) : !category ? (
-                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                      <p className="text-sm font-semibold text-amber-800">
+                    <div className="mt-4 rounded-xl border border-attention/40 bg-attention-soft p-4">
+                      <p className="text-sm font-semibold text-attention-text">
                         Não existe categoria ativa compatível.
                       </p>
 
-                      <p className="mt-1 text-xs text-amber-700">
+                      <p className="mt-1 text-xs text-attention-text">
                         Considere colocar este contato na Lista de Interesse.
                       </p>
                     </div>
@@ -847,22 +847,22 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                 <div
                   className="
                     mt-5
-                    rounded-2xl
+                    rounded-xl
                     border
-                    border-purple-100
-                    bg-purple-50/40
+                    border-line
+                    bg-canvas
                     p-5
                   "
                 >
                   <div className="flex items-center gap-2">
-                    <ListPlus size={18} className="text-purple-700" />
+                    <ListPlus size={18} className="text-ink" />
 
-                    <h4 className="font-bold text-neutral-900">
+                    <h4 className="font-bold text-ink">
                       Lista de interesse
                     </h4>
                   </div>
 
-                  <p className="mt-2 text-sm text-neutral-500">
+                  <p className="mt-2 text-sm text-muted">
                     Use quando existe interesse real, mas ainda não é possível
                     avançar para uma experimental.
                   </p>
@@ -974,18 +974,18 @@ export default function NewContactModal({ open, onClose, onCreated }) {
             {/* ERRO */}
 
             {error && (
-              <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
-                <p className="text-sm font-semibold text-red-700">{error}</p>
+              <div className="rounded-xl border border-alert/30 bg-alert-soft p-4">
+                <p className="text-sm font-semibold text-alert-text">{error}</p>
               </div>
             )}
 
             {/* SUCESSO */}
 
             {success && (
-              <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-4">
-                <CheckCircle2 size={20} className="shrink-0 text-green-700" />
+              <div className="flex items-center gap-3 rounded-xl border border-ok/30 bg-ok-soft p-4">
+                <CheckCircle2 size={20} className="shrink-0 text-ok" />
 
-                <p className="text-sm font-semibold text-green-800">
+                <p className="text-sm font-semibold text-ok">
                   Contato cadastrado com sucesso.
                 </p>
               </div>
@@ -1002,7 +1002,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
               flex-col-reverse
               gap-3
               border-t
-              border-neutral-100
+              border-line
               bg-white
               px-6
               py-5
@@ -1018,14 +1018,14 @@ export default function NewContactModal({ open, onClose, onCreated }) {
               className="
                 rounded-xl
                 border
-                border-neutral-200
+                border-line
                 px-5
                 py-3
                 text-sm
                 font-semibold
                 text-neutral-700
                 transition
-                hover:bg-neutral-50
+                hover:bg-canvas
                 disabled:opacity-50
               "
             >
@@ -1048,7 +1048,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                 font-semibold
                 text-white
                 transition
-                hover:bg-[#a80e24]
+                hover:bg-inter-red-dark
                 disabled:cursor-not-allowed
                 disabled:opacity-50
               "
@@ -1091,7 +1091,7 @@ function FormSection({ number, title, description, children }) {
             items-center
             justify-center
             rounded-lg
-            bg-neutral-900
+            bg-ink
             text-xs
             font-bold
             text-white
@@ -1101,9 +1101,9 @@ function FormSection({ number, title, description, children }) {
         </span>
 
         <div>
-          <h3 className="font-bold text-neutral-900">{title}</h3>
+          <h3 className="font-bold text-ink">{title}</h3>
 
-          <p className="mt-0.5 text-xs text-neutral-500">{description}</p>
+          <p className="mt-0.5 text-xs text-muted">{description}</p>
         </div>
       </div>
 
@@ -1115,7 +1115,7 @@ function FormSection({ number, title, description, children }) {
 function Field({ label, required = false, children }) {
   return (
     <label className="block">
-      <span className="text-sm font-semibold text-neutral-800">
+      <span className="text-sm font-semibold text-ink">
         {label}
 
         {required && <span className="ml-1 text-inter-red">*</span>}
@@ -1136,18 +1136,18 @@ const inputClass = `
   w-full
   rounded-xl
   border
-  border-neutral-200
+  border-line
   bg-white
   px-4
   py-3
   text-sm
-  text-neutral-900
+  text-ink
   outline-none
   transition
-  placeholder:text-neutral-400
-  focus:border-inter-red
+  placeholder:text-muted
+  focus:border-ink
   focus:ring-2
-  focus:ring-red-100
+  focus:ring-neutral-200
 `;
 
 /*

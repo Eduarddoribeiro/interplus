@@ -13,9 +13,9 @@ export default function CrudModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 
-      <div className="w-full max-w-2xl rounded-3xl bg-white shadow-xl">
+      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
 
-        <div className="flex items-center justify-between border-b border-neutral-200 p-6">
+        <div className="flex items-center justify-between border-b border-line p-6">
 
           <h2 className="text-xl font-bold">
             {title}
@@ -35,7 +35,7 @@ export default function CrudModal({
 
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-neutral-200 p-6">
+        <div className="flex justify-end gap-3 border-t border-line p-6">
 
           <button
             onClick={onClose}
@@ -46,7 +46,7 @@ export default function CrudModal({
 
           <button
             onClick={onSave}
-            className="rounded-xl bg-red-600 px-5 py-2 text-white"
+            className="rounded-xl bg-inter-red px-5 py-2 text-white"
           >
             Salvar
           </button>

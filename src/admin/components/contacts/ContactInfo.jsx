@@ -17,11 +17,11 @@ export default function ContactInfo({
 
   return (
     <div className={`min-w-0 ${className}`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+      <p className="text-sm font-medium text-muted">
         {label}
       </p>
 
-      <p className="mt-1 break-words text-sm font-semibold text-neutral-900">
+      <p className="mt-1 break-words text-sm font-semibold text-ink">
         {hasValue ? value : fallback}
       </p>
     </div>

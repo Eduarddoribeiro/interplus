@@ -13,7 +13,7 @@ export default function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 
-      <div className="w-full max-w-md rounded-3xl bg-white p-8">
+      <div className="w-full max-w-md rounded-xl bg-white p-8">
 
         <div className="flex justify-center">
 
@@ -28,7 +28,7 @@ export default function ConfirmDialog({
           {title}
         </h2>
 
-        <p className="mt-2 text-center text-neutral-500">
+        <p className="mt-2 text-center text-muted">
           {description}
         </p>
 
@@ -43,7 +43,7 @@ export default function ConfirmDialog({
 
           <button
             onClick={onConfirm}
-            className="rounded-xl bg-red-600 px-5 py-2 text-white"
+            className="rounded-xl bg-inter-red px-5 py-2 text-white"
           >
             Confirmar
           </button>

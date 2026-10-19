@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
+import { Panel, Tabs } from "../ui";
 import { getReportsData } from "../../services/reports";
 import { WAITING_REASON_LABELS } from "../../constants/waitingListReasons";
 
@@ -157,7 +158,7 @@ export default function Reports() {
 
   if (loading) {
     return (
-      <div className="py-20 text-center text-neutral-500">
+      <div className="py-20 text-center text-muted">
         Carregando relatórios...
       </div>
     );
@@ -165,8 +166,8 @@ export default function Reports() {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-        <p className="font-semibold text-red-700">
+      <div className="rounded-xl border border-alert/30 bg-alert-soft p-6">
+        <p className="font-semibold text-alert-text">
           {error}
         </p>
 
@@ -182,32 +183,18 @@ export default function Reports() {
   }
 
   return (
-    <div className="space-y-10">
-      {/* HEADER */}
+    <div className="space-y-6">
+      {/* CABEÇALHO */}
 
-      <div
-        className="
-          flex
-          flex-col
-          gap-5
-          xl:flex-row
-          xl:items-end
-          xl:justify-between
-        "
-      >
-        <SectionTitle
-          title="Relatórios"
-          description="Acompanhe aquisição, conversão e oportunidades comerciais."
-        />
-
-        <div className="flex flex-wrap gap-2">
-          {locations.length > 0 && (
+      <SectionTitle
+        title="Relatórios"
+        actions={
+          locations.length > 0 && (
             <select
+              aria-label="Local"
               value={location}
-              onChange={(event) =>
-                setLocation(event.target.value)
-              }
-              className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700"
+              onChange={(event) => setLocation(event.target.value)}
+              className="h-10 rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
             >
               <option value="all">Todos os locais</option>
 
@@ -219,38 +206,15 @@ export default function Reports() {
 
               <option value="none">Sem local definido</option>
             </select>
-          )}
+          )
+        }
+      />
 
-          {PERIODS.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() =>
-                setPeriod(item.value)
-              }
-              className={`
-                rounded-xl
-                px-4
-                py-2
-                text-sm
-                font-semibold
-                transition
-                ${
-                  period === item.value
-                    ? "bg-neutral-900 text-white"
-                    : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
-                }
-              `}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Tabs label="Período" value={period} onChange={setPeriod} items={PERIODS} />
 
       {/* PRINCIPAIS INDICADORES */}
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <Panel as="dl" className="grid grid-cols-2 gap-px overflow-hidden bg-line xl:grid-cols-4">
         <MetricCard
           title="Contatos"
           value={report.total}
@@ -278,7 +242,7 @@ export default function Reports() {
           subtitle="Total registrado"
           icon={GraduationCap}
         />
-      </div>
+      </Panel>
 
       {/* FUNIL + OPORTUNIDADES */}
 
@@ -337,14 +301,14 @@ export default function Reports() {
             />
           </div>
 
-          <div className="mt-7 rounded-2xl bg-amber-50 p-4">
+          <div className="mt-7 rounded-xl bg-attention-soft p-4">
             <div className="flex gap-3">
               <AlertCircle
                 size={19}
-                className="mt-0.5 shrink-0 text-amber-700"
+                className="mt-0.5 shrink-0 text-attention-text"
               />
 
-              <p className="text-xs leading-5 text-amber-800">
+              <p className="text-xs leading-5 text-attention-text">
                 Matrículas históricas sem experimental
                 registrada não entram na conversão
                 pós-aula. Assim, os dados importados não
@@ -382,19 +346,19 @@ export default function Reports() {
             />
           </div>
 
-          <div className="mt-6 border-t border-neutral-100 pt-5">
+          <div className="mt-6 border-t border-line pt-5">
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                <p className="text-sm font-medium text-muted">
                   Potencial aberto
                 </p>
 
-                <p className="mt-1 text-sm text-neutral-500">
+                <p className="mt-1 text-sm text-muted">
                   Oportunidades não encerradas
                 </p>
               </div>
 
-              <strong className="text-4xl font-bold text-neutral-900">
+              <strong className="text-4xl font-bold text-ink">
                 {report.openOpportunities}
               </strong>
             </div>
@@ -705,29 +669,12 @@ function MetricCard({
   title,
   value,
   subtitle,
-  icon: Icon,
 }) {
   return (
-    <div className="rounded-3xl border border-neutral-200 bg-white p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-neutral-500">
-            {title}
-          </p>
-
-          <p className="mt-3 text-4xl font-bold text-neutral-900">
-            {value}
-          </p>
-
-          <p className="mt-2 text-xs text-neutral-400">
-            {subtitle}
-          </p>
-        </div>
-
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-inter-red">
-          <Icon size={20} />
-        </div>
-      </div>
+    <div className="bg-white px-5 py-4">
+      <dt className="text-sm text-muted">{title}</dt>
+      <dd className="font-display text-5xl font-semibold leading-tight tabular-nums">{value}</dd>
+      <dd className="text-sm text-muted">{subtitle}</dd>
     </div>
   );
 }
@@ -738,19 +685,13 @@ function ReportBox({
   children,
 }) {
   return (
-    <div className="rounded-3xl border border-neutral-200 bg-white p-6 sm:p-7">
-      <h3 className="text-lg font-bold text-neutral-900">
-        {title}
-      </h3>
+    <Panel className="p-5">
+      <h3 className="font-semibold">{title}</h3>
 
-      <p className="mt-1 text-sm text-neutral-500">
-        {description}
-      </p>
+      {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
 
-      <div className="mt-7">
-        {children}
-      </div>
-    </div>
+      <div className="mt-5">{children}</div>
+    </Panel>
   );
 }
 
@@ -762,39 +703,23 @@ function FunnelRow({
 }) {
   return (
     <div>
-      <div className="mb-2 flex items-start justify-between gap-4">
+      <div className="mb-1.5 flex items-start justify-between gap-4">
         <div>
-          <span className="text-sm font-semibold text-neutral-700">
-            {label}
-          </span>
+          <span className="text-sm font-semibold">{label}</span>
 
-          {helper && (
-            <p className="mt-1 text-xs text-neutral-400">
-              {helper}
-            </p>
-          )}
+          {helper && <p className="text-sm text-muted">{helper}</p>}
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <strong className="text-lg text-neutral-900">
-            {value}
-          </strong>
-
-          <span className="w-12 text-right text-xs font-semibold text-neutral-500">
-            {valuePercentage}%
-          </span>
+        <div className="flex shrink-0 items-baseline gap-3 tabular-nums">
+          <strong className="text-lg">{value}</strong>
+          <span className="w-12 text-right text-sm text-muted">{valuePercentage}%</span>
         </div>
       </div>
 
-      <div className="h-2.5 overflow-hidden rounded-full bg-neutral-100">
+      <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
         <div
-          className="h-full rounded-full bg-inter-red transition-all"
-          style={{
-            width: `${Math.min(
-              valuePercentage,
-              100
-            )}%`,
-          }}
+          className="h-full rounded-full bg-ink"
+          style={{ width: `${Math.min(valuePercentage, 100)}%` }}
         />
       </div>
     </div>
@@ -806,14 +731,9 @@ function Opportunity({
   value,
 }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-4">
-      <span className="text-sm font-medium text-neutral-600">
-        {label}
-      </span>
-
-      <strong className="text-xl text-neutral-900">
-        {value}
-      </strong>
+    <div className="flex items-center justify-between border-b border-line py-3 last:border-b-0">
+      <span className="text-sm">{label}</span>
+      <strong className="text-lg tabular-nums">{value}</strong>
     </div>
   );
 }
@@ -823,78 +743,43 @@ function Ranking({
   empty,
 }) {
   if (!items.length) {
-    return (
-      <div className="rounded-2xl border border-dashed border-neutral-200 p-8 text-center">
-        <p className="text-sm text-neutral-400">
-          {empty}
-        </p>
-      </div>
-    );
+    return <p className="py-6 text-center text-sm text-muted">{empty}</p>;
   }
 
-  const maximum =
-    items[0]?.value || 1;
+  const maximum = items[0]?.value || 1;
 
   return (
-    <div className="space-y-5">
-      {items.map((item) => {
-        const width =
-          (item.value / maximum) *
-          100;
-
-        return (
-          <div key={item.label}>
-            <div className="mb-2 flex items-center justify-between gap-4">
-              <span className="text-sm font-medium text-neutral-700">
-                {item.label}
-              </span>
-
-              <strong className="text-sm text-neutral-900">
-                {item.value}
-              </strong>
-            </div>
-
-            <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
-              <div
-                className="h-full rounded-full bg-inter-red"
-                style={{
-                  width: `${width}%`,
-                }}
-              />
-            </div>
+    <div className="space-y-4">
+      {items.map((item) => (
+        <div key={item.label}>
+          <div className="mb-1.5 flex items-center justify-between gap-4 text-sm">
+            <span>{item.label}</span>
+            <strong className="tabular-nums">{item.value}</strong>
           </div>
-        );
-      })}
+
+          <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+            <div
+              className="h-full rounded-full bg-ink"
+              style={{ width: `${(item.value / maximum) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
 function SmallMetric({
-  icon: Icon,
   label,
   value,
   description,
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-3xl border border-neutral-200 bg-white p-5">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-700">
-        <Icon size={21} />
-      </div>
-
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-          {label}
-        </p>
-
-        <p className="mt-1 text-2xl font-bold text-neutral-900">
-          {value}
-        </p>
-
-        <p className="mt-1 text-xs text-neutral-400">
-          {description}
-        </p>
-      </div>
-    </div>
+    <Panel className="px-5 py-4">
+      <p className="text-sm text-muted">{label}</p>
+      <p className="font-display text-4xl font-semibold leading-tight tabular-nums">{value}</p>
+      <p className="text-sm text-muted">{description}</p>
+    </Panel>
   );
 }
 

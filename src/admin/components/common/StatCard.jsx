@@ -12,12 +12,12 @@ export default function StatCard({
       whileHover={{ y: -4 }}
       transition={{ duration: .2 }}
       className="
-        rounded-3xl
+        rounded-xl
         border
-        border-neutral-200
+        border-line
         bg-white
         p-7
-        shadow-sm
+       
         hover:shadow-xl
         transition-all
       "
@@ -26,16 +26,16 @@ export default function StatCard({
 
         <div>
 
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted">
             {title}
           </p>
 
-          <h2 className="mt-2 text-5xl font-display uppercase leading-none text-neutral-900">
+          <h2 className="mt-2 text-5xl font-display uppercase leading-none text-ink">
             {value}
           </h2>
 
           {subtitle && (
-            <p className="mt-4 text-sm text-neutral-400">
+            <p className="mt-4 text-sm text-muted">
               {subtitle}
             </p>
           )}
@@ -47,7 +47,7 @@ export default function StatCard({
             className="
               w-14
               h-14
-              rounded-2xl
+              rounded-xl
               bg-inter-red/10
               flex
               items-center

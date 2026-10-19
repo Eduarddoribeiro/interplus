@@ -160,32 +160,32 @@ function normalizePhone(phone) {
 function getStatusClass(status) {
   switch (status) {
     case "enrolled":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "bg-ok-soft text-ok border-ok/30";
 
     case "attended":
-      return "bg-blue-50 text-blue-700 border-blue-200";
+      return "bg-canvas text-ink border-line";
 
     case "confirmed":
-      return "bg-indigo-50 text-indigo-700 border-indigo-200";
+      return "bg-canvas text-ink border-line";
 
     case "pending_confirmation":
-      return "bg-amber-50 text-amber-700 border-amber-200";
+      return "bg-attention-soft text-attention-text border-attention/40";
 
     case "follow_up":
-      return "bg-orange-50 text-orange-700 border-orange-200";
+      return "bg-attention-soft text-attention-text border-attention/40";
 
     case "waiting_list":
-      return "bg-violet-50 text-violet-700 border-violet-200";
+      return "bg-canvas text-ink border-line";
 
     case "no_show":
     case "lost":
-      return "bg-red-50 text-red-700 border-red-200";
+      return "bg-alert-soft text-alert-text border-alert/30";
 
     case "cancelled":
-      return "bg-neutral-100 text-neutral-600 border-neutral-200";
+      return "bg-neutral-100 text-neutral-600 border-line";
 
     default:
-      return "bg-neutral-100 text-neutral-700 border-neutral-200";
+      return "bg-neutral-100 text-neutral-700 border-line";
   }
 }
 
@@ -215,16 +215,16 @@ function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div
-        className={`w-full ${maxWidth} overflow-hidden rounded-2xl bg-white shadow-2xl`}
+        className={`w-full ${maxWidth} overflow-hidden rounded-xl bg-white shadow-2xl`}
       >
-        <div className="flex items-start justify-between border-b border-neutral-200 px-6 py-5">
+        <div className="flex items-start justify-between border-b border-line px-6 py-5">
           <div>
-            <h2 className="text-lg font-bold text-neutral-900">
+            <h2 className="text-lg font-bold text-ink">
               {title}
             </h2>
 
             {description ? (
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-1 text-sm text-muted">
                 {description}
               </p>
             ) : null}
@@ -233,7 +233,7 @@ function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+            className="rounded-lg p-2 text-muted transition hover:bg-neutral-100 hover:text-ink"
           >
             <X size={20} />
           </button>
@@ -250,11 +250,11 @@ function Modal({
 function Field({ label, value }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+      <p className="text-sm font-medium text-muted">
         {label}
       </p>
 
-      <p className="mt-1 whitespace-pre-wrap text-sm font-medium text-neutral-800">
+      <p className="mt-1 whitespace-pre-wrap text-sm font-medium text-ink">
         {value || "—"}
       </p>
     </div>
@@ -274,14 +274,14 @@ function ActionButton({
       onClick={onClick}
       className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
         danger
-          ? "border-red-200 bg-red-50 hover:bg-red-100"
-          : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50"
+          ? "border-alert/30 bg-alert-soft hover:bg-red-100"
+          : "border-line bg-white hover:border-neutral-300 hover:bg-canvas"
       }`}
     >
       <div
         className={`rounded-lg p-2 ${
           danger
-            ? "bg-red-100 text-red-700"
+            ? "bg-red-100 text-alert-text"
             : "bg-neutral-100 text-neutral-700"
         }`}
       >
@@ -291,7 +291,7 @@ function ActionButton({
       <div>
         <p
           className={`text-sm font-bold ${
-            danger ? "text-red-800" : "text-neutral-900"
+            danger ? "text-alert-text" : "text-ink"
           }`}
         >
           {title}
@@ -299,7 +299,7 @@ function ActionButton({
 
         <p
           className={`mt-1 text-xs leading-relaxed ${
-            danger ? "text-red-600" : "text-neutral-500"
+            danger ? "text-red-600" : "text-muted"
           }`}
         >
           {description}
@@ -806,7 +806,7 @@ const [waitingForm, setWaitingForm] = useState({
             className="mx-auto animate-spin text-neutral-700"
           />
 
-          <p className="mt-3 text-sm text-neutral-500">
+          <p className="mt-3 text-sm text-muted">
             Carregando ficha do contato...
           </p>
         </div>
@@ -816,8 +816,8 @@ const [waitingForm, setWaitingForm] = useState({
 
   if (!contact) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-        <h2 className="font-bold text-red-800">
+      <div className="rounded-xl border border-alert/30 bg-alert-soft p-6">
+        <h2 className="font-bold text-alert-text">
           Contato não encontrado
         </h2>
 
@@ -829,7 +829,7 @@ const [waitingForm, setWaitingForm] = useState({
         <button
           type="button"
           onClick={() => navigate("/admin/contacts")}
-          className="mt-4 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white"
+          className="mt-4 rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-white"
         >
           Voltar para contatos
         </button>
@@ -850,14 +850,14 @@ const [waitingForm, setWaitingForm] = useState({
           <button
             type="button"
             onClick={() => navigate("/admin/contacts")}
-            className="mt-1 rounded-xl border border-neutral-200 bg-white p-2.5 text-neutral-600 transition hover:bg-neutral-50"
+            className="mt-1 rounded-xl border border-line bg-white p-2.5 text-neutral-600 transition hover:bg-canvas"
           >
             <ArrowLeft size={19} />
           </button>
 
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold text-neutral-900">
+              <h1 className="text-2xl font-bold text-ink">
                 {contact.child_name}
               </h1>
 
@@ -872,7 +872,7 @@ const [waitingForm, setWaitingForm] = useState({
               </span>
             </div>
 
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-muted">
               Ficha completa do contato e histórico comercial.
             </p>
           </div>
@@ -884,7 +884,7 @@ const [waitingForm, setWaitingForm] = useState({
               href={whatsappUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
+              className="flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-canvas"
             >
               <MessageCircle size={17} />
               WhatsApp
@@ -894,7 +894,7 @@ const [waitingForm, setWaitingForm] = useState({
           <button
             type="button"
             onClick={openEditModal}
-            className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
+            className="flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-canvas"
           >
             <Edit3 size={17} />
             Editar contato
@@ -905,14 +905,14 @@ const [waitingForm, setWaitingForm] = useState({
       {/* MENSAGENS */}
 
       {success ? (
-        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+        <div className="flex items-center gap-3 rounded-xl border border-ok/30 bg-ok-soft px-4 py-3 text-sm font-medium text-ok">
           <CheckCircle2 size={18} />
           {success}
         </div>
       ) : null}
 
       {error && !modal ? (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+        <div className="flex items-center gap-3 rounded-xl border border-alert/30 bg-alert-soft px-4 py-3 text-sm font-medium text-alert-text">
           <XCircle size={18} />
           {error}
         </div>
@@ -924,14 +924,14 @@ const [waitingForm, setWaitingForm] = useState({
         <div className="space-y-6">
           {/* DADOS DO ALUNO */}
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <section className="rounded-xl border border-line bg-white p-6">
             <div className="mb-5 flex items-center gap-2">
               <UserRound
                 size={20}
-                className="text-neutral-500"
+                className="text-muted"
               />
 
-              <h2 className="font-bold text-neutral-900">
+              <h2 className="font-bold text-ink">
                 Dados do aluno
               </h2>
             </div>
@@ -986,8 +986,8 @@ const [waitingForm, setWaitingForm] = useState({
 
           {/* CONTEXTO DO LEAD */}
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-5 font-bold text-neutral-900">
+          <section className="rounded-xl border border-line bg-white p-6">
+            <h2 className="mb-5 font-bold text-ink">
               Contexto do lead
             </h2>
 
@@ -1028,7 +1028,7 @@ const [waitingForm, setWaitingForm] = useState({
             </div>
 
             {contact.observations ? (
-              <div className="mt-6 border-t border-neutral-100 pt-5">
+              <div className="mt-6 border-t border-line pt-5">
                 <Field
                   label="Observações"
                   value={contact.observations}
@@ -1039,8 +1039,8 @@ const [waitingForm, setWaitingForm] = useState({
 
           {/* SITUAÇÃO COMERCIAL */}
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-5 font-bold text-neutral-900">
+          <section className="rounded-xl border border-line bg-white p-6">
+            <h2 className="mb-5 font-bold text-ink">
               Situação comercial
             </h2>
 
@@ -1126,7 +1126,7 @@ const [waitingForm, setWaitingForm] = useState({
             </div>
 
             {contact.waiting_list_notes ? (
-              <div className="mt-6 border-t border-neutral-100 pt-5">
+              <div className="mt-6 border-t border-line pt-5">
                 <Field
                   label="Detalhes da lista de interesse"
                   value={contact.waiting_list_notes}
@@ -1137,19 +1137,19 @@ const [waitingForm, setWaitingForm] = useState({
 
           {/* HISTÓRICO DE EXPERIMENTAIS */}
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <section className="rounded-xl border border-line bg-white p-6">
             <div className="mb-5 flex items-center gap-2">
               <History
                 size={20}
-                className="text-neutral-500"
+                className="text-muted"
               />
 
               <div>
-                <h2 className="font-bold text-neutral-900">
+                <h2 className="font-bold text-ink">
                   Histórico de experimentais
                 </h2>
 
-                <p className="mt-1 text-xs text-neutral-500">
+                <p className="mt-1 text-xs text-muted">
                   Cada agendamento permanece registrado.
                   Correções não apagam o histórico.
                 </p>
@@ -1157,7 +1157,7 @@ const [waitingForm, setWaitingForm] = useState({
             </div>
 
             {sessions.length === 0 ? (
-              <div className="rounded-xl bg-neutral-50 p-5 text-sm text-neutral-500">
+              <div className="rounded-xl bg-canvas p-5 text-sm text-muted">
                 Nenhuma aula experimental registrada para
                 este contato.
               </div>
@@ -1166,17 +1166,17 @@ const [waitingForm, setWaitingForm] = useState({
                 {sessions.map((session) => (
                   <div
                     key={session.id}
-                    className="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4 lg:flex-row lg:items-center lg:justify-between"
+                    className="flex flex-col gap-4 rounded-xl border border-line p-4 lg:flex-row lg:items-center lg:justify-between"
                   >
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-bold text-neutral-900">
+                        <p className="font-bold text-ink">
                           {formatDate(
                             session.experimental_date
                           )}
                         </p>
 
-                        <span className="text-sm text-neutral-400">
+                        <span className="text-sm text-muted">
                           •
                         </span>
 
@@ -1197,7 +1197,7 @@ const [waitingForm, setWaitingForm] = useState({
                         </span>
                       </div>
 
-                      <p className="mt-1 text-sm text-neutral-500">
+                      <p className="mt-1 text-sm text-muted">
                         {session.category?.name ||
                           "Categoria não informada"}
                         {session.schedule?.training_group
@@ -1206,13 +1206,13 @@ const [waitingForm, setWaitingForm] = useState({
                       </p>
 
                       {session.notes ? (
-                        <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-neutral-500">
+                        <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-muted">
                           {session.notes}
                         </p>
                       ) : null}
 
                       {session.coach_feedback ? (
-                        <p className="mt-2 whitespace-pre-wrap rounded-lg bg-green-50 p-2 text-xs leading-relaxed text-green-900">
+                        <p className="mt-2 whitespace-pre-wrap rounded-lg bg-ok-soft p-2 text-xs leading-relaxed text-ok">
                           <strong>Professor:</strong> {session.coach_feedback}
                         </p>
                       ) : null}
@@ -1222,7 +1222,7 @@ const [waitingForm, setWaitingForm] = useState({
   <button
     type="button"
     onClick={() => openCorrectionModal(session)}
-    className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-xs font-semibold hover:bg-neutral-50"
+    className="flex items-center gap-2 rounded-xl border border-line px-3 py-2 text-xs font-semibold hover:bg-canvas"
   >
     <RotateCcw size={15}/>
     Corrigir registro
@@ -1231,7 +1231,7 @@ const [waitingForm, setWaitingForm] = useState({
   <button
     type="button"
     onClick={() => openDeleteExperimentalModal(session)}
-    className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
+    className="flex items-center gap-2 rounded-xl border border-alert/30 bg-alert-soft px-3 py-2 text-xs font-semibold text-alert-text hover:bg-red-100"
   >
     <XCircle size={15}/>
     Excluir
@@ -1245,12 +1245,12 @@ const [waitingForm, setWaitingForm] = useState({
 
           {/* OBSERVAÇÕES INTERNAS */}
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 font-bold text-neutral-900">
+          <section className="rounded-xl border border-line bg-white p-6">
+            <h2 className="mb-4 font-bold text-ink">
               Observações internas
             </h2>
 
-            <div className="min-h-[90px] whitespace-pre-wrap rounded-xl bg-neutral-50 p-4 text-sm leading-relaxed text-neutral-700">
+            <div className="min-h-[90px] whitespace-pre-wrap rounded-xl bg-canvas p-4 text-sm leading-relaxed text-neutral-700">
               {contact.internal_notes ||
                 "Nenhuma observação interna registrada."}
             </div>
@@ -1264,17 +1264,17 @@ const [waitingForm, setWaitingForm] = useState({
                   <div className="flex-1">
     
 </div>
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm xl:sticky xl:top-6">
+          <div className="rounded-xl border border-line bg-white p-5 xl:sticky xl:top-6">
             <div className="mb-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+              <p className="text-sm font-medium text-mutedr text-muted">
                 Gestão do lead
               </p>
 
-              <h2 className="mt-1 text-lg font-bold text-neutral-900">
+              <h2 className="mt-1 text-lg font-bold text-ink">
                 Próxima ação
               </h2>
 
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+              <p className="mt-1 text-xs leading-relaxed text-muted">
                 Use estas ações para movimentar o contato
                 pelo funil sem apagar o histórico.
               </p>
@@ -1324,14 +1324,14 @@ const [waitingForm, setWaitingForm] = useState({
               ) : null}
             </div>
 
-            <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <div className="mt-5 rounded-xl border border-line bg-canvas p-4">
               <div className="flex items-start gap-3">
                 <ShieldCheck
                   size={18}
-                  className="mt-0.5 shrink-0 text-neutral-500"
+                  className="mt-0.5 shrink-0 text-muted"
                 />
 
-                <p className="text-xs leading-relaxed text-neutral-500">
+                <p className="text-xs leading-relaxed text-muted">
                   Corrigir uma experimental antiga não
                   altera automaticamente um contato que já
                   avançou para matrícula, retorno, lista de
@@ -1397,7 +1397,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1406,7 +1406,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
             >
               Cancelar
             </button>
@@ -1414,7 +1414,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {actionLoading ? (
                 <Loader2
@@ -1483,7 +1483,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1492,7 +1492,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
             >
               Cancelar
             </button>
@@ -1500,7 +1500,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {actionLoading ? (
                 <Loader2
@@ -1577,7 +1577,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1586,7 +1586,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
             >
               Cancelar
             </button>
@@ -1594,7 +1594,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {actionLoading ? (
                 <Loader2
@@ -1674,7 +1674,7 @@ const [waitingForm, setWaitingForm] = useState({
             />
 
             {experimentalForm.slot && (
-              <p className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm text-neutral-700">
+              <p className="mt-3 rounded-xl bg-canvas p-3 text-sm text-neutral-700">
                 Selecionado:{" "}
                 <strong>
                   {experimentalForm.slot.group.location?.name} ·{" "}
@@ -1706,7 +1706,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1715,7 +1715,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
             >
               Cancelar
             </button>
@@ -1723,7 +1723,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {actionLoading ? (
                 <Loader2
@@ -1754,7 +1754,7 @@ const [waitingForm, setWaitingForm] = useState({
           onSubmit={handleCloseOpportunity}
           className="space-y-5"
         >
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="rounded-xl border border-alert/30 bg-alert-soft p-4 text-sm text-alert-text">
             Esta ação deve ser usada quando a família não
             seguirá no processo neste momento.
           </div>
@@ -1805,7 +1805,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1814,7 +1814,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
             >
               Cancelar
             </button>
@@ -1822,7 +1822,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-inter-red px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {actionLoading ? (
                 <Loader2
@@ -1853,7 +1853,7 @@ const [waitingForm, setWaitingForm] = useState({
           onSubmit={handleCorrection}
           className="space-y-5"
         >
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-800">
+          <div className="rounded-xl border border-attention/40 bg-attention-soft p-4 text-sm leading-relaxed text-attention-text">
             Esta função corrige o histórico da aula. Se o
             aluno já avançou para matrícula, retorno, lista
             de interesse ou encerramento, essa situação
@@ -1912,7 +1912,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1921,7 +1921,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
             >
               Cancelar
             </button>
@@ -1929,7 +1929,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {actionLoading ? (
                 <Loader2
@@ -1954,14 +1954,14 @@ const [waitingForm, setWaitingForm] = useState({
 >
   <div className="space-y-5">
 
-    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    <div className="rounded-xl border border-alert/30 bg-alert-soft p-4 text-sm text-alert-text">
       Utilize esta função apenas quando a experimental foi criada por engano ou para testes.
 
       Esta ação não poderá ser desfeita.
     </div>
 
     {error ? (
-      <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+      <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
         {error}
       </p>
     ) : null}
@@ -1971,7 +1971,7 @@ const [waitingForm, setWaitingForm] = useState({
       <button
         type="button"
         onClick={closeModal}
-        className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+        className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
       >
         Cancelar
       </button>
@@ -1980,7 +1980,7 @@ const [waitingForm, setWaitingForm] = useState({
         type="button"
         onClick={handleDeleteExperimental}
         disabled={actionLoading}
-        className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white"
+        className="flex items-center gap-2 rounded-xl bg-inter-red px-4 py-2.5 text-sm font-semibold text-white"
       >
         {actionLoading ? (
           <Loader2 size={16} className="animate-spin"/>
@@ -2203,7 +2203,7 @@ const [waitingForm, setWaitingForm] = useState({
             </div>
           </div>
 
-          <label className="flex items-center gap-3 rounded-xl border border-neutral-200 p-4">
+          <label className="flex items-center gap-3 rounded-xl border border-line p-4">
             <input
               type="checkbox"
               checked={editForm.trained_elsewhere}
@@ -2280,7 +2280,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -2289,7 +2289,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
             >
               Cancelar
             </button>
@@ -2297,7 +2297,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {actionLoading ? (
                 <Loader2

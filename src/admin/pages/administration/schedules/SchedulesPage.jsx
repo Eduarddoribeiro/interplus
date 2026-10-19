@@ -14,7 +14,7 @@ export default function SchedulesPage() {
 
       <button
         onClick={() => navigate("/admin/administration")}
-        className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900"
+        className="flex items-center gap-2 text-sm text-muted hover:text-ink"
       >
         <ArrowLeft size={18} />
         Voltar para Administração
@@ -27,18 +27,18 @@ export default function SchedulesPage() {
           subtitle="Gerencie os horários de cada turma."
         />
 
-        <button className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-medium text-white hover:bg-red-700">
+        <button className="flex items-center gap-2 rounded-xl bg-inter-red px-5 py-3 font-medium text-white hover:bg-inter-red-dark">
           <Plus size={18} />
           Novo Horário
         </button>
 
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
 
         <table className="min-w-full">
 
-          <thead className="border-b border-neutral-200 bg-neutral-50">
+          <thead className="border-b border-line bg-canvas">
 
             <tr>
 
@@ -68,7 +68,7 @@ export default function SchedulesPage() {
 
                 <td
                   colSpan={7}
-                  className="px-6 py-16 text-center text-neutral-500"
+                  className="px-6 py-16 text-center text-muted"
                 >
                   Nenhum horário cadastrado.
                 </td>
