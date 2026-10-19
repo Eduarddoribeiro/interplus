@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import usePendingCounts from "./usePendingCounts";
 
 import NewContactModal from "../components/contacts/NewContactModal";
 import Toaster from "../components/common/Toaster";
@@ -19,22 +20,21 @@ export default function Layout() {
   const [contactsVersion, setContactsVersion] =
     useState(0);
 
+  // Contadores do menu (pendências da Visão geral)
+  const pending = usePendingCounts(contactsVersion);
+
   return (
     <div className="flex min-h-screen">
       <Sidebar
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
+        pending={pending}
       />
 
-      <div className="min-w-0 flex-1 bg-neutral-50">
-        <Topbar
-          onNewContact={() =>
-            setNewContactOpen(true)
-          }
-          onOpenMenu={() => setMenuOpen(true)}
-        />
+      <div className="min-w-0 flex-1 bg-canvas text-ink">
+        <Topbar onOpenMenu={() => setMenuOpen(true)} />
 
-        <main className="p-4 sm:p-6 lg:p-10">
+        <main className="mx-auto max-w-[1400px] p-4 sm:p-6 lg:px-10 lg:py-8">
           <Outlet
             context={{
               openNewContact: () => setNewContactOpen(true),

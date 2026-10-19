@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 
 import {
   ArrowRight,
@@ -7,10 +7,11 @@ import {
   ListChecks,
   MapPin,
   MessageCircle,
-  RefreshCw,
+  Plus,
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
+import { Button } from "../ui";
 
 import { getDashboardData } from "../../services/dashboard";
 import { EXPERIMENTAL_STATUS_LABEL } from "../../constants/experimentalStatus";
@@ -25,6 +26,17 @@ const SESSION_DOT = {
 };
 
 const formatTime = (time) => time?.slice(0, 5) ?? "";
+
+// "Segunda-feira, 19 de outubro"
+function formatToday() {
+  const label = new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
 
 function formatDayTitle(iso, isToday) {
   const label = new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", {
@@ -61,9 +73,20 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { openNewContact, contactsVersion } = useOutletContext();
 
+  // Recarrega ao criar contato e ao voltar para a aba do navegador
   useEffect(() => {
     loadDashboard();
+  }, [contactsVersion]);
+
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible") loadDashboard();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
   async function loadDashboard() {
@@ -156,22 +179,16 @@ export default function Dashboard() {
   return (
     <div className="space-y-10">
       {/* CABEÇALHO */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <SectionTitle
-          title="Visão Geral"
-          description="O que precisa ser feito hoje."
-        />
-
-        <button
-          type="button"
-          onClick={loadDashboard}
-          disabled={loading}
-          className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold transition hover:bg-neutral-50 disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          Atualizar
-        </button>
-      </div>
+      <SectionTitle
+        title="Visão geral"
+        summary={formatToday()}
+        actions={
+          <Button variant="primary" onClick={openNewContact}>
+            <Plus size={18} aria-hidden="true" />
+            Novo contato
+          </Button>
+        }
+      />
 
       {/* PENDÊNCIAS */}
       {/* Uma faixa só, neutra; o vermelho marca apenas o que está atrasado */}
