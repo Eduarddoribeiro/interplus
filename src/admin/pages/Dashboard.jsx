@@ -1,29 +1,31 @@
 import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 
-import {
-  ArrowRight,
-  CheckCircle2,
-  ListChecks,
-  MapPin,
-  MessageCircle,
-  Plus,
-} from "lucide-react";
+import { CheckCircle2, ChevronRight, MessageCircle, Plus } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
-import { Button } from "../ui";
+import { Button, Panel, urgencyRail, urgencyText } from "../ui";
 
 import { getDashboardData } from "../../services/dashboard";
 import { EXPERIMENTAL_STATUS_LABEL } from "../../constants/experimentalStatus";
 import { createWhatsAppUrl } from "../../helpers/contactPresentation";
 
-// Status da agenda: só um ponto discreto
-const SESSION_DOT = {
-  pending_confirmation: "bg-amber-400",
-  confirmed: "bg-neutral-900",
-  attended: "bg-neutral-300",
-  no_show: "bg-red-600",
+// Rótulos curtos da agenda (cabem numa linha)
+const SESSION_LABEL = {
+  pending_confirmation: "A confirmar",
+  confirmed: "Confirmada",
+  attended: "Compareceu",
+  no_show: "Não compareceu",
+  cancelled: "Cancelada",
 };
+
+// Status da experimental na agenda: só "a confirmar" pede atenção
+const SESSION_URGENCY = {
+  pending_confirmation: "attention",
+  no_show: "alert",
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const formatTime = (time) => time?.slice(0, 5) ?? "";
 
@@ -38,6 +40,7 @@ function formatToday() {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
+// "Hoje, segunda-feira, 19/10" ou "Terça-feira, 20/10"
 function formatDayTitle(iso, isToday) {
   const label = new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -45,14 +48,15 @@ function formatDayTitle(iso, isToday) {
     month: "2-digit",
   });
 
-  return isToday ? `Hoje · ${label}` : label;
+  return isToday ? `Hoje, ${label}` : label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-function formatShortDate(value) {
-  if (!value) return "";
+// Dias entre a data de retorno e hoje (0 = hoje)
+function daysLate(value, today) {
+  const date = new Date(`${String(value).slice(0, 10)}T12:00:00`);
+  const base = new Date(`${today}T12:00:00`);
 
-  const [year, month, day] = String(value).slice(0, 10).split("-");
-  return `${day}/${month}/${year}`;
+  return Math.round((base - date) / DAY_MS);
 }
 
 function monthName(key) {
@@ -66,7 +70,7 @@ function monthName(key) {
  *
  * 1. Pendências (clicáveis, somem quando zeram)
  * 2. Agenda de hoje e do próximo dia com experimental, por local
- * 3. Retornos vencidos
+ * 3. Retornos para fazer (vencidos e de hoje)
  * 4. Resultado do mês
  */
 export default function Dashboard() {
@@ -103,255 +107,256 @@ export default function Dashboard() {
     }
   }
 
+  const header = (
+    <SectionTitle
+      title="Visão geral"
+      summary={formatToday()}
+      actions={
+        <Button variant="primary" onClick={openNewContact}>
+          <Plus size={18} aria-hidden="true" />
+          Novo contato
+        </Button>
+      }
+    />
+  );
+
   if (loading && !data) {
     return (
-      <div className="py-20 text-center text-neutral-500">
-        Carregando visão geral...
+      <div>
+        {header}
+        <p role="status" className="py-16 text-center text-muted">
+          Carregando…
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-        <p className="font-medium text-red-700">{error}</p>
+      <div>
+        {header}
+        <Panel className="p-6">
+          <p role="alert" className="font-medium text-alert-text">
+            {error} Confira sua internet e tente de novo.
+          </p>
 
-        <button
-          type="button"
-          onClick={loadDashboard}
-          className="mt-4 rounded-xl bg-inter-red px-5 py-2 font-semibold text-white"
-        >
-          Tentar novamente
-        </button>
+          <Button className="mt-4" onClick={loadDashboard}>
+            Tentar de novo
+          </Button>
+        </Panel>
       </div>
     );
   }
 
   const { pending } = data;
 
-  const pendingCards = [
+  const pendingItems = [
     {
       key: "overdue",
-      urgent: true,
+      urgency: "alert",
       value: pending.overdue,
-      title: "Presença sem baixa",
-      text: "Experimentais que já passaram sem 'veio' ou 'faltou'.",
+      title: "Presenças sem baixa",
+      text: "Aulas que já passaram sem veio ou faltou",
       to: "/admin/experimentals?filtro=overdue",
     },
     {
-      key: "toConfirm",
-      value: pending.toConfirm,
-      title: "Confirmar experimentais",
-      text: "Nas próximas 48h e ainda não confirmadas.",
-      to: "/admin/experimentals?filtro=future",
-    },
-    {
       key: "followUpsDue",
-      urgent: true,
+      urgency: "alert",
       value: pending.followUpsDue,
       title: "Retornos vencidos",
-      text: "Data de retorno é hoje ou já passou.",
+      text: "Data de retorno é hoje ou já passou",
       to: "/admin/follow-ups",
     },
     {
+      key: "toConfirm",
+      urgency: "attention",
+      value: pending.toConfirm,
+      title: "Aulas para confirmar",
+      text: "Nas próximas 48 horas",
+      to: "/admin/experimentals?filtro=future",
+    },
+    {
       key: "awaitingResult",
+      urgency: "attention",
       value: pending.awaitingResult,
       title: "Resultado da aula",
-      text: "Vieram na experimental e a família ainda não decidiu.",
+      text: "Vieram e a família ainda não decidiu",
       to: "/admin/experimentals?filtro=no_result",
     },
     {
       key: "waitingNow",
       value: pending.waitingNow,
-      title: "Lista: podem agendar agora",
-      text: "Famílias da lista de interesse com vaga aberta.",
+      title: "Lista de interesse com vaga",
+      text: "Famílias que podem agendar agora",
       to: "/admin/waiting-list",
     },
     {
       key: "triage",
       value: pending.triage,
       title: "Contatos para triagem",
-      text: "Entraram pelo WhatsApp ou estão sem nome.",
+      text: "Vieram pelo WhatsApp ou estão sem nome",
       to: "/admin/contacts?aba=triage",
     },
-  ].filter((card) => card.value > 0);
+  ].filter((item) => item.value > 0);
 
   return (
-    <div className="space-y-10">
-      {/* CABEÇALHO */}
-      <SectionTitle
-        title="Visão geral"
-        summary={formatToday()}
-        actions={
-          <Button variant="primary" onClick={openNewContact}>
-            <Plus size={18} aria-hidden="true" />
-            Novo contato
-          </Button>
-        }
-      />
+    <div className="space-y-8">
+      {header}
 
       {/* PENDÊNCIAS */}
-      {/* Uma faixa só, neutra; o vermelho marca apenas o que está atrasado */}
-      {pendingCards.length === 0 ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-6 py-5 text-neutral-700">
-          <CheckCircle2 size={20} className="text-neutral-400" />
+      {pendingItems.length === 0 ? (
+        <Panel className="flex items-center gap-3 px-5 py-4">
+          <CheckCircle2 size={20} aria-hidden="true" className="text-ok" />
           <p className="font-medium">Tudo em dia. Nenhuma pendência agora.</p>
-        </div>
+        </Panel>
       ) : (
-        <section>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+        <section aria-labelledby="pendencias">
+          <h2 id="pendencias" className="sr-only">
             Pendências
-          </p>
+          </h2>
 
-          <div className="grid overflow-hidden rounded-2xl border border-neutral-200 bg-white sm:grid-cols-2 xl:auto-cols-fr xl:grid-flow-col xl:grid-cols-none">
-            {pendingCards.map(({ key, value, title, text, to, urgent }, index) => (
-              <Link
-                key={key}
-                to={to}
-                className={`group flex flex-col justify-between px-6 py-5 transition-colors hover:bg-neutral-50 ${
-                  index > 0 ? "border-t border-neutral-100 sm:border-t-0 xl:border-l" : ""
-                } ${index % 2 === 1 ? "sm:border-l" : ""} ${index > 1 ? "sm:border-t xl:border-t-0" : ""}`}
-              >
-                <div>
-                  <p className="flex items-center gap-2 text-sm font-medium text-neutral-500">
-                    {urgent && <span className="h-1.5 w-1.5 rounded-full bg-red-600" />}
-                    {title}
-                  </p>
-
-                  <p
-                    className={`mt-2 font-display text-5xl leading-none ${
-                      urgent ? "text-red-700" : "text-neutral-900"
+          <Panel as="ul" className="grid gap-px overflow-hidden bg-line sm:grid-cols-2 xl:grid-cols-3">
+            {pendingItems.map((item) => (
+              <li key={item.key} className="bg-white">
+                <Link
+                  to={item.to}
+                  className={`group flex h-full items-center gap-4 px-4 py-4 transition-colors hover:bg-canvas ${urgencyRail(item.urgency)}`}
+                >
+                  <span
+                    className={`w-14 shrink-0 text-right font-display text-4xl font-semibold leading-none tabular-nums ${
+                      item.urgency ? urgencyText(item.urgency) : "text-ink"
                     }`}
                   >
-                    {value}
-                  </p>
-                </div>
+                    {item.value}
+                  </span>
 
-                <p className="mt-4 flex items-end justify-between gap-3 text-xs leading-relaxed text-neutral-400">
-                  <span>{text}</span>
-                  <ArrowRight
-                    size={15}
-                    className="shrink-0 text-neutral-300 transition group-hover:translate-x-0.5 group-hover:text-neutral-700"
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold">{item.title}</span>
+                    <span className="block text-sm text-muted">{item.text}</span>
+                  </span>
+
+                  <ChevronRight
+                    size={18}
+                    aria-hidden="true"
+                    className="shrink-0 text-neutral-300 group-hover:text-ink"
                   />
-                </p>
-              </Link>
+                </Link>
+              </li>
             ))}
-          </div>
+          </Panel>
         </section>
       )}
 
-      <div className="grid gap-8 xl:grid-cols-3">
+      <div className="grid gap-8 xl:grid-cols-[1.6fr_1fr]">
         {/* AGENDA */}
-        <section className="space-y-4 xl:col-span-2">
-          <div className="flex items-end justify-between gap-3">
-            <h2 className="text-xl font-bold text-neutral-900">Agenda de experimentais</h2>
+        <section aria-labelledby="agenda" className="space-y-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 id="agenda" className="text-lg font-semibold">
+              Agenda de experimentais
+            </h2>
 
-            <Link
-              to="/admin/experimentals"
-              className="flex items-center gap-1.5 text-sm font-semibold text-red-700 hover:underline"
-            >
-              <ListChecks size={16} />
-              Lista dos professores
+            <Link to="/admin/experimentals" className="text-sm font-semibold text-muted hover:text-ink">
+              Ver todas
             </Link>
           </div>
 
           {data.agenda.map((day) => (
-            <div key={day.date} className="rounded-2xl border border-neutral-200 bg-white">
-              <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-3">
-                <p className="font-bold capitalize text-neutral-900">
-                  {formatDayTitle(day.date, day.isToday)}
-                </p>
+            <Panel key={day.date}>
+              <div className="flex items-baseline justify-between gap-3 border-b border-line px-4 py-3">
+                <h3 className="font-semibold">{formatDayTitle(day.date, day.isToday)}</h3>
 
-                <span className="text-sm text-neutral-500">
-                  {day.total} experimenta{day.total === 1 ? "l" : "is"}
+                <span className="text-sm text-muted">
+                  {day.total} {day.total === 1 ? "aula" : "aulas"}
                 </span>
               </div>
 
               {day.total === 0 ? (
-                <p className="px-5 py-6 text-sm text-neutral-500">
-                  Nenhuma experimental neste dia.
-                </p>
+                <p className="px-4 py-5 text-sm text-muted">Nenhuma aula neste dia.</p>
               ) : (
                 day.locations.map((location) => (
-                  <div key={location.name} className="px-5 py-3">
-                    <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-neutral-500">
-                      <MapPin size={13} className="text-red-600" />
-                      {location.name}
-                    </p>
+                  <div key={location.name}>
+                    <p className="px-4 pb-1 pt-3 text-sm text-muted">{location.name}</p>
 
-                    <ul className="mt-2 divide-y divide-neutral-100">
-                      {location.items.map((session) => (
-                        <li key={session.id} className="flex items-center gap-3 py-2 text-sm">
-                          <span className="w-12 font-bold text-red-600">
-                            {formatTime(session.experimental_time || session.schedule?.start_time)}
-                          </span>
+                    <ul>
+                      {location.items.map((session) => {
+                        const urgency = SESSION_URGENCY[session.status];
 
-                          <Link
-                            to={`/admin/contacts/${session.contact_id}`}
-                            className="min-w-0 flex-1 truncate font-semibold text-neutral-900 hover:underline"
+                        return (
+                          <li
+                            key={session.id}
+                            className={`grid grid-cols-[3.5rem_1fr_auto] items-center gap-x-3 px-4 py-2.5 text-sm sm:grid-cols-[3.5rem_1fr_5rem_10rem] ${urgencyRail(urgency)}`}
                           >
-                            {session.contact?.child_name || "Sem nome"}
-                          </Link>
+                            <span className="font-semibold tabular-nums">
+                              {formatTime(session.experimental_time || session.schedule?.start_time)}
+                            </span>
 
-                          <span className="hidden text-neutral-500 sm:inline">
-                            {session.category?.name}
-                          </span>
+                            <Link
+                              to={`/admin/contacts/${session.contact_id}`}
+                              className="min-w-0 truncate font-medium hover:underline"
+                            >
+                              {session.contact?.child_name || "Sem nome"}
+                            </Link>
 
-                          <span className="flex items-center gap-1.5 text-xs text-neutral-500">
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                SESSION_DOT[session.status] ?? "bg-neutral-300"
-                              }`}
-                            />
-                            {EXPERIMENTAL_STATUS_LABEL[session.status] ?? session.status}
-                          </span>
-                        </li>
-                      ))}
+                            <span className="hidden text-muted sm:block">
+                              {session.category?.name}
+                            </span>
+
+                            <span className={`text-right ${urgency ? urgencyText(urgency) : "text-muted"}`}>
+                              {SESSION_LABEL[session.status] ?? EXPERIMENTAL_STATUS_LABEL[session.status] ?? session.status}
+                            </span>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 ))
               )}
-            </div>
+            </Panel>
           ))}
         </section>
 
         {/* RETORNOS */}
-        <section className="space-y-4">
-          <div className="flex items-end justify-between gap-3">
-            <h2 className="text-xl font-bold text-neutral-900">Retornos de hoje</h2>
+        <section aria-labelledby="retornos" className="space-y-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 id="retornos" className="text-lg font-semibold">
+              Retornos para fazer
+            </h2>
 
-            <Link
-              to="/admin/follow-ups"
-              className="text-sm font-semibold text-red-700 hover:underline"
-            >
+            <Link to="/admin/follow-ups" className="text-sm font-semibold text-muted hover:text-ink">
               Ver todos
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 bg-white">
+          <Panel>
             {data.followUpsDue.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-neutral-500">
-                Nenhum retorno vencido. 👍
-              </p>
+              <p className="px-4 py-5 text-sm text-muted">Nenhum retorno para hoje.</p>
             ) : (
-              <ul className="divide-y divide-neutral-100">
+              <ul className="divide-y divide-line">
                 {data.followUpsDue.slice(0, 8).map((contact) => {
                   const whatsappUrl = createWhatsAppUrl(contact.phone);
-                  const late = String(contact.follow_up_date).slice(0, 10) < data.today;
+                  const late = daysLate(contact.follow_up_date, data.today);
+                  const urgency = late > 0 ? "alert" : "attention";
+                  const name = contact.child_name || contact.responsible_name || "Sem nome";
 
                   return (
-                    <li key={contact.id} className="flex items-center gap-3 px-5 py-3">
+                    <li key={contact.id} className={`flex items-center gap-3 px-4 py-2.5 ${urgencyRail(urgency)}`}>
                       <div className="min-w-0 flex-1">
                         <Link
                           to={`/admin/contacts/${contact.id}`}
-                          className="block truncate font-semibold text-neutral-900 hover:underline"
+                          className="block truncate font-medium hover:underline"
                         >
-                          {contact.child_name || contact.responsible_name || "Sem nome"}
+                          {name}
                         </Link>
 
-                        <p className={`text-xs ${late ? "font-semibold text-orange-700" : "text-neutral-500"}`}>
-                          {late ? `Vencido em ${formatShortDate(contact.follow_up_date)}` : "Hoje"}
-                          {contact.category?.name ? ` · ${contact.category.name}` : ""}
+                        <p className="text-sm">
+                          <span className={urgencyText(urgency)}>
+                            {late > 0
+                              ? `Atrasado há ${late} ${late === 1 ? "dia" : "dias"}`
+                              : "Para hoje"}
+                          </span>
+                          {contact.category?.name && (
+                            <span className="text-muted">, {contact.category.name}</span>
+                          )}
                         </p>
                       </div>
 
@@ -360,10 +365,10 @@ export default function Dashboard() {
                           href={whatsappUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          title="Abrir WhatsApp"
-                          className="rounded-lg border border-green-200 bg-green-50 p-2 text-green-800 hover:bg-green-100"
+                          aria-label={`WhatsApp de ${name}`}
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-line text-whatsapp hover:border-whatsapp"
                         >
-                          <MessageCircle size={15} />
+                          <MessageCircle size={18} aria-hidden="true" />
                         </a>
                       )}
                     </li>
@@ -373,12 +378,13 @@ export default function Dashboard() {
             )}
 
             {(data.followUpsDue.length > 8 || data.followUpsUpcoming > 0) && (
-              <p className="border-t border-neutral-100 px-5 py-3 text-xs text-neutral-500">
-                {data.followUpsDue.length > 8 && `+${data.followUpsDue.length - 8} vencidos · `}
-                {data.followUpsUpcoming} nos próximos 7 dias
+              <p className="border-t border-line px-4 py-3 text-sm text-muted">
+                {data.followUpsDue.length > 8 && `Mais ${data.followUpsDue.length - 8} atrasados. `}
+                {data.followUpsUpcoming > 0 &&
+                  `${data.followUpsUpcoming} nos próximos 7 dias.`}
               </p>
             )}
-          </div>
+          </Panel>
         </section>
       </div>
 
@@ -391,18 +397,19 @@ export default function Dashboard() {
 function Delta({ current, previous }) {
   const diff = current - previous;
 
-  if (!diff) return <span className="text-xs text-neutral-400">= mês anterior</span>;
+  if (!diff) return <span className="text-sm text-muted">igual ao mês anterior</span>;
 
   return (
-    <span className={`text-xs font-semibold ${diff > 0 ? "text-green-700" : "text-red-600"}`}>
-      {diff > 0 ? "▲" : "▼"} {Math.abs(diff)} vs. mês anterior
+    <span className={`text-sm ${diff > 0 ? "text-ok" : "text-alert-text"}`}>
+      {diff > 0 ? "+" : "−"}
+      {Math.abs(diff)} que o mês anterior
     </span>
   );
 }
 
 function MonthResult({ month, previous }) {
   const steps = [
-    { key: "leads", label: "Novos leads" },
+    { key: "leads", label: "Novos contatos" },
     { key: "scheduled", label: "Experimentais" },
     { key: "attended", label: "Compareceram" },
     { key: "enrolled", label: "Matrículas" },
@@ -411,83 +418,59 @@ function MonthResult({ month, previous }) {
   const maxSource = month.sources[0]?.count ?? 0;
 
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
-            Resultado do mês
-          </p>
+    <section aria-labelledby="resultado" className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="resultado" className="text-lg font-semibold">
+          Resultado de {monthName(month.key)}
+        </h2>
 
-          <h2 className="mt-1 text-xl font-bold capitalize text-neutral-900">
-            {monthName(month.key)}
-          </h2>
-        </div>
-
-        <Link
-          to="/admin/reports"
-          className="text-sm font-semibold text-red-700 hover:underline"
-        >
-          Relatórios completos
+        <Link to="/admin/reports" className="text-sm font-semibold text-muted hover:text-ink">
+          Relatórios
         </Link>
       </div>
 
-      <div className="mt-5 grid gap-6 lg:grid-cols-3">
-        {/* FUNIL */}
-        <div className="lg:col-span-2">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {steps.map((step, index) => (
-              <div key={step.key} className="relative rounded-xl bg-neutral-50 p-4">
-                <p className="text-xs font-semibold text-neutral-500">{step.label}</p>
-
-                <p className="mt-1 font-display text-4xl leading-none text-neutral-900">
+      <Panel className="grid gap-6 p-5 lg:grid-cols-[1.6fr_1fr]">
+        <div>
+          <dl className="grid grid-cols-2 gap-y-5 sm:grid-cols-4">
+            {steps.map((step) => (
+              <div key={step.key}>
+                <dt className="text-sm text-muted">{step.label}</dt>
+                <dd className="font-display text-4xl font-semibold leading-tight tabular-nums">
                   {month[step.key]}
-                </p>
-
-                <div className="mt-2">
+                </dd>
+                <dd>
                   <Delta current={month[step.key]} previous={previous[step.key]} />
-                </div>
-
-                {index < steps.length - 1 && (
-                  <ArrowRight
-                    size={16}
-                    className="absolute -right-3 top-1/2 hidden -translate-y-1/2 text-neutral-300 sm:block"
-                  />
-                )}
+                </dd>
               </div>
             ))}
-          </div>
+          </dl>
 
-          <p className="mt-4 text-sm text-neutral-600">
-            Conversão (matrículas ÷ compareceram):{" "}
-            <strong className="text-neutral-900">
-              {month.conversion === null ? "—" : `${month.conversion}%`}
+          <p className="mt-5 text-sm text-muted">
+            Conversão (matrículas sobre quem compareceu):{" "}
+            <strong className="text-ink">
+              {month.conversion === null ? "sem dados" : `${month.conversion}%`}
             </strong>
-            {previous.conversion !== null && (
-              <span className="text-neutral-400">
-                {" "}· mês anterior {previous.conversion}%
-              </span>
-            )}
+            {previous.conversion !== null && `. No mês anterior: ${previous.conversion}%.`}
           </p>
         </div>
 
-        {/* ORIGENS */}
         <div>
-          <p className="text-sm font-semibold text-neutral-900">De onde vieram os leads</p>
+          <h3 className="text-sm font-semibold">De onde vieram os contatos</h3>
 
           {month.sources.length === 0 ? (
-            <p className="mt-3 text-sm text-neutral-500">Nenhum lead novo neste mês.</p>
+            <p className="mt-3 text-sm text-muted">Nenhum contato novo neste mês.</p>
           ) : (
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3 space-y-2.5">
               {month.sources.slice(0, 5).map((source) => (
                 <li key={source.label}>
-                  <div className="flex justify-between text-xs text-neutral-600">
+                  <div className="flex justify-between text-sm">
                     <span>{source.label}</span>
-                    <span className="font-semibold">{source.count}</span>
+                    <span className="font-semibold tabular-nums">{source.count}</span>
                   </div>
 
                   <div className="mt-1 h-1.5 rounded-full bg-neutral-100">
                     <div
-                      className="h-full rounded-full bg-red-600"
+                      className="h-full rounded-full bg-ink"
                       style={{ width: `${(source.count / maxSource) * 100}%` }}
                     />
                   </div>
@@ -496,7 +479,7 @@ function MonthResult({ month, previous }) {
             </ul>
           )}
         </div>
-      </div>
+      </Panel>
     </section>
   );
 }
