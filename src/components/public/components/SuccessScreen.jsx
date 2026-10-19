@@ -38,7 +38,7 @@ function whatToBring(modalityName = "") {
   ];
 }
 
-export default function SuccessScreen({ type = "scheduled", form }) {
+export default function SuccessScreen({ type = "scheduled", form, onRestart }) {
   const isWaitingList = type === "waiting_list";
   const firstName = form?.child_name?.trim().split(" ")[0];
 
@@ -69,9 +69,9 @@ export default function SuccessScreen({ type = "scheduled", form }) {
     >
       {/* CABEÇALHO */}
       <div className="px-5 pt-8 text-center sm:px-8">
-        <CheckCircle2 className="mx-auto h-14 w-14 text-green-600" />
+        <CheckCircle2 aria-hidden="true" className="mx-auto h-14 w-14 text-green-600" />
 
-        <h2 className="mt-4 text-2xl font-bold text-neutral-900 sm:text-3xl">
+        <h2 className="mt-4 text-2xl font-bold text-neutral-900 outline-none sm:text-3xl">
           {isWaitingList ? "Interesse registrado!" : "Aula solicitada!"}
         </h2>
 
@@ -93,19 +93,19 @@ export default function SuccessScreen({ type = "scheduled", form }) {
 
             <ul className="mt-3 space-y-2 text-neutral-800">
               <li className="flex items-center gap-2">
-                <CalendarDays size={17} className="text-neutral-400" />
+                <CalendarDays size={17} aria-hidden="true" className="text-neutral-400" />
                 <span className="font-semibold">
                   {WEEKDAY_LABELS[schedule.weekday]}, {formatDate(form.experimental_date)}
                 </span>
               </li>
 
               <li className="flex items-center gap-2">
-                <Clock size={17} className="text-neutral-400" />
+                <Clock size={17} aria-hidden="true" className="text-neutral-400" />
                 {formatTime(schedule.start_time)} às {formatTime(schedule.end_time)}
               </li>
 
               <li className="flex items-start gap-2">
-                <MapPin size={17} className="mt-0.5 shrink-0 text-neutral-400" />
+                <MapPin size={17} aria-hidden="true" className="mt-0.5 shrink-0 text-neutral-400" />
                 <span>
                   <span className="font-semibold">{location?.name}</span>
                   {location?.address && (
@@ -124,7 +124,7 @@ export default function SuccessScreen({ type = "scheduled", form }) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700"
               >
-                <CalendarPlus size={16} />
+                <CalendarPlus size={16} aria-hidden="true" />
                 Google Agenda
               </a>
 
@@ -133,7 +133,7 @@ export default function SuccessScreen({ type = "scheduled", form }) {
                 onClick={() => downloadIcs(event)}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
               >
-                <CalendarPlus size={16} />
+                <CalendarPlus size={16} aria-hidden="true" />
                 Agenda do iPhone
               </button>
 
@@ -143,7 +143,7 @@ export default function SuccessScreen({ type = "scheduled", form }) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
               >
-                <Navigation size={16} />
+                <Navigation size={16} aria-hidden="true" />
                 Como chegar
               </a>
             </div>
@@ -158,7 +158,7 @@ export default function SuccessScreen({ type = "scheduled", form }) {
             <ul className="mt-3 space-y-2 text-sm text-neutral-700">
               {whatToBring(form?.modality?.name).map((item) => (
                 <li key={item} className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="shrink-0 text-green-600" />
+                  <CheckCircle2 size={16} aria-hidden="true" className="shrink-0 text-green-600" />
                   {item}
                 </li>
               ))}
@@ -173,18 +173,22 @@ export default function SuccessScreen({ type = "scheduled", form }) {
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3.5 font-semibold text-white hover:bg-green-700"
           >
-            <MessageCircle size={18} />
+            <MessageCircle size={18} aria-hidden="true" />
             Falar com a escola no WhatsApp
           </a>
         )}
 
         <button
           type="button"
-          onClick={() => window.location.reload()}
-          className="mx-auto block text-sm font-semibold text-neutral-500 underline-offset-2 hover:underline"
+          onClick={onRestart}
+          className="mx-auto block rounded text-sm font-semibold text-neutral-600 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-red-600/30"
         >
           {isWaitingList ? "Registrar outro atleta" : "Agendar outro atleta"}
         </button>
+
+        <p className="text-center text-xs text-neutral-500">
+          Para irmãos: seus dados de contato já ficam preenchidos.
+        </p>
 
       </div>
     </motion.div>

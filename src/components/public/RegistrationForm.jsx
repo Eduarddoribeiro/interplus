@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { MotionConfig, motion } from "framer-motion";
 
 import ProgressBar from "./components/ProgressBar";
 import AthleteForm from "./components/AthleteForm";
@@ -63,14 +63,32 @@ export default function RegistrationForm() {
   const topRef = useRef(null);
   const firstRender = useRef(true);
 
-  // No celular, cada etapa nova começa do topo do formulário
+  /*
+   * No celular, cada etapa nova começa do topo do formulário.
+   * O foco vai para o título da etapa, para o leitor de tela
+   * anunciar a mudança.
+   */
   useEffect(() => {
     if (firstRender.current) {
       firstRender.current = false;
       return;
     }
 
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const reduceMotion = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    topRef.current?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
+
+    const heading = topRef.current?.querySelector("h2");
+
+    if (heading) {
+      heading.setAttribute("tabindex", "-1");
+      heading.focus({ preventScroll: true });
+    }
   }, [step, success]);
 
   function updateField(field, value) {
@@ -78,6 +96,20 @@ export default function RegistrationForm() {
       ...prev,
       [field]: value,
     }));
+  }
+
+  // Irmãos: recomeça pelo atleta, mantendo os dados do responsável
+  function handleRestart() {
+    setForm((prev) => ({
+      ...INITIAL_FORM,
+      source: prev.source,
+      responsible_name: prev.responsible_name,
+      phone: prev.phone,
+      neighborhood: prev.neighborhood,
+      consent: prev.consent,
+    }));
+    setSuccess(null);
+    setStep(1);
   }
 
   function handleJoinInterestList() {
@@ -151,9 +183,10 @@ export default function RegistrationForm() {
   }
 
   return (
+    <MotionConfig reducedMotion="user">
     <div ref={topRef} className="scroll-mt-4">
       {success ? (
-        <SuccessScreen type={success} form={form} />
+        <SuccessScreen type={success} form={form} onRestart={handleRestart} />
       ) : (
         <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
           <div className="border-b border-neutral-100 px-5 pt-5 sm:px-8 sm:pt-7">
@@ -214,5 +247,6 @@ export default function RegistrationForm() {
         </div>
       )}
     </div>
+    </MotionConfig>
   );
 }
