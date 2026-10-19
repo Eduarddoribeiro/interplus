@@ -13,6 +13,10 @@ export default {
           'red-dark': '#9e0d23',
           'red-light': '#f5e6e9',
         },
+        // Landing: cinza frio das seções, texto e WhatsApp
+        quadra: '#EEF0F2',
+        grafite: '#22252A',
+        whatsapp: '#1F9D55',
       },
       borderRadius: {
         '2xl': '16px',
