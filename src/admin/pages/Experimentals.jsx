@@ -3,13 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   CircleCheckBig,
-  Clock3,
   MessageCircle,
   UserCheck,
   UserX,
-  RefreshCw,
-  History,
-  CalendarRange,
   GraduationCap,
   PhoneCall,
   XCircle,
@@ -17,6 +13,7 @@ import {
   CalendarPlus,
   CalendarClock,
   ArchiveX,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ClipboardCopy,
@@ -28,6 +25,7 @@ import {
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
+import { Button, Panel, Tabs, urgencyRail, urgencyText } from "../ui";
 import { toast } from "../components/common/Toaster";
 import { getSessionMessages } from "../../helpers/whatsappMessages";
 import { isAwaitingResult } from "../../helpers/experimentalRules";
@@ -37,6 +35,7 @@ import {
   getOrCreateCoachLink,
 } from "../../services/coachLinks";
 import { WEEKDAY_LABELS } from "../../constants/weekdays";
+import { getSourceLabel } from "../../constants/school";
 
 import {
   getExperimentals,
@@ -222,6 +221,16 @@ export default function Experimentals() {
 
   useEffect(() => {
     loadExperimentals();
+  }, []);
+
+  // Recarrega ao voltar para a aba do navegador (sem botão Atualizar)
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible") loadExperimentals();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
   /*
@@ -581,6 +590,23 @@ export default function Experimentals() {
     weekEnd,
   ]);
 
+  // Contadores das abas (mesmas regras dos filtros abaixo)
+  const filterCounts = useMemo(() => {
+    const count = (predicate) => scopedExperimentals.filter(predicate).length;
+
+    return {
+      week: count((item) => item.experimental_date >= weekStart && item.experimental_date <= weekEnd),
+      today: count((item) => item.experimental_date === today),
+      future: count((item) => item.experimental_date >= today),
+      overdue: count(
+        (item) =>
+          item.experimental_date < today &&
+          ["pending_confirmation", "confirmed"].includes(item.status),
+      ),
+      no_result: count(isAwaitingResult),
+    };
+  }, [scopedExperimentals, today, weekStart, weekEnd]);
+
   /*
    * =======================================================
    * RESUMO SEMANAL
@@ -828,327 +854,120 @@ export default function Experimentals() {
     <div className="space-y-8">
       <SectionTitle
         title="Experimentais"
-        description="Acompanhe confirmações, presença, reagendamentos e resultados das aulas experimentais."
+        summary={`${stats.week} nesta semana, ${stats.pending} a confirmar. Comparecimento da semana: ${stats.attendanceRate}%.`}
+        actions={
+          <Button onClick={() => setCoachListOpen(true)}>
+            <Users size={17} aria-hidden="true" />
+            Lista dos professores
+          </Button>
+        }
       />
 
-      {/* INDICADORES */}
+      {/* SEMANA */}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
-        <StatCard
-          title="Hoje"
-          value={stats.today}
-          icon={CalendarDays}
-          subtitle="Experimentais na agenda"
-        />
-
-        <StatCard
-          title="Nesta semana"
-          value={stats.week}
-          icon={CalendarRange}
-          subtitle={`${formatShortDate(
-            weekStart
-          )} a ${formatShortDate(
-            weekEnd
-          )}`}
-        />
-
-        <StatCard
-          title="A confirmar"
-          value={stats.pending}
-          icon={Clock3}
-          subtitle="Nesta semana"
-        />
-
-        <StatCard
-          title="Comparecimento"
-          value={`${stats.attendanceRate}%`}
-          icon={CircleCheckBig}
-          subtitle="Das aulas já realizadas"
-        />
-      </div>
-
-      {/* CABEÇALHO */}
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-neutral-900">
-            Agenda de experimentais
+      <Panel className="p-3 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold">
+            Semana de {formatDayMonth(weekStart)} a {formatDayMonth(weekEnd)}
           </h2>
 
-          <p className="mt-1 text-sm text-neutral-500">
-            Cada card representa uma
-            tentativa de aula experimental.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={() =>
-              setCoachListOpen(true)
-            }
-            className="
-              flex
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              bg-neutral-900
-              px-4
-              py-3
-              text-sm
-              font-semibold
-              text-white
-              transition
-              hover:bg-neutral-800
-            "
-          >
-            <Users size={17} />
-            Lista dos professores
-          </button>
-
-          <button
-            type="button"
-            onClick={loadExperimentals}
-            disabled={loading}
-            className="
-              flex
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              border
-              border-neutral-200
-              bg-white
-              px-4
-              py-3
-              text-sm
-              font-semibold
-              text-neutral-700
-              transition
-              hover:bg-neutral-50
-              disabled:opacity-50
-            "
-          >
-            <RefreshCw
-              size={17}
-              className={
-                loading
-                  ? "animate-spin"
-                  : ""
-              }
-            />
-
-            Atualizar
-          </button>
-        </div>
-      </div>
-
-      {/* VISÃO SEMANAL */}
-
-      <div className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
-              Visão semanal
-            </p>
-
-            <h3 className="mt-1 text-lg font-bold text-neutral-900">
-              {formatWeekRange(
-                weekStart,
-                weekEnd
-              )}
-            </h3>
-
-            <p className="mt-1 text-sm text-neutral-500">
-              Clique em um dia para abrir
-              as experimentais.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="quiet"
               onClick={goToPreviousWeek}
-              className="rounded-xl border border-neutral-200 p-2.5 hover:bg-neutral-50"
               aria-label="Semana anterior"
             >
-              <ChevronLeft size={18} />
-            </button>
+              <ChevronLeft size={18} aria-hidden="true" />
+            </Button>
 
-            <button
-              type="button"
-              onClick={goToCurrentWeek}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold hover:bg-neutral-50"
-            >
-              Semana atual
-            </button>
+            <Button size="sm" variant="quiet" onClick={goToCurrentWeek}>
+              Esta semana
+            </Button>
 
-            <button
-              type="button"
+            <Button
+              size="sm"
+              variant="quiet"
               onClick={goToNextWeek}
-              className="rounded-xl border border-neutral-200 p-2.5 hover:bg-neutral-50"
               aria-label="Próxima semana"
             >
-              <ChevronRight size={18} />
-            </button>
+              <ChevronRight size={18} aria-hidden="true" />
+            </Button>
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
+        <div className="mt-3 grid grid-cols-7 gap-1">
           {weekSummary.map((day) => (
             <WeekDayCard
               key={day.date}
               day={day}
               today={today}
               active={
-                activeFilter ===
-                  `day:${day.date}` ||
-                (activeFilter ===
-                  "today" &&
-                  day.date === today)
+                activeFilter === `day:${day.date}` ||
+                (activeFilter === "today" && day.date === today)
               }
-              onClick={() =>
-                openDay(day.date)
-              }
+              onClick={() => openDay(day.date)}
             />
           ))}
         </div>
-
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-neutral-100 pt-4 text-xs text-neutral-500">
-          <span>
-            <strong className="text-neutral-900">
-              {stats.week}
-            </strong>{" "}
-            experimentais
-          </span>
-
-          <span>
-            <strong className="text-amber-700">
-              {stats.pending}
-            </strong>{" "}
-            a confirmar
-          </span>
-
-          <span>
-            Comparecimento:{" "}
-            <strong className="text-green-700">
-              {stats.attendanceRate}%
-            </strong>
-          </span>
-        </div>
-      </div>
+      </Panel>
 
       {/* FILTROS */}
 
-      <div className="flex flex-wrap gap-2 rounded-2xl border border-neutral-200 bg-white p-3">
-        {FILTERS.map((filter) => {
-          const active =
-            activeFilter ===
-            filter.value;
-
-          return (
-            <button
-              key={filter.value}
-              type="button"
-              onClick={() =>
-                setActiveFilter(
-                  filter.value
-                )
-              }
-              className={`
-                rounded-xl
-                px-4
-                py-2.5
-                text-sm
-                font-semibold
-                transition
-                ${
-                  active
-                    ? "bg-neutral-900 text-white"
-                    : "text-neutral-600 hover:bg-neutral-100"
-                }
-              `}
-            >
-              {filter.value ===
-                "history" && (
-                <History
-                  size={15}
-                  className="mr-2 inline"
-                />
-              )}
-
-              {filter.label}
-            </button>
-          );
-        })}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <Tabs
+          label="Filtrar experimentais"
+          value={activeFilter}
+          onChange={setActiveFilter}
+          items={FILTERS.map((filter) => ({
+            ...filter,
+            count: filterCounts[filter.value],
+            urgency:
+              filter.value === "overdue" && filterCounts.overdue
+                ? "alert"
+                : filter.value === "no_result" && filterCounts.no_result
+                  ? "attention"
+                  : undefined,
+          }))}
+        />
 
         {locationOptions.length > 0 && (
-          <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-2 sm:ml-auto sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
-            {[
-              { id: "all", name: "Todos os locais" },
-              ...locationOptions,
-            ].map((location) => {
-              const active =
-                locationFilter === location.id;
-
-              return (
-                <button
-                  key={location.id}
-                  type="button"
-                  onClick={() =>
-                    setLocationFilter(location.id)
-                  }
-                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-                    active
-                      ? "bg-red-600 text-white"
-                      : "text-neutral-600 hover:bg-neutral-100"
-                  }`}
-                >
-                  {location.id !== "all" && (
-                    <MapPin size={15} />
-                  )}
-                  {location.name}
-                </button>
-              );
-            })}
-          </div>
+          <Tabs
+            label="Filtrar por local"
+            value={locationFilter}
+            onChange={setLocationFilter}
+            items={[{ id: "all", name: "Todos os locais" }, ...locationOptions].map(
+              (location) => ({ value: location.id, label: location.name }),
+            )}
+          />
         )}
       </div>
 
       {/* LOADING */}
 
-      {loading && (
-        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
-          <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-neutral-200 border-t-red-600" />
-
-          <p className="mt-4 text-sm text-neutral-500">
-            Carregando experimentais...
-          </p>
-        </div>
+      {loading && experimentals.length === 0 && (
+        <p role="status" className="py-12 text-center text-muted">
+          Carregando experimentais…
+        </p>
       )}
 
       {/* ERRO */}
 
       {!loading && error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-          <p className="font-semibold text-red-700">
+        <Panel className="p-5">
+          <p role="alert" className="font-medium text-alert-text">
             {error}
           </p>
 
-          <button
-            type="button"
-            onClick={loadExperimentals}
-            className="mt-3 text-sm font-semibold text-red-700 underline"
-          >
-            Tentar novamente
-          </button>
-        </div>
+          <Button className="mt-3" onClick={loadExperimentals}>
+            Tentar de novo
+          </Button>
+        </Panel>
       )}
 
       {/* VAZIO */}
 
-      {!loading &&
+      {!(loading && experimentals.length === 0) &&
         !error &&
         filteredExperimentals.length ===
           0 && (
@@ -1159,104 +978,51 @@ export default function Experimentals() {
 
       {/* AGENDA */}
 
-      {!loading &&
-        !error &&
+      {!error &&
         filteredExperimentals.length >
           0 && (
-          <div className="space-y-10">
-            {groupedDates.map(
-              (date) => {
-                const items =
-                  groupedExperimentals[
-                    date
-                  ];
+          <div className="space-y-6">
+            {groupedDates.map((date) => {
+              const items = groupedExperimentals[date];
 
-                return (
-                  <section key={date}>
-                    <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
-                          {getDateRelativeLabel(
-                            date,
-                            today,
-                            tomorrow
-                          )}
-                        </p>
+              return (
+                <section key={date} aria-label={formatFullDate(date)}>
+                  <div className="mb-2 flex items-baseline justify-between gap-3">
+                    <h2 className="font-semibold">
+                      {dayHeading(date, today, tomorrow)}
+                    </h2>
 
-                        <h3 className="mt-1 text-xl font-bold text-neutral-900">
-                          {formatFullDate(
-                            date
-                          )}
-                        </h3>
+                    <p className="text-sm text-muted">
+                      {items.length} {items.length === 1 ? "aula" : "aulas"}
+                    </p>
+                  </div>
+
+                  <Panel className="overflow-hidden">
+                    {sortByLocation(items).map((item, index, sorted) => (
+                      <div key={item.id}>
+                        {getLocationName(item) !== getLocationName(sorted[index - 1]) && (
+                          <p className={`bg-canvas px-4 py-1.5 text-sm text-muted ${index > 0 ? "border-t border-line" : ""}`}>
+                            {getLocationName(item)}
+                          </p>
+                        )}
+
+                        <ExperimentalCard
+                          item={item}
+                          today={today}
+                          updating={updatingId === item.id}
+                          onStatusChange={handleStatusChange}
+                          onSaveCoachNotes={handleSaveCoachNotes}
+                          onOpenResult={() => setResultSession(item)}
+                          onReschedule={() => setRescheduleSession(item)}
+                          onScheduleFollowUp={() => setFollowUpSession(item)}
+                          onCloseOpportunity={() => setCloseOpportunitySession(item)}
+                        />
                       </div>
-
-                      <p className="text-sm font-medium text-neutral-500">
-                        {items.length}{" "}
-                        {items.length ===
-                        1
-                          ? "experimental"
-                          : "experimentais"}
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      {sortByLocation(items).map(
-                        (item, index, sorted) => (
-                          <div key={item.id} className="space-y-4">
-                          {getLocationName(item) !==
-                            getLocationName(sorted[index - 1]) && (
-                            <p className="flex items-center gap-1.5 pt-2 text-sm font-bold text-neutral-700">
-                              <MapPin
-                                size={15}
-                                className="text-red-600"
-                              />
-                              {getLocationName(item)}
-                            </p>
-                          )}
-
-                          <ExperimentalCard
-                            key={item.id}
-                            item={item}
-                            today={today}
-                            updating={
-                              updatingId ===
-                              item.id
-                            }
-                            onStatusChange={
-                              handleStatusChange
-                            }
-                            onSaveCoachNotes={
-                              handleSaveCoachNotes
-                            }
-                            onOpenResult={() =>
-                              setResultSession(
-                                item
-                              )
-                            }
-                            onReschedule={() =>
-                              setRescheduleSession(
-                                item
-                              )
-                            }
-                            onScheduleFollowUp={() =>
-                              setFollowUpSession(
-                                item
-                              )
-                            }
-                            onCloseOpportunity={() =>
-                              setCloseOpportunitySession(
-                                item
-                              )
-                            }
-                          />
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </section>
-                );
-              }
-            )}
+                    ))}
+                  </Panel>
+                </section>
+              );
+            })}
           </div>
         )}
 
@@ -1393,6 +1159,9 @@ const isCancelled =
 const isReschedule =
   isPending || isConfirmed;
 
+  // Fechada por padrão; abre ao clicar na linha
+  const [open, setOpen] = useState(false);
+
   const canRegisterAttendance =
     item.experimental_date <= today;
 
@@ -1412,269 +1181,207 @@ const isReschedule =
   const commercialResult =
     contact.experimental_result;
 
+  const urgency = sessionUrgency(item, today);
+  const detailsId = `experimental-${item.id}`;
+
   return (
-    <article className="overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md">
-      <div className="p-5 sm:p-6">
-        {/* TOPO */}
+    <article className={`border-t border-line first:border-t-0 ${urgencyRail(urgency)}`}>
+      {/* LINHA */}
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              {displayTime && (
-                <span className="text-lg font-bold text-red-600">
-                  {formatTime(
-                    displayTime
-                  )}
-                </span>
-              )}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
+        <button
+          type="button"
+          onClick={() => setOpen((current) => !current)}
+          aria-expanded={open}
+          aria-controls={detailsId}
+          className="grid min-w-0 flex-1 grid-cols-[3.25rem_1fr] items-center gap-x-3 text-left sm:grid-cols-[3.25rem_minmax(0,1fr)_4.5rem_11rem]"
+        >
+          <span className="font-semibold tabular-nums">
+            {displayTime ? formatTime(displayTime) : "—"}
+          </span>
 
-              {displayTime &&
-                item.category?.name && (
-                  <span className="text-neutral-300">
-                    •
-                  </span>
-                )}
-
-              {item.category?.name && (
-                <span className="text-sm font-semibold text-neutral-600">
-                  {item.category.name}
-                </span>
-              )}
-            </div>
-
-            <h3 className="mt-3 break-words text-xl font-bold text-neutral-900">
-              {contact.child_name ||
-                "Aluno não informado"}
-            </h3>
-
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-neutral-500">
-              <MapPin size={14} />
-              {trainingGroup
-                ? `${trainingGroup.location?.name ?? "Sem local"} · ${trainingGroup.name}`
-                : "Sem turma definida (agendamento antigo)"}
-            </p>
-          </div>
-
-          <SessionStatusBadge
-            status={item.status}
-          />
-        </div>
-
-        {/* DADOS */}
-
-        <div className="mt-6 grid gap-5 border-t border-neutral-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-          <Info
-            label="Responsável"
-            value={
-              contact.responsible_name
-            }
-          />
-
-          <Info
-            label="WhatsApp"
-            value={contact.phone}
-          />
-
-          <Info
-            label="Origem"
-            value={contact.source}
-          />
-
-          <Info
-            label="Bairro"
-            value={
-              contact.neighborhood
-            }
-          />
-        </div>
-
-        {/* PROFESSORES */}
-
-        <CoachNotesEditor
-          sessionId={item.id}
-          initialValue={
-            item.coach_notes || ""
-          }
-          onSave={
-            onSaveCoachNotes
-          }
-        />
-
-        {/* AVALIAÇÃO DO PROFESSOR (interna) */}
-
-        {item.coach_feedback && (
-          <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-green-800">
-              Avaliação do professor
-            </p>
-
-            <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-800">
-              {item.coach_feedback}
-            </p>
-          </div>
-        )}
-
-        {/* MENSAGENS PRONTAS */}
-
-        {messages.length > 0 && (
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-neutral-400">
-              Mensagem pronta:
+          <span className="min-w-0">
+            <span className="block truncate font-medium">
+              {contact.child_name || "Aluno não informado"}
             </span>
+            <span className="block truncate text-sm text-muted">
+              {contact.responsible_name || "Responsável não informado"}
+            </span>
+          </span>
 
-            {messages.map((message) => (
-              <a
-                key={message.key}
-                href={message.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-800 transition hover:bg-green-100"
-              >
-                <MessageCircle size={14} />
-                {message.label}
-              </a>
-            ))}
-          </div>
-        )}
+          <span className="hidden text-sm text-muted sm:block">
+            {item.category?.name}
+          </span>
 
-        {/* AÇÕES */}
+          <span className={`col-start-2 text-sm sm:col-start-auto ${urgency ? urgencyText(urgency) : "text-muted"}`}>
+            {sessionStatusText(item, today)}
+          </span>
+        </button>
 
-        <div className="mt-6 flex flex-col gap-3 border-t border-neutral-100 pt-5 sm:flex-row sm:flex-wrap">
-          {whatsappUrl &&
-            !isNoShow && (
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 sm:w-auto"
-              >
-                <MessageCircle
-                  size={17}
-                />
-                WhatsApp
-              </a>
-            )}
-
-            {isReschedule && (
-  <button
-    type="button"
-    onClick={onReschedule}
-    className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 sm:w-auto"
-  >
-    <CalendarPlus size={17} />
-    Remarcar experimental
-  </button>
-)}
-
+        <div className="flex items-center gap-2">
           {isPending && (
-            <button
-              type="button"
+            <Button
+              size="sm"
               disabled={updating}
-              onClick={() =>
-                onStatusChange(
-                  item.id,
-                  "confirmed"
-                )
-              }
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50 sm:w-auto"
+              onClick={() => onStatusChange(item.id, "confirmed")}
             >
-              <CircleCheckBig
-                size={17}
-              />
-
-              {updating
-                ? "Salvando..."
-                : "Confirmar aula"}
-            </button>
+              <CircleCheckBig size={16} aria-hidden="true" />
+              {updating ? "Salvando…" : "Confirmar"}
+            </Button>
           )}
 
-          {isConfirmed &&
-            canRegisterAttendance && (
-              <>
-                <button
-                  type="button"
-                  disabled={updating}
-                  onClick={() =>
-                    onStatusChange(
-                      item.id,
-                      "attended"
-                    )
-                  }
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50 sm:w-auto"
-                >
-                  <UserCheck
-                    size={17}
-                  />
-                  Compareceu
-                </button>
+          {isConfirmed && canRegisterAttendance && (
+            <>
+              <Button
+                size="sm"
+                disabled={updating}
+                onClick={() => onStatusChange(item.id, "attended")}
+              >
+                <UserCheck size={16} aria-hidden="true" />
+                Veio
+              </Button>
 
-                <button
-                  type="button"
-                  disabled={updating}
-                  onClick={() =>
-                    onStatusChange(
-                      item.id,
-                      "no_show"
-                    )
-                  }
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50 sm:w-auto"
-                >
-                  <UserX size={17} />
-                  Não compareceu
-                </button>
-              </>
-            )}
+              <Button
+                size="sm"
+                disabled={updating}
+                onClick={() => onStatusChange(item.id, "no_show")}
+              >
+                <UserX size={16} aria-hidden="true" />
+                Faltou
+              </Button>
+            </>
+          )}
 
-          {isConfirmed &&
-            !canRegisterAttendance && (
-              <div className="flex items-center gap-2 text-sm font-semibold text-blue-700">
-                <CircleCheckBig
-                  size={17}
-                />
-                Aula confirmada. Presença
-                disponível no dia da aula.
-              </div>
-            )}
+          {whatsappUrl && (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`WhatsApp de ${contact.responsible_name || contact.child_name || "contato"}`}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line text-whatsapp hover:border-whatsapp"
+            >
+              <MessageCircle size={17} aria-hidden="true" />
+            </a>
+          )}
 
-          {isAttended && (
-            <AttendedActions
-              commercialResult={
-                commercialResult
-              }
-              contact={contact}
-              onOpenResult={
-                onOpenResult
-              }
+          <Button
+            size="sm"
+            variant="quiet"
+            onClick={() => setOpen((current) => !current)}
+            aria-expanded={open}
+            aria-controls={detailsId}
+            aria-label={open ? "Fechar detalhes" : "Abrir detalhes"}
+          >
+            <ChevronDown
+              size={18}
+              aria-hidden="true"
+              className={`transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
             />
-          )}
-
-          {isNoShow && (
-            <NoShowActions
-              contact={contact}
-              whatsappUrl={
-                whatsappUrl
-              }
-              onReschedule={
-                onReschedule
-              }
-              onScheduleFollowUp={
-                onScheduleFollowUp
-              }
-              onCloseOpportunity={
-                onCloseOpportunity
-              }
-              
-            />
-          )}
-
-          {isCancelled && (
-            <div className="flex items-center gap-2 text-sm font-semibold text-neutral-500">
-              <XCircle size={17} />
-              Experimental cancelada.
-            </div>
-          )}
+          </Button>
         </div>
       </div>
+
+      {/* DETALHES */}
+
+      {open && (
+        <div id={detailsId} className="border-t border-line bg-canvas/60 px-4 pb-4 pt-3">
+          <p className="flex items-center gap-1.5 text-sm text-muted">
+            <MapPin size={14} aria-hidden="true" />
+            {trainingGroup
+              ? `${trainingGroup.location?.name ?? "Sem local"}, ${trainingGroup.name}`
+              : "Sem turma definida (agendamento antigo)"}
+          </p>
+
+          <dl className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Info label="Responsável" value={contact.responsible_name} />
+            <Info label="WhatsApp" value={formatPhone(contact.phone)} />
+            <Info label="Origem" value={getSourceLabel(contact.source)} />
+            <Info label="Bairro" value={contact.neighborhood} />
+          </dl>
+
+          <CoachNotesEditor
+            sessionId={item.id}
+            initialValue={item.coach_notes || ""}
+            onSave={onSaveCoachNotes}
+          />
+
+          {/* AVALIAÇÃO DO PROFESSOR (interna) */}
+
+          {item.coach_feedback && (
+            <div className="mt-4 rounded-lg border border-line bg-white p-3">
+              <p className="text-sm font-semibold">Avaliação do professor</p>
+
+              <p className="mt-1 whitespace-pre-wrap text-sm">
+                {item.coach_feedback}
+              </p>
+            </div>
+          )}
+
+          {/* MENSAGENS PRONTAS */}
+
+          {messages.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted">Mensagem pronta:</span>
+
+              {messages.map((message) => (
+                <a
+                  key={message.key}
+                  href={message.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-sm font-medium text-whatsapp hover:border-whatsapp"
+                >
+                  <MessageCircle size={15} aria-hidden="true" />
+                  {message.label}
+                </a>
+              ))}
+            </div>
+          )}
+
+          {/* AÇÕES */}
+
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+            {isReschedule && (
+              <Button size="sm" onClick={onReschedule}>
+                <CalendarPlus size={16} aria-hidden="true" />
+                Remarcar
+              </Button>
+            )}
+
+            {isConfirmed && !canRegisterAttendance && (
+              <p className="flex items-center gap-2 text-sm text-muted">
+                <CircleCheckBig size={16} aria-hidden="true" />
+                Aula confirmada. A presença fica disponível no dia da aula.
+              </p>
+            )}
+
+            {isAttended && (
+              <AttendedActions
+                commercialResult={commercialResult}
+                contact={contact}
+                onOpenResult={onOpenResult}
+              />
+            )}
+
+            {isNoShow && (
+              <NoShowActions
+                contact={contact}
+                whatsappUrl={whatsappUrl}
+                onReschedule={onReschedule}
+                onScheduleFollowUp={onScheduleFollowUp}
+                onCloseOpportunity={onCloseOpportunity}
+              />
+            )}
+
+            {isCancelled && (
+              <p className="flex items-center gap-2 text-sm text-muted">
+                <XCircle size={16} aria-hidden="true" />
+                Experimental cancelada.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </article>
   );
 }
@@ -1735,13 +1442,13 @@ function CoachNotesEditor({
   }
 
   return (
-    <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
+    <div className="mt-5 rounded-lg border border-line bg-white p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <Users
               size={17}
-              className="text-blue-700"
+              className="text-ink"
             />
 
             <p className="text-sm font-bold text-neutral-900">
@@ -1762,7 +1469,7 @@ function CoachNotesEditor({
             onClick={() =>
               setEditing(true)
             }
-            className="flex shrink-0 items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
+            className="flex shrink-0 items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-xs font-semibold text-ink transition hover:bg-white"
           >
             <Pencil size={14} />
             {initialValue
@@ -1805,7 +1512,7 @@ function CoachNotesEditor({
             }
             rows={3}
             placeholder="Ex.: Goleiro. Já treina com categoria acima. Avaliar nível técnico."
-            className="w-full resize-none rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className="w-full resize-none rounded-lg border border-line bg-white px-4 py-3 text-sm outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
           />
 
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
@@ -1818,7 +1525,7 @@ function CoachNotesEditor({
                 );
                 setEditing(false);
               }}
-              className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
+              className="rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -1827,7 +1534,7 @@ function CoachNotesEditor({
               type="button"
               disabled={saving}
               onClick={handleSave}
-              className="flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
             >
               <Save size={16} />
 
@@ -1968,7 +1675,7 @@ function CoachListModal({
     <ModalShell onClose={onClose}>
       <div className="flex items-start justify-between border-b border-neutral-100 p-6">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
+          <p className="text-sm font-semibold text-ink">
             Comissão técnica
           </p>
 
@@ -2002,10 +1709,10 @@ function CoachListModal({
             );
             setCopied(false);
           }}
-          className="mt-2 w-full rounded-xl border border-neutral-200 px-4 py-3 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+          className="mt-2 w-full rounded-lg border border-neutral-200 px-4 py-3 outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
         />
 
-        <div className="mt-5 flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3">
+        <div className="mt-5 flex items-center justify-between rounded-lg bg-neutral-50 px-4 py-3">
           <span className="text-sm text-neutral-600">
             Experimentais na lista
           </span>
@@ -2016,7 +1723,7 @@ function CoachListModal({
         </div>
 
         {sessions.length === 0 ? (
-          <div className="mt-5 rounded-2xl border border-dashed border-neutral-300 px-5 py-10 text-center">
+          <div className="mt-5 rounded-lg border border-dashed border-neutral-300 px-5 py-10 text-center">
             <Users
               size={30}
               className="mx-auto text-neutral-300"
@@ -2036,13 +1743,13 @@ function CoachListModal({
         ) : (
           <>
             {linkError && (
-              <p className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">
+              <p className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">
                 {linkError}
               </p>
             )}
 
             {linkUrl && (
-              <p className="mt-5 rounded-xl bg-green-50 p-3 text-xs text-green-800">
+              <p className="mt-5 rounded-lg bg-green-50 p-3 text-xs text-green-800">
                 O link no fim da mensagem abre a lista no celular do
                 professor para marcar quem veio, sem login. Vale até
                 o fim do dia seguinte.
@@ -2054,7 +1761,7 @@ function CoachListModal({
                 Prévia da mensagem
               </p>
 
-              <div className="mt-2 max-h-[420px] overflow-y-auto rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
+              <div className="mt-2 max-h-[420px] overflow-y-auto rounded-lg border border-neutral-200 bg-neutral-50 p-5">
                 <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-6 text-neutral-800">
                   {text}
                 </pre>
@@ -2128,7 +1835,7 @@ function NoShowActions({
           Ausência registrada.
         </div>
 
-        <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
+        <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
           <div className="flex items-start gap-3">
             <ArchiveX
               size={20}
@@ -2173,19 +1880,19 @@ function NoShowActions({
           Ausência registrada.
         </div>
 
-        <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50/50 p-4 sm:p-5">
+        <div className="mt-4 rounded-lg border border-line bg-white p-4 sm:p-5">
           <div className="flex items-start gap-3">
             <CalendarClock
               size={20}
-              className="mt-0.5 shrink-0 text-violet-700"
+              className="mt-0.5 shrink-0 text-ink"
             />
 
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-violet-900">
+              <p className="font-semibold text-ink">
                 Retorno programado
               </p>
 
-              <p className="mt-1 text-sm text-violet-700">
+              <p className="mt-1 text-sm text-ink">
                 Próximo contato:{" "}
                 <strong>
                   {formatShortDate(
@@ -2219,7 +1926,7 @@ function NoShowActions({
         Ausência registrada.
       </div>
 
-      <div className="mt-4 rounded-2xl border border-red-100 bg-red-50/50 p-4 sm:p-5">
+      <div className="mt-4 rounded-lg border border-line bg-white p-4 sm:p-5">
         <p className="font-semibold text-neutral-900">
           Não deixe essa oportunidade
           morrer.
@@ -2259,7 +1966,7 @@ function NoShowActionButtons({
           href={whatsappUrl}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+          className="flex items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
         >
           <MessageCircle size={17} />
           {followUpExists
@@ -2273,7 +1980,7 @@ function NoShowActionButtons({
       <button
         type="button"
         onClick={onReschedule}
-        className="flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
+        className="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
       >
         <CalendarPlus size={17} />
         Reagendar experimental
@@ -2282,7 +1989,7 @@ function NoShowActionButtons({
       <button
         type="button"
         onClick={onScheduleFollowUp}
-        className="flex items-center justify-center gap-2 rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-50"
+        className="flex items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:bg-white"
       >
         <CalendarClock size={17} />
         {followUpExists
@@ -2293,7 +2000,7 @@ function NoShowActionButtons({
       <button
         type="button"
         onClick={onCloseOpportunity}
-        className="flex items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+        className="flex items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
       >
         <ArchiveX size={17} />
         Encerrar oportunidade
@@ -2331,7 +2038,7 @@ function AttendedActions({
   ) {
     return (
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2 text-sm font-semibold text-violet-700">
+        <div className="flex items-center gap-2 text-sm font-semibold text-ink">
           <PhoneCall size={17} />
           Compareceu. Retorno agendado.
         </div>
@@ -2369,7 +2076,7 @@ function AttendedActions({
         Presença registrada.
       </div>
 
-      <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
+      <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
         <p className="font-semibold text-neutral-900">
           Aguardando decisão da família
         </p>
@@ -2382,7 +2089,7 @@ function AttendedActions({
         <button
           type="button"
           onClick={onOpenResult}
-          className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-neutral-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
         >
           <GraduationCap size={17} />
           Registrar resultado
@@ -3182,204 +2889,85 @@ function WeekDayCard({
   active,
   onClick,
 }) {
-  const isToday =
-    day.date === today;
-
-  const categories =
-    Object.entries(day.categories);
+  const isToday = day.date === today;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-[190px] rounded-2xl border p-4 text-left transition ${
-        active
-          ? "border-red-500 bg-red-50/60 shadow-sm"
-          : isToday
-          ? "border-red-200 hover:border-red-300 hover:shadow-sm"
-          : "border-neutral-200 hover:border-neutral-300 hover:shadow-sm"
+      aria-pressed={active}
+      aria-label={`${getWeekdayLong(day.date)}, ${formatDayMonth(day.date)}: ${day.total} ${day.total === 1 ? "aula" : "aulas"}${day.pending ? `, ${day.pending} a confirmar` : ""}`}
+      className={`flex flex-col items-center rounded-lg px-1 py-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink ${
+        active ? "bg-ink text-white" : "hover:bg-canvas"
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p
-            className={`text-xs font-bold uppercase tracking-wide ${
-              isToday
-                ? "text-red-600"
-                : "text-neutral-500"
-            }`}
-          >
-            {isToday
-              ? "Hoje"
-              : getWeekdayShort(
-                  day.date
-                )}
-          </p>
+      <span className={`text-xs ${active ? "text-white/80" : isToday ? "font-semibold text-ink" : "text-muted"}`}>
+        {isToday ? "Hoje" : getWeekdayShort(day.date)}
+      </span>
 
-          <p className="mt-1 text-sm font-semibold text-neutral-700">
-            {formatDayMonth(
-              day.date
-            )}
-          </p>
-        </div>
+      <span className="text-sm tabular-nums">{formatDayMonth(day.date)}</span>
 
-        <span
-          className={`flex h-9 min-w-9 items-center justify-center rounded-xl px-2 text-lg font-bold ${
-            day.total
-              ? "bg-neutral-900 text-white"
-              : "bg-neutral-100 text-neutral-400"
-          }`}
-        >
-          {day.total}
-        </span>
-      </div>
+      <span
+        className={`mt-1 font-display text-2xl font-semibold leading-none tabular-nums ${
+          active ? "text-white" : day.total ? "text-ink" : "text-neutral-300"
+        }`}
+      >
+        {day.total}
+      </span>
 
-      <div className="mt-4 space-y-1.5">
-        {!day.total && (
-          <p className="text-xs text-neutral-400">
-            Agenda livre
-          </p>
-        )}
-
-        {day.pending > 0 && (
-          <p className="text-xs font-medium text-amber-700">
-            {day.pending} a confirmar
-          </p>
-        )}
-
-        {day.confirmed > 0 && (
-          <p className="text-xs font-medium text-blue-700">
-            {day.confirmed} confirmada
-            {day.confirmed > 1
-              ? "s"
-              : ""}
-          </p>
-        )}
-
-        {day.attended > 0 && (
-          <p className="text-xs font-medium text-green-700">
-            {day.attended} compareceu
-          </p>
-        )}
-
-        {day.noShow > 0 && (
-          <p className="text-xs font-medium text-red-700">
-            {day.noShow} não compareceu
-          </p>
-        )}
-      </div>
-
-      {categories.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-1.5 border-t border-neutral-100 pt-3">
-          {categories
-            .slice(0, 3)
-            .map(
-              ([name, count]) => (
-                <span
-                  key={name}
-                  className="rounded-lg bg-neutral-100 px-2 py-1 text-[11px] font-semibold text-neutral-600"
-                >
-                  {name}: {count}
-                </span>
-              )
-            )}
-
-          {categories.length > 3 && (
-            <span className="rounded-lg bg-neutral-100 px-2 py-1 text-[11px] font-semibold text-neutral-500">
-              +
-              {categories.length -
-                3}
-            </span>
-          )}
-        </div>
+      {day.pending > 0 && (
+        <span className={`mt-1 h-1 w-6 rounded-full ${active ? "bg-white/70" : "bg-attention"}`} aria-hidden="true" />
       )}
     </button>
   );
 }
 
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  subtitle,
-}) {
+// Urgência da linha: atrasada (vermelho) ou pedindo ação (âmbar)
+function sessionUrgency(item, today) {
+  const open = ["pending_confirmation", "confirmed"].includes(item.status);
+
+  if (open && item.experimental_date < today) return "alert";
+  if (item.status === "pending_confirmation") return "attention";
+  if (isAwaitingResult(item)) return "attention";
+
+  return undefined;
+}
+
+function sessionStatusText(item, today) {
+  const open = ["pending_confirmation", "confirmed"].includes(item.status);
+
+  if (open && item.experimental_date < today) return "Sem baixa de presença";
+  if (isAwaitingResult(item)) return "Veio, falta o resultado";
+
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium text-neutral-500 sm:text-sm">
-            {title}
-          </p>
-
-          <p className="mt-2 text-2xl font-bold text-neutral-900 sm:text-3xl">
-            {value}
-          </p>
-
-          {subtitle && (
-            <p className="mt-1 text-xs text-neutral-400">
-              {subtitle}
-            </p>
-          )}
-        </div>
-
-        <div className="rounded-xl bg-red-50 p-2.5 text-red-600 sm:p-3">
-          <Icon size={20} />
-        </div>
-      </div>
-    </div>
+    {
+      pending_confirmation: "A confirmar",
+      confirmed: "Confirmada",
+      attended: "Compareceu",
+      no_show: "Não compareceu",
+      cancelled: "Cancelada",
+    }[item.status] ?? (item.status || "Sem status")
   );
 }
 
-function SessionStatusBadge({
-  status,
-}) {
-  const data = {
-    pending_confirmation: {
-      label: "Aguardando confirmação",
-      className:
-        "bg-amber-50 text-amber-700",
-    },
+// "Hoje, segunda-feira, 19 de outubro"
+function dayHeading(date, today, tomorrow) {
+  const full = formatFullDate(date);
 
-    confirmed: {
-      label: "Confirmada",
-      className:
-        "bg-blue-50 text-blue-700",
-    },
+  if (date === today) return `Hoje, ${full.charAt(0).toLowerCase()}${full.slice(1)}`;
+  if (date === tomorrow) return `Amanhã, ${full.charAt(0).toLowerCase()}${full.slice(1)}`;
 
-    attended: {
-      label: "Compareceu",
-      className:
-        "bg-green-50 text-green-700",
-    },
+  return full;
+}
 
-    no_show: {
-      label: "Não compareceu",
-      className:
-        "bg-red-50 text-red-700",
-    },
+// "51986090538" -> "(51) 98609-0538"
+function formatPhone(value) {
+  const digits = String(value ?? "").replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
 
-    cancelled: {
-      label: "Cancelada",
-      className:
-        "bg-neutral-100 text-neutral-600",
-    },
-  };
+  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
 
-  const current =
-    data[status] || {
-      label:
-        status || "Sem status",
-      className:
-        "bg-neutral-100 text-neutral-600",
-    };
-
-  return (
-    <span
-      className={`w-fit shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${current.className}`}
-    >
-      {current.label}
-    </span>
-  );
+  return value;
 }
 
 function Info({
@@ -3390,13 +2978,8 @@ function Info({
 
   return (
     <div className="min-w-0">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
-        {label}
-      </p>
-
-      <p className="mt-1 break-words text-sm font-semibold text-neutral-900">
-        {value}
-      </p>
+      <dt className="text-sm text-muted">{label}</dt>
+      <dd className="break-words text-sm font-medium">{value}</dd>
     </div>
   );
 }
@@ -3409,17 +2992,12 @@ function EmptyState({ filter }) {
       filter.replace("day:", "");
 
     return (
-      <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
-        <CalendarDays
-          size={32}
-          className="mx-auto text-neutral-300"
-        />
-
-        <h3 className="mt-4 text-lg font-bold text-neutral-900">
+      <div className="rounded-xl border border-line bg-white px-6 py-10 text-center">
+        <h3 className="font-semibold">
           Nenhuma experimental neste dia
         </h3>
 
-        <p className="mt-2 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-muted">
           Não existem aulas experimentais
           em{" "}
           {formatShortDate(
@@ -3480,17 +3058,12 @@ function EmptyState({ filter }) {
     messages.today;
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
-      <CalendarDays
-        size={32}
-        className="mx-auto text-neutral-300"
-      />
-
-      <h3 className="mt-4 text-lg font-bold text-neutral-900">
+    <div className="rounded-xl border border-line bg-white px-6 py-10 text-center">
+      <h3 className="font-semibold">
         {content.title}
       </h3>
 
-      <p className="mt-2 text-sm text-neutral-500">
+      <p className="mt-1 text-sm text-muted">
         {content.description}
       </p>
     </div>
@@ -3787,9 +3360,9 @@ function getWeekdayShort(
       )
     );
 
-  return value
-    .replace(".", "")
-    .toUpperCase();
+  const short = value.replace(".", "");
+
+  return short.charAt(0).toUpperCase() + short.slice(1);
 }
 
 function getWeekdayLong(
