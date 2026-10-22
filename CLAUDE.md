@@ -106,6 +106,9 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - `SectionTitle` recebe `title`, `summary` e `actions`.
 - Janelas: sempre `Dialog` de `src/admin/ui`. O título diz a ação ("Agendar experimental") e a descrição diz de quem. A janela fecha com Esc, prende o foco, devolve o foco ao fechar e não fecha enquanto salva (`busy`). No celular abre de baixo, como uma folha. Botões com `DialogActions` + `Button`, nunca botões feitos à mão.
 - Campos de formulário: `inputClass`. Seleção (chips, cartões de opção) em tinta, nunca em vermelho, com `aria-pressed`.
+- Avisos: `toast(mensagem, { type, action })` de `common/Toaster`. Sucesso usa `role="status"`; com `action` (ex.: "Desfazer") o aviso fica 10 s e para enquanto o mouse está em cima.
+- Desfazer: depois de Confirmar/Veio/Faltou e depois de arquivar (um ou em lote). Encerrar e Mover para lista em lote não têm desfazer exato, então pedem confirmação com a quantidade ("Encerrar 23 contatos?").
+- Erros na tela: `errorMessage(err, "texto de reserva")` de `helpers/errorMessage.js`. Mensagens nossas (em português) aparecem; erros técnicos do Supabase viram o texto de reserva.
 - Cadastros (Administração): `CrudPage`, `CrudTable` (rola para o lado no celular), `CrudModal`, `ConfirmDialog` (o botão repete o verbo do título). Situação é texto colorido, sem pílula. As ações de cada linha são `Button` `quiet` `sm`.
 
 ## Landing
@@ -132,4 +135,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 
 - 2026-10-16: removida a integração de WhatsApp/Evolution (mantidos os links wa.me). RLS fechado (etapas 2A, 2B e 2C).
 - 2026-10-19: formulário público revisado (acessibilidade e validação, PR #20). Painel redesenhado (PRs #22–#26). Aviso de duplicado não marca mais irmãos (#27).
-- 2026-10-22: horários das turmas sem os segundos (#28). Criado este CLAUDE.md (#29). Crítica Impeccable do painel: 26/40. Item 1: janela única (`Dialog`) em todas as janelas e Administração no padrão novo; a tela Modalidades, que quebrava ao abrir, foi refeita; o botão de salvar da qualificação, que estava invisível, foi corrigido.
+- 2026-10-22: horários das turmas sem os segundos (#28). Criado este CLAUDE.md (#29). Crítica Impeccable do painel: 26/40. Item 1: janela única (`Dialog`) em todas as janelas e Administração no padrão novo; a tela Modalidades, que quebrava ao abrir, foi refeita; o botão de salvar da qualificação, que estava invisível, foi corrigido (#30). Item 2: Desfazer na presença e no arquivamento, confirmação com quantidade nas ações em lote, erros sem texto técnico. Turmas inativas saem da lista principal e ficam na aba Inativas; turmas não são excluídas, para não perder o histórico das experimentais.

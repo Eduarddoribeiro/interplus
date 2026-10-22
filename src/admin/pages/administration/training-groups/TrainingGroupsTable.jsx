@@ -6,7 +6,7 @@ import { getTrainingGroupCategoryNames } from "../../../../services/administrati
 
 const COLUMNS = ["Turma", "Categorias", "Modalidade", "Local", "Situação"];
 
-export default function TrainingGroupsTable({ groups, loading }) {
+export default function TrainingGroupsTable({ groups, loading, emptyMessage = "Nenhuma turma cadastrada." }) {
   if (loading) {
     return (
       <p className="rounded-xl border border-line bg-white p-12 text-center text-sm text-muted">
@@ -16,7 +16,7 @@ export default function TrainingGroupsTable({ groups, loading }) {
   }
 
   return (
-    <CrudTable columns={COLUMNS} emptyMessage="Nenhuma turma cadastrada.">
+    <CrudTable columns={COLUMNS} emptyMessage={emptyMessage}>
       {groups.length
         ? groups.map((group) => (
             <tr key={group.id} className="border-t border-line hover:bg-canvas">

@@ -20,6 +20,7 @@ import { WEEKDAY_LABELS } from "../../../constants/weekdays";
 import { WAITING_LIST_REASONS } from "../../../constants/waitingListReasons";
 import { PREFERRED_SHIFT_OPTIONS } from "../../../constants/preferredShift";
 import DaySelector from "../common/DaySelector";
+import { errorMessage } from "../../../helpers/errorMessage";
 
 const SOURCES = [
   { value: "whatsapp", label: "WhatsApp" },
@@ -363,7 +364,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
     } catch (err) {
       console.error("Erro ao criar contato:", err);
 
-      setError(err?.message || "Não foi possível cadastrar o contato.");
+      setError(errorMessage(err, "Não foi possível cadastrar o contato."));
     } finally {
       setSaving(false);
     }

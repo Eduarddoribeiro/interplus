@@ -39,6 +39,7 @@ import TrialSlotPicker from "../components/experimentals/TrialSlotPicker";
 import { Button, Dialog, Panel, buttonClass, inputClass } from "../ui";
 import { formatPhone } from "../../helpers/phoneHelpers";
 import { getSourceLabel } from "../../constants/school";
+import { errorMessage } from "../../helpers/errorMessage";
 
 /* =========================================================
  * CONSTANTES
@@ -376,8 +377,7 @@ const [waitingForm, setWaitingForm] = useState({
     } catch (err) {
       console.error(err);
       setError(
-        err?.message ||
-          "Não foi possível carregar a ficha do contato."
+        errorMessage(err, "Não foi possível carregar a ficha do contato.")
       );
     } finally {
       setLoading(false);
@@ -524,8 +524,7 @@ const [waitingForm, setWaitingForm] = useState({
       console.error(err);
 
       setError(
-        err?.message ||
-          "Não foi possível concluir a operação."
+        errorMessage(err, "Não foi possível concluir a operação.")
       );
     } finally {
       setActionLoading(false);

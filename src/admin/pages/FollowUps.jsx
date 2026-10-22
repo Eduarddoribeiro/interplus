@@ -19,6 +19,7 @@ import {
   enrollFromFollowUp,
   loseFromFollowUp,
 } from "../../services/contacts";
+import { errorMessage } from "../../helpers/errorMessage";
 
 /*
  * Retornos: famílias que precisam de novo contato.
@@ -152,7 +153,7 @@ export default function FollowUps() {
     } catch (err) {
       console.error("Erro ao atualizar retorno:", err);
 
-      setActionError(err?.message || "Não foi possível atualizar o retorno.");
+      setActionError(errorMessage(err, "Não foi possível atualizar o retorno."));
     } finally {
       setSaving(false);
     }

@@ -38,6 +38,7 @@ import {
 import { INITIAL_WAITING_LIST_FILTERS } from "../../constants/waitingListFilters";
 import { CONTACT_STATUS } from "../../constants/contactStatus";
 import { FOLLOW_UP_ACTION } from "../../constants/followUpActions";
+import { errorMessage } from "../../helpers/errorMessage";
 
 // Quem foi chamado há menos que isso não entra na fila "chamar todas"
 const RECENT_CALL_DAYS = 7;
@@ -278,7 +279,7 @@ export default function WaitingList() {
       );
     } catch (error) {
       console.error("Erro ao agendar experimental:", error);
-      setActionError(error?.message || "Não foi possível agendar a experimental.");
+      setActionError(errorMessage(error, "Não foi possível agendar a experimental."));
     } finally {
       setSaving(false);
     }
@@ -305,7 +306,7 @@ export default function WaitingList() {
       setQualificationContact(null);
     } catch (error) {
       console.error("Erro ao salvar qualificação:", error);
-      showNotice(error?.message || "Não foi possível salvar a qualificação.");
+      showNotice(errorMessage(error, "Não foi possível salvar a qualificação."));
     } finally {
       setSaving(false);
     }
@@ -326,7 +327,7 @@ export default function WaitingList() {
       setActionContact(null);
     } catch (error) {
       console.error("Erro ao encerrar lista de interesse:", error);
-      showNotice(error?.message || "Não foi possível encerrar o contato.");
+      showNotice(errorMessage(error, "Não foi possível encerrar o contato."));
     } finally {
       setSaving(false);
     }
