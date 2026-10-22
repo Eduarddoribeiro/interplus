@@ -262,11 +262,11 @@ export default function TrainingGroupDetails() {
             </td>
 
             <td className="px-6 py-4">
-              {schedule.start_time}
+              {schedule.start_time?.slice(0, 5)}
             </td>
 
             <td className="px-6 py-4">
-              {schedule.end_time}
+              {schedule.end_time?.slice(0, 5)}
             </td>
 
             <td className="px-6 py-4">
