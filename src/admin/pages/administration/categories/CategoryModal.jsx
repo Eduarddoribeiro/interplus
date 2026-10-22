@@ -2,6 +2,7 @@ import CrudModal from "../components/CrudModal";
 import FormField from "../components/FormField";
 
 import { birthYearsOf, currentYear } from "../../../../helpers/categoryAge";
+import { inputClass } from "../../../ui";
 
 export default function CategoryModal({
   open,
@@ -32,7 +33,7 @@ export default function CategoryModal({
           name="name"
           value={form.name}
           onChange={onChange}
-          className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+          className={inputClass}
         />
       </FormField>
 
@@ -45,7 +46,7 @@ export default function CategoryModal({
             name="min_age"
             value={form.min_age}
             onChange={onChange}
-            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+            className={inputClass}
           />
         </FormField>
 
@@ -56,7 +57,7 @@ export default function CategoryModal({
             name="max_age"
             value={form.max_age}
             onChange={onChange}
-            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+            className={inputClass}
           />
         </FormField>
 
@@ -82,7 +83,7 @@ export default function CategoryModal({
           name="order_index"
           value={form.order_index}
           onChange={onChange}
-          className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+          className={inputClass}
         />
       </FormField>
 

@@ -3,13 +3,7 @@ import { TRAINING_GROUP_STATUS_BY_VALUE } from "../../../../constants/trainingGr
 export default function TrainingGroupStatusBadge({ status }) {
   const option = TRAINING_GROUP_STATUS_BY_VALUE[status];
 
-  if (!option) return <span>-</span>;
+  if (!option) return <span className="text-muted">—</span>;
 
-  return (
-    <span
-      className={`rounded-full px-3 py-1 text-xs font-medium ${option.badge}`}
-    >
-      {option.label}
-    </span>
-  );
+  return <span className={`font-medium ${option.tone}`}>{option.label}</span>;
 }
