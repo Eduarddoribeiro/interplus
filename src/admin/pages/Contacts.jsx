@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
-import { Button, Count, Panel, Tabs, urgencyRail } from "../ui";
+import { Button, Count, Dialog, DialogActions, Panel, Tabs, urgencyRail } from "../ui";
+import { toast } from "../components/common/Toaster";
 import { formatPhone } from "../../helpers/phoneHelpers";
 
 import {
@@ -101,7 +102,7 @@ export default function Contacts() {
 
   const [selected, setSelected] = useState(() => new Set());
   const [bulk, setBulk] = useState(null); // { done, total, label }
-  const [notice, setNotice] = useState("");
+  const [confirming, setConfirming] = useState(null); // { title, description, confirmLabel, run }
 
   useEffect(() => {
     loadContacts();
@@ -136,9 +137,11 @@ export default function Contacts() {
     }
   }
 
-  function showNotice(message) {
-    setNotice(message);
-    window.setTimeout(() => setNotice(""), 6000);
+  const plural = (count) => `${count} contato${count === 1 ? "" : "s"}`;
+
+  // Ações em lote que mexem no funil pedem confirmação com a quantidade
+  function confirmBulk({ title, description, confirmLabel, run }) {
+    setConfirming({ title, description, confirmLabel, run });
   }
 
   /* =========================================================
@@ -265,7 +268,7 @@ export default function Contacts() {
    * AÇÕES EM LOTE
    * =======================================================*/
 
-  async function runBulk(label, action) {
+  async function runBulk(label, action, { undo } = {}) {
     const ids = [...selected];
     if (!ids.length) return;
 
@@ -273,10 +276,28 @@ export default function Contacts() {
 
     try {
       await action(ids, (done) => setBulk({ done, total: ids.length, label }));
-      showNotice(`${label}: ${ids.length} contato${ids.length === 1 ? "" : "s"}.`);
+      toast(`${label}: ${plural(ids.length)}.`, {
+        type: "success",
+        action: undo
+          ? {
+              label: "Desfazer",
+              onClick: async () => {
+                try {
+                  await undo(ids);
+                  toast("Desfeito.", { type: "success" });
+                } catch (err) {
+                  console.error("Erro ao desfazer:", err);
+                  toast("Não foi possível desfazer. Os contatos estão na aba Arquivados.");
+                } finally {
+                  await loadContacts();
+                }
+              },
+            }
+          : undefined,
+      });
     } catch (err) {
       console.error(`Erro em "${label}":`, err);
-      showNotice(err?.message || `Não foi possível concluir: ${label}.`);
+      toast(`Não foi possível concluir: ${label}. Confira a lista e tente de novo.`);
     } finally {
       setBulk(null);
       setSelected(new Set());
@@ -292,9 +313,12 @@ export default function Contacts() {
     }
   }
 
+  // Arquivar é reversível: vira "Desfazer" no aviso, sem confirmação
   function archiveSelected(reason) {
-    return runBulk(`Arquivado como "${ARCHIVE_REASON_LABEL[reason]}"`, (ids) =>
-      archiveContacts(ids, reason),
+    return runBulk(
+      `Arquivado como "${ARCHIVE_REASON_LABEL[reason]}"`,
+      (ids) => archiveContacts(ids, reason),
+      { undo: (ids) => restoreContacts(ids) },
     );
   }
 
@@ -303,6 +327,16 @@ export default function Contacts() {
   }
 
   function closeSelectedNoResponse() {
+    confirmBulk({
+      title: `Encerrar ${plural(selected.size)}?`,
+      description:
+        "Cada um vai para Não convertido com o motivo \"família não respondeu\". Para voltar atrás depois, é preciso abrir contato por contato.",
+      confirmLabel: `Encerrar ${plural(selected.size)}`,
+      run: runCloseNoResponse,
+    });
+  }
+
+  function runCloseNoResponse() {
     return runBulk('Encerrado como "família não respondeu"', (ids, onProgress) =>
       oneByOne(ids, onProgress, (id) =>
         closeOpportunity(id, {
@@ -314,6 +348,16 @@ export default function Contacts() {
   }
 
   function moveSelectedToWaitingList() {
+    confirmBulk({
+      title: `Mover ${plural(selected.size)} para a lista de interesse?`,
+      description:
+        "Saem do funil ativo e ficam na lista para avisar quando abrir vaga.",
+      confirmLabel: `Mover ${plural(selected.size)}`,
+      run: runMoveToWaitingList,
+    });
+  }
+
+  function runMoveToWaitingList() {
     return runBulk("Movido para a lista de interesse", (ids, onProgress) =>
       oneByOne(ids, onProgress, (id) =>
         addToWaitingList(id, {
@@ -330,7 +374,7 @@ export default function Contacts() {
       navigate(`/admin/contacts/${contact.id}`);
     } catch (err) {
       console.error("Erro ao marcar como lead:", err);
-      showNotice("Não foi possível marcar como lead.");
+      toast("Não foi possível marcar como lead.");
     }
   }
 
@@ -344,9 +388,25 @@ export default function Contacts() {
             : item,
         ),
       );
+      toast(`Arquivado como "${ARCHIVE_REASON_LABEL[reason]}".`, {
+        type: "success",
+        action: {
+          label: "Desfazer",
+          onClick: async () => {
+            try {
+              await restoreContacts([contact.id]);
+            } catch (err) {
+              console.error("Erro ao desfazer:", err);
+              toast("Não foi possível desfazer. O contato está na aba Arquivados.");
+            } finally {
+              await loadContacts();
+            }
+          },
+        },
+      });
     } catch (err) {
       console.error("Erro ao arquivar:", err);
-      showNotice("Não foi possível arquivar.");
+      toast("Não foi possível arquivar.");
     }
   }
 
@@ -372,11 +432,29 @@ export default function Contacts() {
         }
       />
 
-      {notice && (
-        <p role="status" className="rounded-lg bg-ink px-4 py-3 text-sm font-medium text-white">
-          {notice}
-        </p>
-      )}
+      <Dialog
+        open={!!confirming}
+        onClose={() => setConfirming(null)}
+        title={confirming?.title}
+        size="sm"
+        footer={
+          <DialogActions>
+            <Button onClick={() => setConfirming(null)}>Cancelar</Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                const run = confirming.run;
+                setConfirming(null);
+                run();
+              }}
+            >
+              {confirming?.confirmLabel}
+            </Button>
+          </DialogActions>
+        }
+      >
+        <p className="text-sm">{confirming?.description}</p>
+      </Dialog>
 
       {/* ABAS */}
       <Tabs

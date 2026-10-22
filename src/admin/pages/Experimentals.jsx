@@ -38,6 +38,8 @@ import { getSourceLabel } from "../../constants/school";
 
 import {
   getExperimentals,
+  getExperimentalSession,
+  updateContactStatus,
   updateExperimentalSessionStatus,
   updateExperimentalCoachNotes,
   saveExperimentalResult,
@@ -45,12 +47,21 @@ import {
   scheduleFollowUp,
   closeNoShowOpportunity,
 } from "../../services/contacts";
+import { errorMessage } from "../../helpers/errorMessage";
 
 /*
  * =========================================================
  * CONSTANTES
  * =========================================================
  */
+
+// Texto do aviso depois de Confirmar / Veio / Faltou
+const STATUS_DONE_LABEL = {
+  confirmed: "aula confirmada",
+  attended: "marcado como veio",
+  no_show: "marcado como faltou",
+  pending_confirmation: "voltou para aguardando confirmação",
+};
 
 const FILTERS = [
   { value: "week", label: "Semana" },
@@ -257,8 +268,7 @@ export default function Experimentals() {
       );
 
       setError(
-        err?.message ||
-          "Não foi possível carregar as aulas experimentais."
+        errorMessage(err, "Não foi possível carregar as aulas experimentais.")
       );
     } finally {
       setLoading(false);
@@ -273,8 +283,13 @@ export default function Experimentals() {
 
   async function handleStatusChange(
     sessionId,
-    newStatus
+    newStatus,
+    { undo = true } = {}
   ) {
+    const previous = experimentals.find(
+      (item) => item.id === sessionId
+    );
+
     try {
       setUpdatingId(sessionId);
 
@@ -284,13 +299,20 @@ export default function Experimentals() {
           newStatus
         );
 
-      setExperimentals((current) =>
-        current.map((item) =>
-          item.id === sessionId
-            ? updated
-            : item
-        )
-      );
+      replaceSession(updated);
+
+      if (undo && previous && previous.status !== newStatus) {
+        toast(
+          `${previous.contact?.child_name || "Experimental"}: ${STATUS_DONE_LABEL[newStatus] ?? "atualizado"}.`,
+          {
+            type: "success",
+            action: {
+              label: "Desfazer",
+              onClick: () => undoStatusChange(previous),
+            },
+          }
+        );
+      }
     } catch (err) {
       console.error(
         "ERRO AO ATUALIZAR EXPERIMENTAL:",
@@ -298,11 +320,56 @@ export default function Experimentals() {
       );
 
       toast(
-        err?.message ||
-          "Não foi possível atualizar a experimental."
+        "Não foi possível atualizar a experimental. Tente de novo."
       );
     } finally {
       setUpdatingId(null);
+    }
+  }
+
+  function replaceSession(updated) {
+    setExperimentals((current) =>
+      current.map((item) =>
+        item.id === updated.id
+          ? updated
+          : item
+      )
+    );
+  }
+
+  /*
+   * Volta a aula e o contato para como estavam antes do clique.
+   * O status do contato só muda se a troca também o tinha mudado.
+   */
+  async function undoStatusChange(previous) {
+    try {
+      await updateExperimentalSessionStatus(
+        previous.id,
+        previous.status
+      );
+
+      let fresh = await getExperimentalSession(previous.id);
+      const contactStatus = previous.contact?.status;
+
+      // O serviço espelha o status da aula no contato; se o contato
+      // estava diferente antes do clique, devolve o valor original.
+      if (
+        contactStatus &&
+        fresh.contact?.status !== contactStatus &&
+        fresh.contact?.status === fresh.status
+      ) {
+        await updateContactStatus(previous.contact_id, contactStatus);
+        fresh = await getExperimentalSession(previous.id);
+      }
+
+      replaceSession(fresh);
+
+      toast("Desfeito.", { type: "success" });
+    } catch (err) {
+      console.error("Erro ao desfazer:", err);
+      toast(
+        "Não foi possível desfazer. Abra o contato e use Corrigir na experimental."
+      );
     }
   }
 
@@ -381,8 +448,7 @@ export default function Experimentals() {
       );
 
       toast(
-        err?.message ||
-          "Não foi possível salvar o resultado da experimental."
+        errorMessage(err, "Não foi possível salvar o resultado da experimental.")
       );
     } finally {
       setSavingResult(false);
@@ -435,8 +501,7 @@ export default function Experimentals() {
       );
 
       toast(
-        err?.message ||
-          "Não foi possível reagendar a experimental."
+        errorMessage(err, "Não foi possível reagendar a experimental.")
       );
     } finally {
       setSavingReschedule(false);
@@ -476,8 +541,7 @@ export default function Experimentals() {
       );
 
       toast(
-        err?.message ||
-          "Não foi possível programar o retorno."
+        errorMessage(err, "Não foi possível programar o retorno.")
       );
     } finally {
       setSavingFollowUp(false);
@@ -521,8 +585,7 @@ export default function Experimentals() {
       );
 
       toast(
-        err?.message ||
-          "Não foi possível encerrar a oportunidade."
+        errorMessage(err, "Não foi possível encerrar a oportunidade.")
       );
     } finally {
       setSavingCloseOpportunity(false);
@@ -1435,8 +1498,7 @@ function CoachNotesEditor({
       }, 2000);
     } catch (err) {
       toast(
-        err?.message ||
-          "Não foi possível salvar a observação."
+        errorMessage(err, "Não foi possível salvar a observação.")
       );
     } finally {
       setSaving(false);
@@ -1623,9 +1685,7 @@ function CoachListModal({
         console.error("Erro ao gerar link dos professores:", err);
         if (!cancelled) {
           setLinkError(
-            `Não foi possível gerar o link de presença${
-              err?.message ? ` (${err.message})` : ""
-            }.`
+            "Não foi possível gerar o link de presença. Feche e abra a lista de novo."
           );
         }
       });
