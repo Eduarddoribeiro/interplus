@@ -4,9 +4,13 @@ import CrudTable from "../components/CrudTable";
 import TrainingGroupStatusBadge from "../components/TrainingGroupStatusBadge";
 import { getTrainingGroupCategoryNames } from "../../../../services/administration/trainingGroups";
 
-const COLUMNS = ["Turma", "Categorias", "Modalidade", "Local", "Situação"];
+// Modalidade fica de fora: já está no nome da turma e acompanha o local
+const COLUMNS = ["Turma", "Categorias", "Local", "Situação"];
 
 export default function TrainingGroupsTable({ groups, loading, emptyMessage = "Nenhuma turma cadastrada." }) {
+  // Unidade só aparece quando há mais de uma
+  const multipleUnits = new Set(groups.map((group) => group.unit?.id).filter(Boolean)).size > 1;
+
   if (loading) {
     return (
       <p className="rounded-xl border border-line bg-white p-12 text-center text-sm text-muted">
@@ -31,11 +35,11 @@ export default function TrainingGroupsTable({ groups, loading, emptyMessage = "N
 
               <td className="px-4 py-3">{getTrainingGroupCategoryNames(group)}</td>
 
-              <td className="px-4 py-3">{group.modality?.name ?? "—"}</td>
-
               <td className="px-4 py-3">
                 {group.location?.name ?? "—"}
-                {group.unit?.name && <span className="block text-muted">{group.unit.name}</span>}
+                {multipleUnits && group.unit?.name && (
+                  <span className="block text-muted">{group.unit.name}</span>
+                )}
               </td>
 
               <td className="whitespace-nowrap px-4 py-3">
