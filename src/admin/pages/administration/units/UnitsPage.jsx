@@ -11,6 +11,7 @@ import {
   createUnit,
   updateUnit,
 } from "../../../../services/administration/units";
+import { Button, inputClass } from "../../../ui";
 
 export default function UnitsPage() {
   const [units, setUnits] = useState([]);
@@ -89,7 +90,6 @@ export default function UnitsPage() {
     <>
       <CrudPage
         title="Unidades"
-        subtitle="Cidades onde a escola atua. Os ginásios e arenas ficam em Locais."
         createLabel="Nova unidade"
         onCreate={handleCreate}
       >
@@ -97,39 +97,36 @@ export default function UnitsPage() {
           columns={[
             "Nome",
             "Cidade",
-            "Status",
-            "Ações",
+            "Situação",
+            "",
           ]}
           emptyMessage={
             loading
-              ? "Carregando..."
+              ? "Carregando…"
               : "Nenhuma unidade cadastrada."
           }
         >
           {units.map((unit) => (
             <tr
               key={unit.id}
-              className="border-b border-line"
+              className="border-t border-line"
             >
-              <td className="px-6 py-4">
+              <td className="px-4 py-3">
                 {unit.name}
               </td>
 
-              <td className="px-6 py-4">
+              <td className="px-4 py-3">
                 {unit.city}
               </td>
 
-              <td className="px-6 py-4">
+              <td className="px-4 py-3">
                 <StatusBadge active={unit.active} />
               </td>
 
-              <td className="px-6 py-4 text-right">
-                <button
-                  onClick={() => handleEdit(unit)}
-                  className="rounded-lg border border-line px-4 py-2 text-sm hover:bg-neutral-100"
-                >
+              <td className="px-4 py-2 text-right">
+                <Button size="sm" variant="quiet" onClick={() => handleEdit(unit)}>
                   Editar
-                </button>
+                </Button>
               </td>
             </tr>
           ))}
@@ -155,7 +152,7 @@ export default function UnitsPage() {
                 name: e.target.value,
               })
             }
-            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+            className={inputClass}
           />
         </FormField>
 
@@ -168,13 +165,14 @@ export default function UnitsPage() {
                 city: e.target.value,
               })
             }
-            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+            className={inputClass}
           />
         </FormField>
 
         <label className="flex items-center gap-3">
           <input
             type="checkbox"
+            className="h-4 w-4 accent-ink"
             checked={form.active}
             onChange={(e) =>
               setForm({

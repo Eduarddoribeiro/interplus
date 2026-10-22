@@ -8,8 +8,9 @@ import {
   ListPlus,
   Loader2,
   UserPlus,
-  X,
 } from "lucide-react";
+
+import { buttonClass, Dialog, DialogActions, inputClass } from "../../ui";
 
 import { getCategoryByBirthDate } from "../../../services/categories";
 import { createContact } from "../../../services/contacts";
@@ -409,97 +410,16 @@ export default function NewContactModal({ open, onClose, onCreated }) {
   if (!open) return null;
 
   return (
-    <div
-      className="
-        fixed
-        inset-0
-        z-50
-        flex
-        items-center
-        justify-center
-        bg-black/50
-        p-3
-        backdrop-blur-[2px]
-        sm:p-6
-      "
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          handleClose();
-        }
-      }}
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      title="Novo contato"
+      description="Cadastre uma nova oportunidade."
+      size="lg"
+      busy={saving}
     >
-      <div
-        className="
-          flex
-          max-h-[92vh]
-          w-full
-          max-w-3xl
-          flex-col
-          overflow-hidden
-          rounded-xl
-          bg-white
-          shadow-2xl
-        "
-      >
-        {/* HEADER */}
-
-        <div
-          className="
-            flex
-            items-start
-            justify-between
-            gap-5
-            border-b
-            border-line
-            px-6
-            py-5
-            sm:px-8
-          "
-        >
-          <div>
-            <p
-              className="
-                text-xs
-                font-bold
-                uppercase
-                tracking-[0.16em]
-                text-inter-red
-              "
-            >
-              CRM
-            </p>
-
-            <h2 className="mt-1 text-2xl font-bold text-ink">
-              Novo contato
-            </h2>
-
-            <p className="mt-1 text-sm text-muted">
-              Cadastre uma nova oportunidade.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={saving}
-            className="
-              rounded-xl
-              p-2
-              text-muted
-              transition
-              hover:bg-neutral-100
-              hover:text-neutral-700
-              disabled:opacity-50
-            "
-          >
-            <X size={21} />
-          </button>
-        </div>
-
-        {/* CONTEÚDO */}
-
-        <form onSubmit={handleSubmit} className="overflow-y-auto">
-          <div className="space-y-8 px-6 py-6 sm:px-8">
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-8">
             {/* DADOS DO ATLETA */}
 
             <FormSection
@@ -546,7 +466,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                       flex
                       items-start
                       gap-3
-                      rounded-xl
+                      rounded-lg
                       border
                       border-attention/40
                       bg-attention-soft
@@ -580,7 +500,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
               {birthDate && (
                 <div className="mt-5">
                   {categoryLoading ? (
-                    <div className="flex items-center gap-3 rounded-xl bg-canvas p-4 text-sm text-muted">
+                    <div className="flex items-center gap-3 rounded-lg bg-canvas p-4 text-sm text-muted">
                       <Loader2 size={18} className="animate-spin" />
                       Identificando categoria...
                     </div>
@@ -590,7 +510,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                         flex
                         flex-col
                         gap-3
-                        rounded-xl
+                        rounded-lg
                         border
                         border-alert/30
                         bg-alert-soft
@@ -612,7 +532,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
 
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-attention/40 bg-attention-soft p-4">
+                    <div className="rounded-lg border border-attention/40 bg-attention-soft p-4">
                       <p className="text-sm font-semibold text-attention-text">
                         Nenhuma categoria ativa encontrada para esta data de
                         nascimento.
@@ -726,21 +646,22 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                     <button
                       key={item.value}
                       type="button"
+                      aria-pressed={active}
                       onClick={() => {
                         setDestination(item.value);
 
                         setError("");
                       }}
                       className={`
-                          rounded-xl
+                          rounded-lg
                           border
                           p-4
                           text-left
-                          transition
+                          transition-colors
                           ${
                             active
-                              ? "border-inter-red bg-alert-soft ring-1 ring-inter-red"
-                              : "border-line bg-white hover:border-neutral-300 hover:bg-canvas"
+                              ? "border-ink bg-white ring-1 ring-ink"
+                              : "border-line bg-white hover:border-neutral-400"
                           }
                         `}
                     >
@@ -751,11 +672,11 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                             w-10
                             items-center
                             justify-center
-                            rounded-xl
+                            rounded-lg
                             ${
                               active
-                                ? "bg-inter-red text-white"
-                                : "bg-neutral-100 text-neutral-600"
+                                ? "bg-ink text-white"
+                                : "bg-neutral-100 text-muted"
                             }
                           `}
                       >
@@ -780,7 +701,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                 <div
                   className="
                     mt-5
-                    rounded-xl
+                    rounded-lg
                     border
                     border-line
                     bg-canvas
@@ -796,7 +717,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                   </div>
 
                   {!birthDate ? (
-                    <div className="mt-4 rounded-xl border border-attention/40 bg-attention-soft p-4">
+                    <div className="mt-4 rounded-lg border border-attention/40 bg-attention-soft p-4">
                       <p className="text-sm font-semibold text-attention-text">
                         Informe a data de nascimento para identificar a
                         categoria.
@@ -808,7 +729,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                       Identificando categoria...
                     </div>
                   ) : !category ? (
-                    <div className="mt-4 rounded-xl border border-attention/40 bg-attention-soft p-4">
+                    <div className="mt-4 rounded-lg border border-attention/40 bg-attention-soft p-4">
                       <p className="text-sm font-semibold text-attention-text">
                         Não existe categoria ativa compatível.
                       </p>
@@ -826,7 +747,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                       />
 
                       {slot && (
-                        <p className="mt-4 rounded-xl bg-white p-3 text-sm text-neutral-700">
+                        <p className="mt-4 rounded-lg bg-white p-3 text-sm text-neutral-700">
                           Selecionado:{" "}
                           <strong>
                             {slot.group.location?.name} ·{" "}
@@ -847,7 +768,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                 <div
                   className="
                     mt-5
-                    rounded-xl
+                    rounded-lg
                     border
                     border-line
                     bg-canvas
@@ -974,7 +895,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
             {/* ERRO */}
 
             {error && (
-              <div className="rounded-xl border border-alert/30 bg-alert-soft p-4">
+              <div className="rounded-lg border border-alert/30 bg-alert-soft p-4">
                 <p className="text-sm font-semibold text-alert-text">{error}</p>
               </div>
             )}
@@ -982,7 +903,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
             {/* SUCESSO */}
 
             {success && (
-              <div className="flex items-center gap-3 rounded-xl border border-ok/30 bg-ok-soft p-4">
+              <div className="flex items-center gap-3 rounded-lg border border-ok/30 bg-ok-soft p-4">
                 <CheckCircle2 size={20} className="shrink-0 text-ok" />
 
                 <p className="text-sm font-semibold text-ok">
@@ -994,40 +915,13 @@ export default function NewContactModal({ open, onClose, onCreated }) {
 
           {/* FOOTER */}
 
-          <div
-            className="
-              sticky
-              bottom-0
-              flex
-              flex-col-reverse
-              gap-3
-              border-t
-              border-line
-              bg-white
-              px-6
-              py-5
-              sm:flex-row
-              sm:justify-end
-              sm:px-8
-            "
-          >
+          <div className="sticky -bottom-5 -mx-5 -mb-5 mt-8 border-t border-line bg-white px-5 py-4">
+            <DialogActions>
             <button
               type="button"
               onClick={handleClose}
               disabled={saving}
-              className="
-                rounded-xl
-                border
-                border-line
-                px-5
-                py-3
-                text-sm
-                font-semibold
-                text-neutral-700
-                transition
-                hover:bg-canvas
-                disabled:opacity-50
-              "
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1035,23 +929,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
             <button
               type="submit"
               disabled={saving || success}
-              className="
-                flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                bg-inter-red
-                px-6
-                py-3
-                text-sm
-                font-semibold
-                text-white
-                transition
-                hover:bg-inter-red-dark
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
+              className={buttonClass("primary")}
             >
               {saving ? (
                 <>
@@ -1065,10 +943,10 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                 </>
               )}
             </button>
+            </DialogActions>
           </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -1115,7 +993,7 @@ function FormSection({ number, title, description, children }) {
 function Field({ label, required = false, children }) {
   return (
     <label className="block">
-      <span className="text-sm font-semibold text-ink">
+      <span className="text-sm font-medium text-ink">
         {label}
 
         {required && <span className="ml-1 text-inter-red">*</span>}
@@ -1125,30 +1003,6 @@ function Field({ label, required = false, children }) {
     </label>
   );
 }
-
-/*
- * =========================================================
- * ESTILOS
- * =========================================================
- */
-
-const inputClass = `
-  w-full
-  rounded-xl
-  border
-  border-line
-  bg-white
-  px-4
-  py-3
-  text-sm
-  text-ink
-  outline-none
-  transition
-  placeholder:text-muted
-  focus:border-ink
-  focus:ring-2
-  focus:ring-neutral-200
-`;
 
 /*
  * =========================================================

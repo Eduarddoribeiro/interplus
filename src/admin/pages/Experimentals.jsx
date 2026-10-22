@@ -9,7 +9,6 @@ import {
   GraduationCap,
   PhoneCall,
   XCircle,
-  X,
   CalendarPlus,
   CalendarClock,
   ArchiveX,
@@ -25,7 +24,7 @@ import {
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
-import { Button, Panel, Tabs, urgencyRail, urgencyText } from "../ui";
+import { Button, Dialog, DialogActions, Panel, Tabs, buttonClass, inputClass, urgencyRail, urgencyText } from "../ui";
 import { toast } from "../components/common/Toaster";
 import { getSessionMessages } from "../../helpers/whatsappMessages";
 import { isAwaitingResult } from "../../helpers/experimentalRules";
@@ -1675,31 +1674,14 @@ function CoachListModal({
   }
 
   return (
-    <ModalShell onClose={onClose}>
-      <div className="flex items-start justify-between border-b border-line p-6">
-        <div>
-          <p className="text-sm font-semibold text-ink">
-            Comissão técnica
-          </p>
-
-          <h2 className="mt-2 text-2xl font-bold text-ink">
-            Lista dos professores
-          </h2>
-
-          <p className="mt-1 text-sm text-muted">
-            Gere a relação de
-            experimentais pronta para
-            enviar no grupo do WhatsApp.
-          </p>
-        </div>
-
-        <CloseButton
-          onClick={onClose}
-        />
-      </div>
-
-      <div className="p-6">
-        <label className="text-sm font-semibold text-ink">
+    <Dialog
+      open
+      onClose={onClose}
+      title="Lista dos professores"
+      description="Experimentais do dia, prontas para enviar no grupo do WhatsApp."
+    >
+      <div>
+        <label className="text-sm font-medium text-ink">
           Dia do treino
         </label>
 
@@ -1712,7 +1694,7 @@ function CoachListModal({
             );
             setCopied(false);
           }}
-          className="mt-2 w-full rounded-lg border border-line px-4 py-3 outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
+          className={`mt-1.5 ${inputClass}`}
         />
 
         <div className="mt-5 flex items-center justify-between rounded-lg bg-canvas px-4 py-3">
@@ -1774,26 +1756,7 @@ function CoachListModal({
             <button
               type="button"
               onClick={copyList}
-              className={`
-                mt-5
-                flex
-                w-full
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                px-5
-                py-3.5
-                text-sm
-                font-semibold
-                text-white
-                transition
-                ${
-                  copied
-                    ? "bg-green-700"
-                    : "bg-ink hover:bg-neutral-800"
-                }
-              `}
+              className={`mt-5 w-full ${buttonClass(copied ? "secondary" : "primary")}`}
             >
               {copied ? (
                 <>
@@ -1813,7 +1776,7 @@ function CoachListModal({
           </>
         )}
       </div>
-    </ModalShell>
+    </Dialog>
   );
 }
 
@@ -2171,21 +2134,14 @@ function ExperimentalResultModal({
   }
 
   return (
-    <ModalShell
+    <Dialog
+      open
       onClose={onClose}
-      disableClose={saving}
+      busy={saving}
+      title="Resultado da experimental"
+      description={contact.child_name}
     >
-    <ModalHeader
-  eyebrow="Resultado da experimental"
-  title={contact.child_name}
-  description="Registre o resultado comercial após a aula experimental."
-  onClose={onClose}
-  saving={saving}
-/>
-      <form
-        onSubmit={handleSubmit}
-        className="p-6"
-      >
+      <form onSubmit={handleSubmit}>
         <p className="text-sm font-semibold text-ink">
           Qual foi o resultado?
         </p>
@@ -2226,7 +2182,7 @@ function ExperimentalResultModal({
         </div>
 
         {result === "enrolled" && (
-          <div className="mt-6 rounded-xl border border-ok/30 bg-ok-soft p-4">
+          <div className="mt-6 rounded-lg border border-ok/30 bg-ok-soft p-4">
             <p className="font-semibold text-ok">
               Matrícula realizada
             </p>
@@ -2274,7 +2230,7 @@ function ExperimentalResultModal({
           }
         />
       </form>
-    </ModalShell>
+    </Dialog>
   );
 }
 
@@ -2330,23 +2286,16 @@ function RescheduleExperimentalModal({
   }
 
   return (
-    <ModalShell
+    <Dialog
+      open
       onClose={onClose}
-      disableClose={saving}
+      busy={saving}
+      title="Reagendar experimental"
+      description={`${contact.child_name}. A ausência anterior continuará registrada no histórico.`}
     >
-      <ModalHeader
-        eyebrow="Reagendar experimental"
-        title={contact.child_name}
-        description="A ausência anterior continuará registrada no histórico."
-        onClose={onClose}
-        saving={saving}
-      />
 
-      <form
-        onSubmit={handleSubmit}
-        className="p-6"
-      >
-        <div className="rounded-xl border border-alert/30 bg-alert-soft p-4">
+      <form onSubmit={handleSubmit}>
+        <div className="rounded-lg border border-alert/30 bg-alert-soft p-4">
           <p className="text-sm font-medium text-muted">
             Tentativa anterior
           </p>
@@ -2370,11 +2319,11 @@ function RescheduleExperimentalModal({
         </div>
 
         <div className="mt-6">
-          <label className="text-sm font-semibold text-ink">
+          <label className="text-sm font-medium text-ink">
             Categoria
           </label>
 
-          <div className="mt-2 rounded-xl border border-line bg-canvas px-4 py-3 text-sm font-semibold text-neutral-700">
+          <div className="mt-2 rounded-lg border border-line bg-canvas px-4 py-3 text-sm font-semibold text-neutral-700">
             {session.category?.name ||
               "Categoria não informada"}
           </div>
@@ -2397,7 +2346,7 @@ function RescheduleExperimentalModal({
           </div>
 
           {slot && (
-            <p className="mt-3 rounded-xl bg-canvas p-3 text-sm text-neutral-700">
+            <p className="mt-3 rounded-lg bg-canvas p-3 text-sm text-neutral-700">
               Selecionado:{" "}
               <strong>
                 {slot.group.location?.name} ·{" "}
@@ -2409,7 +2358,7 @@ function RescheduleExperimentalModal({
           )}
 
           {formError && (
-            <p className="mt-3 rounded-xl bg-alert-soft p-3 text-sm font-semibold text-alert-text">
+            <p className="mt-3 rounded-lg bg-alert-soft p-3 text-sm font-semibold text-alert-text">
               {formError}
             </p>
           )}
@@ -2436,7 +2385,7 @@ function RescheduleExperimentalModal({
           submitLabel="Confirmar reagendamento"
         />
       </form>
-    </ModalShell>
+    </Dialog>
   );
 }
 
@@ -2484,24 +2433,17 @@ function NoShowFollowUpModal({
   }
 
   return (
-    <ModalShell
+    <Dialog
+      open
       onClose={onClose}
-      disableClose={saving}
+      busy={saving}
+      title="Programar retorno"
+      description={contact.child_name}
     >
-      <ModalHeader
-        eyebrow="Programar retorno"
-        title={contact.child_name}
-        description="Defina quando essa família deverá ser contatada novamente."
-        onClose={onClose}
-        saving={saving}
-      />
 
-      <form
-        onSubmit={handleSubmit}
-        className="p-6"
-      >
+      <form onSubmit={handleSubmit}>
         {isNoShow ? (
-  <div className="rounded-xl border border-alert/30 bg-alert-soft p-4">
+  <div className="rounded-lg border border-alert/30 bg-alert-soft p-4">
     <p className="text-sm font-medium text-muted">
       Tentativa anterior
     </p>
@@ -2518,7 +2460,7 @@ function NoShowFollowUpModal({
     </p>
   </div>
 ) : (
-  <div className="rounded-xl border border-line bg-canvas p-4">
+  <div className="rounded-lg border border-line bg-canvas p-4">
     <p className="font-semibold text-ink">
       Remarcando experimental
     </p>
@@ -2549,7 +2491,7 @@ function NoShowFollowUpModal({
           submitLabel="Programar retorno"
         />
       </form>
-    </ModalShell>
+    </Dialog>
   );
 }
 
@@ -2594,23 +2536,16 @@ function CloseNoShowOpportunityModal({
   }
 
   return (
-    <ModalShell
+    <Dialog
+      open
       onClose={onClose}
-      disableClose={saving}
+      busy={saving}
+      title="Encerrar oportunidade"
+      description={contact.child_name}
     >
-      <ModalHeader
-        eyebrow="Encerrar oportunidade"
-        title={contact.child_name}
-        description="Use esta opção quando a oportunidade não seguirá no fluxo comercial."
-        onClose={onClose}
-        saving={saving}
-      />
 
-      <form
-        onSubmit={handleSubmit}
-        className="p-6"
-      >
-        <div className="rounded-xl border border-attention/40 bg-attention-soft p-4">
+      <form onSubmit={handleSubmit}>
+        <div className="rounded-lg border border-attention/40 bg-attention-soft p-4">
           <p className="font-semibold text-attention-text">
             A experimental continuará
             como “Não compareceu”
@@ -2641,7 +2576,7 @@ function CloseNoShowOpportunityModal({
           submitLabel="Encerrar oportunidade"
         />
       </form>
-    </ModalShell>
+    </Dialog>
   );
 }
 
@@ -2651,106 +2586,21 @@ function CloseNoShowOpportunityModal({
  * =========================================================
  */
 
-function ModalShell({
-  children,
-  onClose,
-  disableClose,
-}) {
-  function handleBackdrop(event) {
-    if (
-      event.target ===
-        event.currentTarget &&
-      !disableClose
-    ) {
-      onClose();
-    }
-  }
-
-  return (
-    <div
-      onMouseDown={handleBackdrop}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-    >
-      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function ModalHeader({
-  eyebrow,
-  title,
-  description,
-  onClose,
-  saving,
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-line p-6">
-      <div>
-        <p className="text-sm font-medium text-muted">
-          {eyebrow}
-        </p>
-
-        <h2 className="mt-2 text-2xl font-bold text-ink">
-          {title}
-        </h2>
-
-        <p className="mt-1 text-sm text-muted">
-          {description}
-        </p>
-      </div>
-
-      <CloseButton
-        onClick={onClose}
-        disabled={saving}
-      />
-    </div>
-  );
-}
-
-function CloseButton({
-  onClick,
-  disabled,
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className="rounded-xl p-2 text-muted transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-50"
-    >
-      <X size={20} />
-    </button>
-  );
-}
-
 function ModalActions({
   saving,
   onClose,
   submitLabel,
 }) {
   return (
-    <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-      <button
-        type="button"
-        disabled={saving}
-        onClick={onClose}
-        className="rounded-xl border border-line px-5 py-3 text-sm font-semibold text-neutral-700 hover:bg-canvas disabled:opacity-50"
-      >
+    <DialogActions className="mt-6">
+      <Button disabled={saving} onClick={onClose}>
         Cancelar
-      </button>
+      </Button>
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="rounded-xl bg-inter-red px-6 py-3 text-sm font-semibold text-white hover:bg-inter-red-dark disabled:opacity-50"
-      >
-        {saving
-          ? "Salvando..."
-          : submitLabel}
-      </button>
-    </div>
+      <Button type="submit" variant="primary" disabled={saving}>
+        {saving ? "Salvando…" : submitLabel}
+      </Button>
+    </DialogActions>
   );
 }
 
@@ -2762,7 +2612,7 @@ function FormDate({
 }) {
   return (
     <div className="mt-6">
-      <label className="text-sm font-semibold text-ink">
+      <label className="text-sm font-medium text-ink">
         {label}
       </label>
 
@@ -2773,7 +2623,7 @@ function FormDate({
         onChange={(event) =>
           onChange(event.target.value)
         }
-        className="mt-2 w-full rounded-xl border border-line px-4 py-3 outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
+        className={`mt-1.5 ${inputClass}`}
       />
     </div>
   );
@@ -2788,7 +2638,7 @@ function FormTextarea({
 }) {
   return (
     <div className="mt-6">
-      <label className="text-sm font-semibold text-ink">
+      <label className="text-sm font-medium text-ink">
         {label}
         <span className="ml-1 font-normal text-muted">
           (opcional)
@@ -2802,7 +2652,7 @@ function FormTextarea({
         }
         rows={4}
         placeholder={placeholder}
-        className="mt-2 w-full resize-none rounded-xl border border-line px-4 py-3 outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
+        className={`mt-1.5 resize-none ${inputClass}`}
       />
 
       {helper && (
@@ -2821,7 +2671,7 @@ function LostReasonSelect({
 }) {
   return (
     <div className="mt-6">
-      <label className="text-sm font-semibold text-ink">
+      <label className="text-sm font-medium text-ink">
         {label}
       </label>
 
@@ -2830,7 +2680,7 @@ function LostReasonSelect({
         onChange={(event) =>
           onChange(event.target.value)
         }
-        className="mt-2 w-full rounded-xl border border-line bg-white px-4 py-3 outline-none transition focus:border-ink focus:ring-2 focus:ring-neutral-200"
+        className={`mt-1.5 ${inputClass}`}
       >
         <option value="">
           Selecione o motivo
@@ -2866,17 +2716,17 @@ function ResultOption({
         items-center
         justify-center
         gap-2
-        rounded-xl
+        rounded-lg
         border
         px-3
         py-3
         text-sm
         font-semibold
-        transition
+        transition-colors
         ${
           active
-            ? "border-red-600 bg-alert-soft text-alert-text"
-            : "border-line bg-white text-neutral-600 hover:bg-canvas"
+            ? "border-ink bg-ink text-white"
+            : "border-line bg-white text-ink hover:border-neutral-400"
         }
       `}
     >

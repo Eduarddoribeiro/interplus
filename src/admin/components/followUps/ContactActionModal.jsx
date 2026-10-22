@@ -4,8 +4,9 @@ import { useState } from "react";
 
 import {
   CircleCheckBig,
-  X,
 } from "lucide-react";
+
+import { buttonClass, Dialog, inputClass } from "../../ui";
 
 import {
   FOLLOW_UP_ACTION,
@@ -26,7 +27,7 @@ import {
 
 const ACTION_CONFIG = {
   [FOLLOW_UP_ACTION.ENROLL]: {
-    eyebrow: "Conversão",
+    title: "Registrar matrícula",
     description:
       "Registre a matrícula deste contato.",
     button: "Confirmar matrícula",
@@ -35,7 +36,7 @@ const ACTION_CONFIG = {
   },
 
   [FOLLOW_UP_ACTION.RESCHEDULE]: {
-    eyebrow: "Novo retorno",
+    title: "Reagendar retorno",
     description:
       "Escolha quando este contato deve voltar para sua fila.",
     button: "Reagendar retorno",
@@ -44,7 +45,7 @@ const ACTION_CONFIG = {
   },
 
   [FOLLOW_UP_ACTION.LOSE]: {
-    eyebrow: "Encerrar oportunidade",
+    title: "Encerrar oportunidade",
     description:
       "Registre por que este contato não converteu.",
     button: "Registrar não conversão",
@@ -53,7 +54,7 @@ const ACTION_CONFIG = {
   },
 
   [FOLLOW_UP_ACTION.CLOSE_WAITING_LIST]: {
-    eyebrow: "Encerrar interesse",
+    title: "Encerrar interesse",
     description:
       "Registre por que a família não deseja mais aguardar.",
     button: "Encerrar contato",
@@ -129,36 +130,13 @@ export default function FollowUpActionModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
-        {/* =================================================
-         * HEADER
-         * =============================================== */}
-
-        <div className="flex items-start justify-between border-b border-line p-6">
-          <div>
-            <p className="text-sm font-medium text-muted">
-              {config.eyebrow}
-            </p>
-
-            <h2 className="mt-2 text-2xl font-bold text-ink">
-              {contact.child_name}
-            </h2>
-
-            <p className="mt-1 text-sm text-muted">
-              {config.description}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            disabled={saving}
-            onClick={onClose}
-            className="rounded-xl p-2 text-muted transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-50"
-          >
-            <X size={20} />
-          </button>
-        </div>
+    <Dialog
+      open
+      onClose={onClose}
+      title={config.title}
+      description={contact.child_name}
+      busy={saving}
+    >
 
         {/* =================================================
          * FORM
@@ -166,12 +144,11 @@ export default function FollowUpActionModal({
 
         <form
           onSubmit={handleSubmit}
-          className="p-6"
         >
           {/* MATRÍCULA */}
 
           {type === FOLLOW_UP_ACTION.ENROLL && (
-            <div className="rounded-xl border border-ok/30 bg-ok-soft p-4">
+            <div className="rounded-lg border border-ok/30 bg-ok-soft p-4">
               <div className="flex gap-3">
                 <CircleCheckBig
                   size={20}
@@ -198,7 +175,7 @@ export default function FollowUpActionModal({
           {type ===
             FOLLOW_UP_ACTION.RESCHEDULE && (
             <div>
-              <label className="text-sm font-semibold text-ink">
+              <label className="text-sm font-medium text-ink">
                 Nova data do retorno
               </label>
 
@@ -211,19 +188,7 @@ export default function FollowUpActionModal({
                     event.target.value,
                   )
                 }
-                className="
-                  mt-2
-                  w-full
-                  rounded-xl
-                  border
-                  border-line
-                  px-4
-                  py-3
-                  outline-none
-                  focus:border-ink
-                  focus:ring-2
-                  focus:ring-neutral-200
-                "
+                className={`mt-1.5 ${inputClass}`}
               />
             </div>
           )}
@@ -232,7 +197,7 @@ export default function FollowUpActionModal({
 
           {isClosingAction && (
             <div>
-              <label className="text-sm font-semibold text-ink">
+              <label className="text-sm font-medium text-ink">
                 Motivo
               </label>
 
@@ -243,20 +208,7 @@ export default function FollowUpActionModal({
                     event.target.value,
                   )
                 }
-                className="
-                  mt-2
-                  w-full
-                  rounded-xl
-                  border
-                  border-line
-                  bg-white
-                  px-4
-                  py-3
-                  outline-none
-                  focus:border-ink
-                  focus:ring-2
-                  focus:ring-neutral-200
-                "
+                className={`mt-1.5 ${inputClass}`}
               >
                 <option value="">
                   Selecione
@@ -281,7 +233,7 @@ export default function FollowUpActionModal({
            * =============================================== */}
 
           <div className="mt-6">
-            <label className="text-sm font-semibold text-ink">
+            <label className="text-sm font-medium text-ink">
               Observação
 
               <span className="ml-1 font-normal text-muted">
@@ -296,20 +248,7 @@ export default function FollowUpActionModal({
               }
               rows={4}
               placeholder={config.placeholder}
-              className="
-                mt-2
-                w-full
-                resize-none
-                rounded-xl
-                border
-                border-line
-                px-4
-                py-3
-                outline-none
-                focus:border-ink
-                focus:ring-2
-                focus:ring-neutral-200
-              "
+              className={`mt-1.5 resize-none ${inputClass}`}
             />
           </div>
 
@@ -318,7 +257,7 @@ export default function FollowUpActionModal({
            * =============================================== */}
 
           {(formError || error) && (
-            <p className="mt-6 rounded-xl bg-alert-soft p-3 text-sm font-semibold text-alert-text">
+            <p className="mt-6 rounded-lg bg-alert-soft p-3 text-sm font-semibold text-alert-text">
               {formError || error}
             </p>
           )}
@@ -328,7 +267,7 @@ export default function FollowUpActionModal({
               type="button"
               disabled={saving}
               onClick={onClose}
-              className="rounded-xl border border-line px-5 py-3 text-sm font-semibold text-neutral-700 hover:bg-canvas disabled:opacity-50"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -336,7 +275,7 @@ export default function FollowUpActionModal({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-inter-red px-6 py-3 text-sm font-semibold text-white hover:bg-inter-red-dark disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {saving
                 ? "Salvando..."
@@ -344,7 +283,6 @@ export default function FollowUpActionModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 }

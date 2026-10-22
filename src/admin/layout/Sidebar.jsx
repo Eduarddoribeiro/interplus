@@ -9,6 +9,7 @@ import {
   LogOut,
   X,
 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import { signOut } from "../../services/auth";
@@ -62,6 +63,21 @@ const menu = [
  */
 export default function Sidebar({ open = false, onClose, pending }) {
   const navigate = useNavigate();
+  const closeRef = useRef(null);
+
+  // Gaveta aberta no celular: foco no botão de fechar e Esc fecha
+  useEffect(() => {
+    if (!open) return undefined;
+
+    closeRef.current?.focus();
+
+    function handleKey(event) {
+      if (event.key === "Escape") onClose?.();
+    }
+
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open, onClose]);
 
   async function handleSignOut() {
     try {
@@ -100,6 +116,7 @@ export default function Sidebar({ open = false, onClose, pending }) {
           />
 
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
             className="rounded-lg p-2 text-muted hover:bg-neutral-100 lg:hidden"

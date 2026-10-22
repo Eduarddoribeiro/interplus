@@ -24,7 +24,6 @@ export default function SchedulesPage() {
 
         <SectionTitle
           title="Horários"
-          subtitle="Gerencie os horários de cada turma."
         />
 
         <button className="flex items-center gap-2 rounded-xl bg-inter-red px-5 py-3 font-medium text-white hover:bg-inter-red-dark">
@@ -54,7 +53,7 @@ export default function SchedulesPage() {
 
               <th className="px-6 py-4 text-left">Status</th>
 
-              <th className="px-6 py-4 text-right">Ações</th>
+              <th className="px-4 py-3 text-right">Ações</th>
 
             </tr>
 

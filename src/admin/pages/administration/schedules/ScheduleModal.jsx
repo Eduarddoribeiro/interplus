@@ -2,6 +2,7 @@ import CrudModal from "../components/CrudModal";
 import FormField from "../components/FormField";
 
 import { WEEKDAYS } from "../../../../constants/weekdays";
+import { inputClass } from "../../../ui";
 
 export default function ScheduleModal({
   open,
@@ -29,7 +30,7 @@ export default function ScheduleModal({
           name="weekday"
           value={form.weekday}
           onChange={onChange}
-          className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+          className={inputClass}
         >
           <option value="">
             Selecione...
@@ -54,7 +55,7 @@ export default function ScheduleModal({
             name="start_time"
             value={form.start_time}
             onChange={onChange}
-            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+            className={inputClass}
           />
         </FormField>
 
@@ -64,7 +65,7 @@ export default function ScheduleModal({
             name="end_time"
             value={form.end_time}
             onChange={onChange}
-            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+            className={inputClass}
           />
         </FormField>
 
@@ -79,11 +80,12 @@ export default function ScheduleModal({
               <button
                 key={coach.id}
                 type="button"
+                aria-pressed={selected}
                 onClick={() => onToggleCoach?.(coach.id)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                className={`h-9 rounded-lg border px-3 text-sm font-medium transition-colors ${
                   selected
-                    ? "border-red-600 bg-alert-soft text-alert-text"
-                    : "border-line text-neutral-600 hover:border-neutral-300"
+                    ? "border-ink bg-ink text-white"
+                    : "border-line bg-white text-ink hover:border-neutral-400"
                 }`}
               >
                 {coach.name}
@@ -116,7 +118,7 @@ export default function ScheduleModal({
           value={form.experimental_limit}
           onChange={onChange}
           disabled={!form.allow_trial}
-          className="w-full rounded-xl border border-neutral-300 px-4 py-3 disabled:bg-neutral-100 disabled:text-muted"
+          className={inputClass}
         />
       </FormField>
     </CrudModal>

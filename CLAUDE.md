@@ -104,6 +104,9 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Bordas arredondadas de 8px nos controles e 12px nos painéis. Sem sombra nos cards.
 - Sem botão "Atualizar": as telas recarregam ao voltar para a aba (`visibilitychange`).
 - `SectionTitle` recebe `title`, `summary` e `actions`.
+- Janelas: sempre `Dialog` de `src/admin/ui`. O título diz a ação ("Agendar experimental") e a descrição diz de quem. A janela fecha com Esc, prende o foco, devolve o foco ao fechar e não fecha enquanto salva (`busy`). No celular abre de baixo, como uma folha. Botões com `DialogActions` + `Button`, nunca botões feitos à mão.
+- Campos de formulário: `inputClass`. Seleção (chips, cartões de opção) em tinta, nunca em vermelho, com `aria-pressed`.
+- Cadastros (Administração): `CrudPage`, `CrudTable` (rola para o lado no celular), `CrudModal`, `ConfirmDialog` (o botão repete o verbo do título). Situação é texto colorido, sem pílula. As ações de cada linha são `Button` `quiet` `sm`.
 
 ## Landing
 
@@ -129,4 +132,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 
 - 2026-10-16: removida a integração de WhatsApp/Evolution (mantidos os links wa.me). RLS fechado (etapas 2A, 2B e 2C).
 - 2026-10-19: formulário público revisado (acessibilidade e validação, PR #20). Painel redesenhado (PRs #22–#26). Aviso de duplicado não marca mais irmãos (#27).
-- 2026-10-22: horários das turmas sem os segundos (#28). Criado este CLAUDE.md.
+- 2026-10-22: horários das turmas sem os segundos (#28). Criado este CLAUDE.md (#29). Crítica Impeccable do painel: 26/40. Item 1: janela única (`Dialog`) em todas as janelas e Administração no padrão novo; a tela Modalidades, que quebrava ao abrir, foi refeita; o botão de salvar da qualificação, que estava invisível, foi corrigido.
