@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 
 import { toast } from "../common/Toaster";
-import { AlertTriangle, CheckCircle2, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
+
+import { buttonClass, Dialog, inputClass } from "../../ui";
 
 import {
   INTEREST_QUALIFICATION,
@@ -136,51 +138,27 @@ onSave({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl">
-        {/* =================================================
-         * HEADER
-         * =============================================== */}
-
-        <div className="flex items-start justify-between border-b border-line p-6">
-          <div>
-            <p className="text-sm font-medium text-muted">
-              Qualificação comercial
-            </p>
-
-            <h2 className="mt-2 text-2xl font-bold text-ink">
-              {contact.child_name || "Contato sem nome"}
-            </h2>
-
-            <p className="mt-1 text-sm leading-6 text-muted">
-              Complete as informações que ajudam a identificar oportunidades na
-              lista de interesse.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            disabled={saving}
-            onClick={onClose}
-            aria-label="Fechar"
-            className="rounded-xl p-2 text-muted transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-50"
-          >
-            <X size={20} />
-          </button>
-        </div>
+    <Dialog
+      open
+      onClose={onClose}
+      title="Qualificação comercial"
+      description={contact.child_name || "Contato sem nome"}
+      size="lg"
+      busy={saving}
+    >
 
         {/* =================================================
          * FORM
          * =============================================== */}
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit}>
           <div className="grid gap-5 sm:grid-cols-2">
             {/* CATEGORIA */}
 
             <div>
               <label
                 htmlFor="qualification-category"
-                className="text-sm font-semibold text-ink"
+                className="text-sm font-medium text-ink"
               >
                 Categoria de interesse
               </label>
@@ -189,21 +167,7 @@ onSave({
                 id="qualification-category"
                 value={categoryId}
                 onChange={(event) => setCategoryId(event.target.value)}
-                className="
-                  mt-2
-                  w-full
-                  rounded-xl
-                  border
-                  border-line
-                  bg-white
-                  px-4
-                  py-3
-                  text-sm
-                  outline-none
-                  focus:border-line
-                  focus:ring-2
-                  focus:ring-line
-                "
+                className={`mt-1.5 ${inputClass}`}
               >
                 <option value="">Selecione</option>
 
@@ -218,7 +182,7 @@ onSave({
               <div>
                 <label
                   htmlFor="qualification-child-name"
-                  className="text-sm font-semibold text-ink"
+                  className="text-sm font-medium text-ink"
                 >
                   Nome da criança
                 </label>
@@ -229,27 +193,14 @@ onSave({
                   value={childName}
                   onChange={(event) => setChildName(event.target.value)}
                   placeholder="Ex.: Anthony"
-                  className="
-        mt-2
-        w-full
-        rounded-xl
-        border
-        border-line
-        px-4
-        py-3
-        text-sm
-        outline-none
-        focus:border-line
-        focus:ring-2
-        focus:ring-line
-      "
+                  className={`mt-1.5 ${inputClass}`}
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="qualification-responsible-name"
-                  className="text-sm font-semibold text-ink"
+                  className="text-sm font-medium text-ink"
                 >
                   Responsável
                 </label>
@@ -260,20 +211,7 @@ onSave({
                   value={responsibleName}
                   onChange={(event) => setResponsibleName(event.target.value)}
                   placeholder="Ex.: Fernanda"
-                  className="
-        mt-2
-        w-full
-        rounded-xl
-        border
-        border-line
-        px-4
-        py-3
-        text-sm
-        outline-none
-        focus:border-line
-        focus:ring-2
-        focus:ring-line
-      "
+                  className={`mt-1.5 ${inputClass}`}
                 />
               </div>
             </div>
@@ -283,7 +221,7 @@ onSave({
               <div>
                 <label
                   htmlFor="qualification-location"
-                  className="text-sm font-semibold text-ink"
+                  className="text-sm font-medium text-ink"
                 >
                   Local de preferência
                 </label>
@@ -292,7 +230,7 @@ onSave({
                   id="qualification-location"
                   value={locationId}
                   onChange={(event) => setLocationId(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-line bg-white px-4 py-3 text-sm outline-none focus:border-line focus:ring-2 focus:ring-line"
+                  className={`mt-1.5 ${inputClass}`}
                 >
                   <option value="">Qualquer local</option>
 
@@ -310,7 +248,7 @@ onSave({
             <div>
               <label
                 htmlFor="qualification-shift"
-                className="text-sm font-semibold text-ink"
+                className="text-sm font-medium text-ink"
               >
                 Turno preferido
               </label>
@@ -319,21 +257,7 @@ onSave({
                 id="qualification-shift"
                 value={preferredShift}
                 onChange={(event) => setPreferredShift(event.target.value)}
-                className="
-                  mt-2
-                  w-full
-                  rounded-xl
-                  border
-                  border-line
-                  bg-white
-                  px-4
-                  py-3
-                  text-sm
-                  outline-none
-                  focus:border-line
-                  focus:ring-2
-                  focus:ring-line
-                "
+                className={`mt-1.5 ${inputClass}`}
               >
                 <option value="">Não informado</option>
 
@@ -350,7 +274,7 @@ onSave({
             <div>
               <label
                 htmlFor="qualification-birth-date"
-                className="text-sm font-semibold text-ink"
+                className="text-sm font-medium text-ink"
               >
                 Data de nascimento
               </label>
@@ -360,20 +284,7 @@ onSave({
                 type="date"
                 value={birthDate}
                 onChange={(event) => setBirthDate(event.target.value)}
-                className="
-                  mt-2
-                  w-full
-                  rounded-xl
-                  border
-                  border-line
-                  px-4
-                  py-3
-                  text-sm
-                  outline-none
-                  focus:border-line
-                  focus:ring-2
-                  focus:ring-line
-                "
+                className={`mt-1.5 ${inputClass}`}
               />
             </div>
 
@@ -382,7 +293,7 @@ onSave({
             <div>
               <label
                 htmlFor="qualification-status"
-                className="text-sm font-semibold text-ink"
+                className="text-sm font-medium text-ink"
               >
                 Status da qualificação
               </label>
@@ -391,21 +302,7 @@ onSave({
                 id="qualification-status"
                 value={qualificationStatus}
                 onChange={(event) => setQualificationStatus(event.target.value)}
-                className="
-                  mt-2
-                  w-full
-                  rounded-xl
-                  border
-                  border-line
-                  bg-white
-                  px-4
-                  py-3
-                  text-sm
-                  outline-none
-                  focus:border-line
-                  focus:ring-2
-                  focus:ring-line
-                "
+                className={`mt-1.5 ${inputClass}`}
               >
                 {Object.values(INTEREST_QUALIFICATION).map((status) => (
                   <option key={status} value={status}>
@@ -422,7 +319,7 @@ onSave({
 
           <div className="mt-6">
             {canMarkComplete ? (
-              <div className="rounded-xl border border-ok/30 bg-ok-soft p-4">
+              <div className="rounded-lg border border-ok/30 bg-ok-soft p-4">
                 <div className="flex gap-3">
                   <CheckCircle2
                     size={19}
@@ -441,7 +338,7 @@ onSave({
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-attention/40 bg-attention-soft p-4">
+              <div className="rounded-lg border border-attention/40 bg-attention-soft p-4">
                 <div className="flex gap-3">
                   <AlertTriangle
                     size={19}
@@ -469,7 +366,7 @@ onSave({
           <div className="mt-6">
             <label
               htmlFor="qualification-notes"
-              className="text-sm font-semibold text-ink"
+              className="text-sm font-medium text-ink"
             >
               Observação interna
               <span className="ml-1 font-normal text-muted">
@@ -483,21 +380,7 @@ onSave({
               onChange={(event) => setNotes(event.target.value)}
               rows={4}
               placeholder="Ex.: Família demonstrou interesse na nova turma da manhã..."
-              className="
-                mt-2
-                w-full
-                resize-none
-                rounded-xl
-                border
-                border-line
-                px-4
-                py-3
-                text-sm
-                outline-none
-                focus:border-line
-                focus:ring-2
-                focus:ring-line
-              "
+              className={`mt-1.5 resize-none ${inputClass}`}
             />
           </div>
 
@@ -510,7 +393,7 @@ onSave({
               type="button"
               disabled={saving}
               onClick={onClose}
-              className="rounded-xl border border-line px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-canvas disabled:opacity-50"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -518,13 +401,12 @@ onSave({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-canvas px-6 py-3 text-sm font-semibold text-white transition hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {saving ? "Salvando..." : "Salvar qualificação"}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 }

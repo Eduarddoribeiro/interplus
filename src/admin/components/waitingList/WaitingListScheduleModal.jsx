@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { CalendarDays, Loader2, X } from "lucide-react";
+import { CalendarDays, Loader2 } from "lucide-react";
+
+import { buttonClass, Dialog, inputClass } from "../../ui";
 
 import TrialSlotPicker from "../experimentals/TrialSlotPicker";
 import { WEEKDAY_LABELS } from "../../../constants/weekdays";
@@ -28,39 +30,20 @@ export default function WaitingListScheduleModal({
   const [notes, setNotes] = useState("");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-line p-6">
-          <div>
-            <p className="text-sm font-medium text-muted">
-              Agendar experimental
-            </p>
+    <Dialog
+      open
+      onClose={onClose}
+      title="Agendar experimental"
+      description={`${contact.child_name || "Sem nome"}, ${category?.name ?? "sem categoria"}, prefere ${contact.location?.name ?? "qualquer local"}`}
+      size="lg"
+      busy={saving}
+    >
 
-            <h2 className="mt-1 text-xl font-bold text-ink">
-              {contact.child_name || "Sem nome"}
-            </h2>
-
-            <p className="mt-1 text-sm text-muted">
-              {category?.name ?? "Sem categoria"} · prefere{" "}
-              {contact.location?.name ?? "qualquer local"}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="rounded-lg p-2 text-muted hover:bg-neutral-100 disabled:opacity-50"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="space-y-5 p-6">
+        <div className="space-y-5">
           <TrialSlotPicker categoryId={category?.id} value={slot} onChange={setSlot} />
 
           {slot && (
-            <p className="rounded-xl bg-canvas p-3 text-sm text-neutral-700">
+            <p className="rounded-lg bg-canvas p-3 text-sm text-neutral-700">
               Selecionado:{" "}
               <strong>
                 {slot.group.location?.name} · {WEEKDAY_LABELS[slot.weekday]}{" "}
@@ -70,19 +53,19 @@ export default function WaitingListScheduleModal({
           )}
 
           <label className="block">
-            <span className="text-sm font-semibold text-ink">Observação</span>
+            <span className="text-sm font-medium text-ink">Observação</span>
 
             <textarea
               rows={3}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               placeholder="Ex.: Família confirmou pelo WhatsApp após aviso de vaga."
-              className="mt-2 w-full resize-none rounded-xl border border-line px-4 py-3 text-sm outline-none focus:border-ink"
+              className={`mt-1.5 resize-none ${inputClass}`}
             />
           </label>
 
           {error && (
-            <p className="rounded-xl bg-alert-soft p-3 text-sm font-semibold text-alert-text">{error}</p>
+            <p className="rounded-lg bg-alert-soft p-3 text-sm font-semibold text-alert-text">{error}</p>
           )}
 
           <div className="flex justify-end gap-2">
@@ -90,7 +73,7 @@ export default function WaitingListScheduleModal({
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -99,7 +82,7 @@ export default function WaitingListScheduleModal({
               type="button"
               disabled={!slot || saving}
               onClick={() => onSave({ slot, notes })}
-              className="flex items-center gap-2 rounded-xl bg-inter-red px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {saving ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -110,7 +93,6 @@ export default function WaitingListScheduleModal({
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

@@ -16,7 +16,6 @@ import {
   ShieldCheck,
   UserRound,
   UserRoundCheck,
-  X,
   XCircle,
 } from "lucide-react";
 
@@ -37,7 +36,7 @@ import { WAITING_LIST_REASONS } from "../../constants/waitingListReasons";
 import { WEEKDAY_LABELS } from "../../constants/weekdays";
 import { supabase } from "../../lib/supabase";
 import TrialSlotPicker from "../components/experimentals/TrialSlotPicker";
-import { Button, Panel, buttonClass } from "../ui";
+import { Button, Dialog, Panel, buttonClass, inputClass } from "../ui";
 import { formatPhone } from "../../helpers/phoneHelpers";
 import { getSourceLabel } from "../../constants/school";
 
@@ -219,51 +218,6 @@ function getReasonLabel(options, value) {
 /* =========================================================
  * COMPONENTES AUXILIARES
  * ========================================================= */
-
-function Modal({
-  open,
-  title,
-  description,
-  children,
-  onClose,
-  maxWidth = "max-w-lg",
-}) {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div
-        className={`w-full ${maxWidth} overflow-hidden rounded-xl bg-white shadow-2xl`}
-      >
-        <div className="flex items-start justify-between border-b border-line px-6 py-5">
-          <div>
-            <h2 className="text-lg font-bold text-ink">
-              {title}
-            </h2>
-
-            {description ? (
-              <p className="mt-1 text-sm text-muted">
-                {description}
-              </p>
-            ) : null}
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-muted transition hover:bg-neutral-100 hover:text-ink"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="max-h-[75vh] overflow-y-auto p-6">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function Field({ label, value }) {
   return (
@@ -820,7 +774,7 @@ const [waitingForm, setWaitingForm] = useState({
         <button
           type="button"
           onClick={() => navigate("/admin/contacts")}
-          className="mt-4 rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-white"
+          className={`mt-4 ${buttonClass("secondary")}`}
         >
           Voltar para contatos
         </button>
@@ -1169,7 +1123,7 @@ const [waitingForm, setWaitingForm] = useState({
           MODAL: MATRÍCULA
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "enrollment"}
         title="Registrar matrícula"
         description={`Confirmar a entrada de ${contact.child_name} como aluno matriculado.`}
@@ -1180,7 +1134,7 @@ const [waitingForm, setWaitingForm] = useState({
           className="space-y-5"
         >
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Data da matrícula *
             </label>
 
@@ -1193,12 +1147,12 @@ const [waitingForm, setWaitingForm] = useState({
                   enrolledAt: event.target.value,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observação interna
             </label>
 
@@ -1212,12 +1166,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Matrícula confirmada após conversa com a mãe."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1226,7 +1180,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1234,7 +1188,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1249,13 +1203,13 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
       {/* ===================================================
           MODAL: RETORNO
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "follow_up"}
         title="Programar retorno"
         description="Defina quando a família deve voltar para a fila de atendimento."
@@ -1266,7 +1220,7 @@ const [waitingForm, setWaitingForm] = useState({
           className="space-y-5"
         >
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Data do próximo contato *
             </label>
 
@@ -1279,12 +1233,12 @@ const [waitingForm, setWaitingForm] = useState({
                   followUpDate: event.target.value,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observação interna
             </label>
 
@@ -1298,12 +1252,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Retornar após conversar com o pai sobre os horários."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1312,7 +1266,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1320,7 +1274,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1335,13 +1289,13 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
       {/* ===================================================
           MODAL: LISTA DE INTERESSE
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "waiting_list"}
         title="Adicionar à lista de interesse"
         description="Use quando existe interesse real, mas ainda há um impedimento para avançar."
@@ -1352,7 +1306,7 @@ const [waitingForm, setWaitingForm] = useState({
           className="space-y-5"
         >
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Motivo *
             </label>
 
@@ -1364,7 +1318,7 @@ const [waitingForm, setWaitingForm] = useState({
                   reason: event.target.value,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             >
               {WAITING_LIST_REASONS.map((reason) => (
                 <option
@@ -1378,7 +1332,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Detalhes
             </label>
 
@@ -1392,12 +1346,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Família precisa de turma às 19h. Avisar caso seja aberta."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1406,7 +1360,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1414,7 +1368,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1429,25 +1383,25 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
       {/* ===================================================
           MODAL: EXPERIMENTAL
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "experimental"}
         title="Agendar / reagendar experimental"
         description="Uma nova sessão será criada. Experimentais anteriores permanecerão no histórico."
         onClose={closeModal}
-        maxWidth="max-w-2xl"
+        size="lg"
       >
         <form
           onSubmit={handleExperimental}
           className="space-y-5"
         >
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Categoria *
             </label>
 
@@ -1460,7 +1414,7 @@ const [waitingForm, setWaitingForm] = useState({
                   slot: null,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             >
               <option value="">
                 Selecione a categoria
@@ -1478,7 +1432,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <p className="mb-2 block text-sm font-semibold text-neutral-700">
+            <p className="mb-1.5 block text-sm font-medium text-ink">
               Turma, horário e data *
             </p>
 
@@ -1494,7 +1448,7 @@ const [waitingForm, setWaitingForm] = useState({
             />
 
             {experimentalForm.slot && (
-              <p className="mt-3 rounded-xl bg-canvas p-3 text-sm text-neutral-700">
+              <p className="mt-3 rounded-lg bg-canvas p-3 text-sm text-neutral-700">
                 Selecionado:{" "}
                 <strong>
                   {experimentalForm.slot.group.location?.name} ·{" "}
@@ -1507,7 +1461,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observação
             </label>
 
@@ -1521,12 +1475,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Reagendada porque o aluno estava na casa do pai."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1535,7 +1489,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1543,7 +1497,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1558,13 +1512,13 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
       {/* ===================================================
           MODAL: ENCERRAR
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "close"}
         title="Encerrar oportunidade"
         description="O contato deixará de aparecer como oportunidade ativa. O histórico será preservado."
@@ -1574,13 +1528,13 @@ const [waitingForm, setWaitingForm] = useState({
           onSubmit={handleCloseOpportunity}
           className="space-y-5"
         >
-          <div className="rounded-xl border border-alert/30 bg-alert-soft p-4 text-sm text-alert-text">
+          <div className="rounded-lg border border-alert/30 bg-alert-soft p-4 text-sm text-alert-text">
             Esta ação deve ser usada quando a família não
             seguirá no processo neste momento.
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Motivo *
             </label>
 
@@ -1592,7 +1546,7 @@ const [waitingForm, setWaitingForm] = useState({
                   lostReason: event.target.value,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             >
               {LOST_REASONS.map((reason) => (
                 <option
@@ -1606,7 +1560,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observação interna
             </label>
 
@@ -1620,12 +1574,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Família informou que a distância até a Arena inviabilizou a continuidade."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1634,7 +1588,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1642,7 +1596,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-inter-red px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1657,13 +1611,13 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
       {/* ===================================================
           MODAL: CORRIGIR EXPERIMENTAL
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "correction"}
         title="Corrigir registro da experimental"
         description="Use somente para corrigir um registro lançado incorretamente."
@@ -1673,7 +1627,7 @@ const [waitingForm, setWaitingForm] = useState({
           onSubmit={handleCorrection}
           className="space-y-5"
         >
-          <div className="rounded-xl border border-attention/40 bg-attention-soft p-4 text-sm leading-relaxed text-attention-text">
+          <div className="rounded-lg border border-attention/40 bg-attention-soft p-4 text-sm leading-relaxed text-attention-text">
             Esta função corrige o histórico da aula. Se o
             aluno já avançou para matrícula, retorno, lista
             de interesse ou encerramento, essa situação
@@ -1681,7 +1635,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Status correto *
             </label>
 
@@ -1693,7 +1647,7 @@ const [waitingForm, setWaitingForm] = useState({
                   status: event.target.value,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             >
               {Object.entries(
                 SESSION_STATUS_LABELS
@@ -1709,7 +1663,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Motivo da correção
               {correctionForm.status !==
               correctionForm.currentStatus
@@ -1727,12 +1681,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Presença foi lançada como ausência por engano."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1741,7 +1695,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1749,7 +1703,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1764,9 +1718,9 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
-      <Modal
+      <Dialog
   open={modal === "delete_experimental"}
   title="Excluir experimental"
   description="Esta ação remove definitivamente esta aula experimental."
@@ -1774,14 +1728,14 @@ const [waitingForm, setWaitingForm] = useState({
 >
   <div className="space-y-5">
 
-    <div className="rounded-xl border border-alert/30 bg-alert-soft p-4 text-sm text-alert-text">
+    <div className="rounded-lg border border-alert/30 bg-alert-soft p-4 text-sm text-alert-text">
       Utilize esta função apenas quando a experimental foi criada por engano ou para testes.
 
       Esta ação não poderá ser desfeita.
     </div>
 
     {error ? (
-      <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
+      <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
         {error}
       </p>
     ) : null}
@@ -1791,7 +1745,7 @@ const [waitingForm, setWaitingForm] = useState({
       <button
         type="button"
         onClick={closeModal}
-        className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
+        className={buttonClass("secondary")}
       >
         Cancelar
       </button>
@@ -1800,7 +1754,7 @@ const [waitingForm, setWaitingForm] = useState({
         type="button"
         onClick={handleDeleteExperimental}
         disabled={actionLoading}
-        className="flex items-center gap-2 rounded-xl bg-inter-red px-4 py-2.5 text-sm font-semibold text-white"
+        className={buttonClass("primary")}
       >
         {actionLoading ? (
           <Loader2 size={16} className="animate-spin"/>
@@ -1814,23 +1768,23 @@ const [waitingForm, setWaitingForm] = useState({
     </div>
 
   </div>
-</Modal>
+</Dialog>
 
       {/* ===================================================
           MODAL: EDITAR CONTATO
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "edit"}
         title="Editar contato"
         description="Corrija informações cadastrais sem alterar manualmente a jornada comercial."
         onClose={closeModal}
-        maxWidth="max-w-2xl"
+        size="lg"
       >
         <form onSubmit={handleEdit} className="space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Nome do aluno *
               </label>
 
@@ -1842,12 +1796,12 @@ const [waitingForm, setWaitingForm] = useState({
                     child_name: event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Data de nascimento
               </label>
 
@@ -1860,12 +1814,12 @@ const [waitingForm, setWaitingForm] = useState({
                     birth_date: event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Responsável
               </label>
 
@@ -1878,12 +1832,12 @@ const [waitingForm, setWaitingForm] = useState({
                       event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Telefone
               </label>
 
@@ -1895,12 +1849,12 @@ const [waitingForm, setWaitingForm] = useState({
                     phone: event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 E-mail
               </label>
 
@@ -1913,12 +1867,12 @@ const [waitingForm, setWaitingForm] = useState({
                     email: event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Bairro
               </label>
 
@@ -1931,12 +1885,12 @@ const [waitingForm, setWaitingForm] = useState({
                       event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Origem
               </label>
 
@@ -1949,12 +1903,12 @@ const [waitingForm, setWaitingForm] = useState({
                   }))
                 }
                 placeholder="Ex.: Instagram"
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Canal de entrada
               </label>
 
@@ -1968,12 +1922,12 @@ const [waitingForm, setWaitingForm] = useState({
                   }))
                 }
                 placeholder="Ex.: WhatsApp"
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Categoria
               </label>
 
@@ -1986,7 +1940,7 @@ const [waitingForm, setWaitingForm] = useState({
                       event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               >
                 <option value="">
                   Sem categoria
@@ -2004,7 +1958,7 @@ const [waitingForm, setWaitingForm] = useState({
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Primeiro contato
               </label>
 
@@ -2018,12 +1972,12 @@ const [waitingForm, setWaitingForm] = useState({
                       event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
           </div>
 
-          <label className="flex items-center gap-3 rounded-xl border border-line p-4">
+          <label className="flex items-center gap-3 rounded-lg border border-line p-4">
             <input
               type="checkbox"
               checked={editForm.trained_elsewhere}
@@ -2044,7 +1998,7 @@ const [waitingForm, setWaitingForm] = useState({
 
           {editForm.trained_elsewhere ? (
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Escola / clube anterior
               </label>
 
@@ -2057,13 +2011,13 @@ const [waitingForm, setWaitingForm] = useState({
                       event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
           ) : null}
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observações
             </label>
 
@@ -2076,12 +2030,12 @@ const [waitingForm, setWaitingForm] = useState({
                   observations: event.target.value,
                 }))
               }
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observações internas
             </label>
 
@@ -2095,12 +2049,12 @@ const [waitingForm, setWaitingForm] = useState({
                     event.target.value,
                 }))
               }
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -2109,7 +2063,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -2117,7 +2071,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -2132,7 +2086,7 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
     </div>
   );
 }
