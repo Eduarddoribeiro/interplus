@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 
 import {
@@ -44,7 +44,8 @@ import { LOST_REASON } from "../../constants/lostReasons";
 import { getSourceLabel as sourceLabel } from "../../constants/school";
 import { createWhatsAppUrl, normalizePhone } from "../../helpers/contactPresentation";
 
-const ITEMS_PER_PAGE = 30;
+// 20 por página: menos de duas telas de rolagem no notebook
+const ITEMS_PER_PAGE = 20;
 
 
 /* =========================================================
@@ -99,6 +100,7 @@ export default function Contacts() {
   const [sourceFilter, setSourceFilter] = useState("all");
   const [staleOnly, setStaleOnly] = useState(false);
   const [page, setPage] = useState(1);
+  const listTopRef = useRef(null);
 
   const [selected, setSelected] = useState(() => new Set());
   const [bulk, setBulk] = useState(null); // { done, total, label }
@@ -244,6 +246,17 @@ export default function Contacts() {
 
   const totalPages = Math.max(Math.ceil(filtered.length / ITEMS_PER_PAGE), 1);
   const pageItems = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const firstItem = filtered.length ? (page - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const lastItem = Math.min(page * ITEMS_PER_PAGE, filtered.length);
+
+  // Troca de página e leva a tela para o começo da lista
+  function goToPage(next) {
+    setPage(next);
+
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    listTopRef.current?.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+  }
 
   const allFilteredSelected =
     filtered.length > 0 && filtered.every((contact) => selected.has(contact.id));
@@ -619,6 +632,41 @@ export default function Contacts() {
           )}
         </Panel>
       ) : (
+        <>
+        <div ref={listTopRef} className="flex scroll-mt-4 items-center justify-between gap-3">
+          <p className="text-sm text-muted tabular-nums">
+            {firstItem}–{lastItem} de {filtered.length} contato{filtered.length === 1 ? "" : "s"}
+          </p>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="quiet"
+                disabled={page === 1}
+                onClick={() => goToPage(page - 1)}
+                aria-label="Página anterior"
+              >
+                <ChevronLeft size={16} aria-hidden="true" />
+              </Button>
+
+              <span className="px-1 text-sm tabular-nums text-muted">
+                {page} de {totalPages}
+              </span>
+
+              <Button
+                size="sm"
+                variant="quiet"
+                disabled={page === totalPages}
+                onClick={() => goToPage(page + 1)}
+                aria-label="Próxima página"
+              >
+                <ChevronRight size={16} aria-hidden="true" />
+              </Button>
+            </div>
+          )}
+        </div>
+
         <Panel className="overflow-hidden">
           <div className="hidden grid-cols-[1.5rem_minmax(0,2.2fr)_minmax(0,1.3fr)_5rem_minmax(0,1fr)_8rem_auto] items-center gap-x-4 border-b border-line bg-canvas px-4 py-2 text-sm text-muted lg:grid">
             <input
@@ -644,7 +692,7 @@ export default function Contacts() {
               className="h-4 w-4 accent-ink"
               aria-label={`Selecionar todos os ${filtered.length} contatos`}
             />
-            {filtered.length} contato{filtered.length === 1 ? "" : "s"}
+            Selecionar todos
           </div>
 
           {pageItems.map((contact) => (
@@ -661,12 +709,13 @@ export default function Contacts() {
             />
           ))}
         </Panel>
+        </>
       )}
 
       {/* PAGINAÇÃO */}
       {totalPages > 1 && (
         <nav aria-label="Páginas" className="flex items-center justify-between">
-          <Button disabled={page === 1} onClick={() => setPage((current) => current - 1)}>
+          <Button disabled={page === 1} onClick={() => goToPage(page - 1)}>
             <ChevronLeft size={16} aria-hidden="true" />
             Anterior
           </Button>
@@ -677,7 +726,7 @@ export default function Contacts() {
 
           <Button
             disabled={page === totalPages}
-            onClick={() => setPage((current) => current + 1)}
+            onClick={() => goToPage(page + 1)}
           >
             Próxima
             <ChevronRight size={16} aria-hidden="true" />
