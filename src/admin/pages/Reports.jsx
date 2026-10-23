@@ -19,6 +19,7 @@ import SectionTitle from "../components/common/SectionTitle";
 import { Panel, Tabs } from "../ui";
 import { getReportsData } from "../../services/reports";
 import { WAITING_REASON_LABELS } from "../../constants/waitingListReasons";
+import { getLostReasonLabel } from "../../constants/lostReasons";
 
 const PERIODS = [
   {
@@ -52,16 +53,6 @@ const SOURCE_LABELS = {
 };
 
 
-
-const LOST_LABELS = {
-  no_response: "Não respondeu",
-  price: "Preço",
-  schedule: "Horário",
-  distance: "Distância",
-  chose_competitor: "Escolheu outra escola",
-  no_interest: "Sem interesse",
-  other: "Outro",
-};
 
 export default function Reports() {
   const [contacts, setContacts] = useState([]);
@@ -624,10 +615,7 @@ function buildReport(contacts) {
           contact.lost_reason
       ),
       (contact) =>
-        LOST_LABELS[
-          contact.lost_reason
-        ] ||
-        contact.lost_reason
+        getLostReasonLabel(contact.lost_reason)
     ),
   };
 }
