@@ -89,17 +89,20 @@ export default function Contacts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [searchParams] = useSearchParams();
+  // Aba, busca, filtros e página ficam na URL: ao abrir um contato e
+  // voltar, a lista reabre no mesmo lugar
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState(() =>
     TABS.some((item) => item.value === searchParams.get("aba"))
       ? searchParams.get("aba")
       : "active",
   );
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [staleOnly, setStaleOnly] = useState(false);
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(() => searchParams.get("busca") ?? "");
+  const [categoryFilter, setCategoryFilter] = useState(() => searchParams.get("categoria") ?? "all");
+  const [sourceFilter, setSourceFilter] = useState(() => searchParams.get("origem") ?? "all");
+  const [staleOnly, setStaleOnly] = useState(() => searchParams.get("parados") === "1");
+  const [page, setPage] = useState(() => Math.max(Number(searchParams.get("pagina")) || 1, 1));
+  const filtersReady = useRef(false);
   const listTopRef = useRef(null);
 
   const [selected, setSelected] = useState(() => new Set());
@@ -120,10 +123,30 @@ export default function Contacts() {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
+  // Mudou filtro: volta para a página 1 (menos na primeira carga,
+  // que pode vir com a página da URL)
   useEffect(() => {
+    if (!filtersReady.current) {
+      filtersReady.current = true;
+      return;
+    }
+
     setPage(1);
     setSelected(new Set());
   }, [tab, search, categoryFilter, sourceFilter, staleOnly]);
+
+  useEffect(() => {
+    const params = {};
+
+    if (tab !== "active") params.aba = tab;
+    if (search) params.busca = search;
+    if (categoryFilter !== "all") params.categoria = categoryFilter;
+    if (sourceFilter !== "all") params.origem = sourceFilter;
+    if (staleOnly) params.parados = "1";
+    if (page > 1) params.pagina = String(page);
+
+    setSearchParams(params, { replace: true });
+  }, [tab, search, categoryFilter, sourceFilter, staleOnly, page, setSearchParams]);
 
   async function loadContacts() {
     try {
@@ -245,6 +268,11 @@ export default function Contacts() {
   }, [contacts, tab, staleOnly, categoryFilter, sourceFilter, search]);
 
   const totalPages = Math.max(Math.ceil(filtered.length / ITEMS_PER_PAGE), 1);
+
+  // Página da URL maior que o total (a lista mudou): vai para a última
+  useEffect(() => {
+    if (!loading && page > totalPages) setPage(totalPages);
+  }, [loading, page, totalPages]);
   const pageItems = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const firstItem = filtered.length ? (page - 1) * ITEMS_PER_PAGE + 1 : 0;
@@ -343,7 +371,7 @@ export default function Contacts() {
     confirmBulk({
       title: `Encerrar ${plural(selected.size)}?`,
       description:
-        "Cada um vai para Não convertido com o motivo \"família não respondeu\". Para voltar atrás depois, é preciso abrir contato por contato.",
+        "Cada um fica como Encerrado, com o motivo \"família não respondeu\". Para voltar atrás depois, é preciso abrir contato por contato.",
       confirmLabel: `Encerrar ${plural(selected.size)}`,
       run: runCloseNoResponse,
     });
@@ -678,7 +706,7 @@ export default function Contacts() {
             />
             <span>Atleta e responsável</span>
             <span>Situação</span>
-            <span>Turma</span>
+            <span>Categoria</span>
             <span>Local</span>
             <span>Último contato</span>
             <span className="sr-only">Ações</span>

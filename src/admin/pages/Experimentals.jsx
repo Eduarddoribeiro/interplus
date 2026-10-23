@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import {
   CalendarDays,
@@ -48,6 +49,7 @@ import {
   closeNoShowOpportunity,
 } from "../../services/contacts";
 import { errorMessage } from "../../helpers/errorMessage";
+import { LOST_REASON_OPTIONS, getLostReasonLabel } from "../../constants/lostReasons";
 
 /*
  * =========================================================
@@ -74,40 +76,6 @@ const FILTERS = [
   { value: "no_result", label: "Sem resultado" },
 ];
 
-const LOST_REASONS = [
-  {
-    value: "price",
-    label: "Valor",
-  },
-  {
-    value: "schedule",
-    label: "Horário incompatível",
-  },
-  {
-    value: "distance",
-    label: "Distância / deslocamento",
-  },
-  {
-    value: "other_school",
-    label: "Escolheu outra escola",
-  },
-  {
-    value: "child_not_interested",
-    label: "Criança não quis continuar",
-  },
-  {
-    value: "no_response",
-    label: "Família não respondeu",
-  },
-  {
-    value: "no_interest",
-    label: "Não tem mais interesse",
-  },
-  {
-    value: "other",
-    label: "Outro",
-  },
-];
 
 /*
  * =========================================================
@@ -121,14 +89,23 @@ export default function Experimentals() {
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
 
-  // A Visão geral pode abrir direto num filtro (?filtro=history)
+  // O filtro fica na URL (?filtro=history): a Visão geral abre direto
+  // nele e, ao voltar de um contato, a tela reabre no mesmo filtro
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeFilter, setActiveFilter] = useState(() => {
-    const filter = new URLSearchParams(window.location.search).get("filtro");
+    const filter = searchParams.get("filtro");
 
     return FILTERS.some((item) => item.value === filter)
       ? filter
       : "week";
   });
+
+  useEffect(() => {
+    setSearchParams(
+      activeFilter === "week" ? {} : { filtro: activeFilter },
+      { replace: true }
+    );
+  }, [activeFilter, setSearchParams]);
   const [weekAnchor, setWeekAnchor] = useState(getTodayISO());
 
   /*
@@ -647,6 +624,8 @@ export default function Experimentals() {
       week: weekItems.length,
       pending,
       attendanceRate,
+      // Sem veio/faltou na semana não há o que medir
+      attendanceBase: completed.length,
     };
   }, [
     scopedExperimentals,
@@ -919,7 +898,9 @@ export default function Experimentals() {
     <div className="space-y-8">
       <SectionTitle
         title="Experimentais"
-        summary={`${stats.week} nesta semana, ${stats.pending} a confirmar. Comparecimento da semana: ${stats.attendanceRate}%.`}
+        summary={`${stats.week} nesta semana, ${stats.pending} a confirmar.${
+          stats.attendanceBase ? ` Comparecimento da semana: ${stats.attendanceRate}%.` : ""
+        }`}
         actions={
           <Button onClick={() => setCoachListOpen(true)}>
             <Users size={17} aria-hidden="true" />
@@ -2409,7 +2390,7 @@ function RescheduleExperimentalModal({
             <p className="mt-3 rounded-lg bg-canvas p-3 text-sm text-neutral-700">
               Selecionado:{" "}
               <strong>
-                {slot.group.location?.name} ·{" "}
+                {slot.group.location?.name},{" "}
                 {WEEKDAY_LABELS[slot.weekday]}{" "}
                 {formatShortDate(slot.date)} às{" "}
                 {formatTime(slot.start_time)}
@@ -2746,7 +2727,7 @@ function LostReasonSelect({
           Selecione o motivo
         </option>
 
-        {LOST_REASONS.map(
+        {LOST_REASON_OPTIONS.map(
           (reason) => (
             <option
               key={reason.value}
@@ -3344,16 +3325,6 @@ function createWhatsAppUrl(
   return `https://wa.me/${digits}`;
 }
 
-function getLostReasonLabel(
-  value
-) {
-  return (
-    LOST_REASONS.find(
-      (item) =>
-        item.value === value
-    )?.label || value
-  );
-}
 
 function capitalize(value) {
   if (!value) return "";
