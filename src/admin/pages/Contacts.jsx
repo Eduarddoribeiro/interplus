@@ -415,7 +415,7 @@ export default function Contacts() {
    * =======================================================*/
 
   const fieldClass =
-    "h-10 rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink";
+    "h-10 rounded-lg border border-line bg-white px-3 text-sm outline-none placeholder:text-neutral-500 focus:border-ink";
 
   return (
     <div className="space-y-5">
@@ -533,7 +533,7 @@ export default function Contacts() {
           >
             <Clock3 size={16} aria-hidden="true" />
             Parados há {STALE_DAYS}+ dias
-            <Count value={staleCount} urgency="attention" inverted={staleOnly} />
+            <Count value={staleCount} inverted={staleOnly} />
           </Button>
         )}
       </div>
@@ -741,7 +741,7 @@ function ContactRow({
   return (
     <div
       className={`grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-line px-4 py-3 last:border-b-0 lg:grid-cols-[1.5rem_minmax(0,2.2fr)_minmax(0,1.3fr)_5rem_minmax(0,1fr)_8rem_auto] ${
-        stale || duplicate ? urgencyRail("attention") : urgencyRail()
+        duplicate ? urgencyRail("attention") : urgencyRail()
       } ${checked ? "bg-canvas" : ""}`}
     >
       <input
@@ -787,7 +787,7 @@ function ContactRow({
       </span>
 
       <span
-        className={`hidden text-sm lg:block ${stale ? "text-attention-text" : "text-muted"}`}
+        className="hidden text-sm text-muted lg:block"
       >
         {formatDaysAgo(days)}
         {stale && <span className="block">parado</span>}

@@ -98,7 +98,9 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
   - `ink #1C1F24`, `muted #5B616B`, `line #E3E6EA`, `canvas #F6F7F8`;
   - `alert` (vermelho), `attention` (amarelo), `ok` (verde), `whatsapp #1F9D55`.
 - Vermelho Inter só na ação principal da tela. Seleção usa `ink`.
-- Urgência é indicada por uma faixa lateral de 3px (`urgencyRail`), em vermelho ou amarelo.
+- Urgência é indicada por uma faixa lateral de 3px (`urgencyRail`), em vermelho ou amarelo, **só onde há algo a fazer hoje** (atrasado, a confirmar, possível duplicado). Estado que não pede ação ("parado", tempo na lista de interesse) vai em texto cinza, sem faixa.
+- O menu só mostra contadores vermelhos ou amarelos. Na Visão geral, o número grande também é só para pendências; os números informativos (lista de interesse com vaga, triagem) ficam numa linha discreta embaixo.
+- Queda em relação ao mês anterior aparece em cinza, não em vermelho.
 - Títulos em Teko, em formato de frase. Números com `tabular-nums`.
 - Sem rótulos em CAIXA ALTA e sem separadores "·".
 - Bordas arredondadas de 8px nos controles e 12px nos painéis. Sem sombra nos cards.
@@ -135,4 +137,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 
 - 2026-10-16: removida a integração de WhatsApp/Evolution (mantidos os links wa.me). RLS fechado (etapas 2A, 2B e 2C).
 - 2026-10-19: formulário público revisado (acessibilidade e validação, PR #20). Painel redesenhado (PRs #22–#26). Aviso de duplicado não marca mais irmãos (#27).
-- 2026-10-22: horários das turmas sem os segundos (#28). Criado este CLAUDE.md (#29). Crítica Impeccable do painel: 26/40. Item 1: janela única (`Dialog`) em todas as janelas e Administração no padrão novo; a tela Modalidades, que quebrava ao abrir, foi refeita; o botão de salvar da qualificação, que estava invisível, foi corrigido (#30). Item 2: Desfazer na presença e no arquivamento, confirmação com quantidade nas ações em lote, erros sem texto técnico. Turmas inativas saem da lista principal e ficam na aba Inativas; turmas não são excluídas, para não perder o histórico das experimentais (#31). Lista de turmas sem a coluna Modalidade, e a unidade só aparece quando houver mais de uma.
+- 2026-10-22: horários das turmas sem os segundos (#28). Criado este CLAUDE.md (#29). Crítica Impeccable do painel: 26/40. Item 1: janela única (`Dialog`) em todas as janelas e Administração no padrão novo; a tela Modalidades, que quebrava ao abrir, foi refeita; o botão de salvar da qualificação, que estava invisível, foi corrigido (#30). Item 2: Desfazer na presença e no arquivamento, confirmação com quantidade nas ações em lote, erros sem texto técnico. Turmas inativas saem da lista principal e ficam na aba Inativas; turmas não são excluídas, para não perder o histórico das experimentais (#31). Lista de turmas sem a coluna Modalidade, e a unidade só aparece quando houver mais de uma (#32). Item 3, menos amarelo: sem faixa em "parado" e na lista de interesse, menu só com contadores de ação, informativos da Visão geral em linha discreta, nota dos Relatórios neutra, contraste do texto de exemplo dos campos e do zero nos dias de Experimentais.

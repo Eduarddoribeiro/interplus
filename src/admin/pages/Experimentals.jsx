@@ -2822,7 +2822,7 @@ function WeekDayCard({
 
       <span
         className={`mt-1 font-display text-2xl font-semibold leading-none tabular-nums ${
-          active ? "text-white" : day.total ? "text-ink" : "text-neutral-300"
+          active ? "text-white" : day.total ? "text-ink" : "font-normal text-muted"
         }`}
       >
         {day.total}

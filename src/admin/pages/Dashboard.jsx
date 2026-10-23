@@ -10,6 +10,20 @@ import { getDashboardData } from "../../services/dashboard";
 import { EXPERIMENTAL_STATUS_LABEL } from "../../constants/experimentalStatus";
 import { createWhatsAppUrl } from "../../helpers/contactPresentation";
 
+// Colunas da grade de pendências: sem item sozinho numa linha
+const PENDING_COLUMNS = {
+  1: "xl:grid-cols-1",
+  2: "xl:grid-cols-2",
+  3: "xl:grid-cols-3",
+  4: "xl:grid-cols-4",
+};
+
+// Texto da linha informativa (depois do número)
+const INFO_TEXT = {
+  waitingNow: "famílias da lista de interesse podem agendar agora",
+  triage: "contatos para triagem",
+};
+
 // Rótulos curtos da agenda (cabem numa linha)
 const SESSION_LABEL = {
   pending_confirmation: "A confirmar",
@@ -199,12 +213,16 @@ export default function Dashboard() {
     },
   ].filter((item) => item.value > 0);
 
+  // Número grande só para o que pede ação; o resto vira uma linha discreta
+  const actionItems = pendingItems.filter((item) => item.urgency);
+  const infoItems = pendingItems.filter((item) => !item.urgency);
+
   return (
     <div className="space-y-8">
       {header}
 
       {/* PENDÊNCIAS */}
-      {pendingItems.length === 0 ? (
+      {actionItems.length === 0 ? (
         <Panel className="flex items-center gap-3 px-5 py-4">
           <CheckCircle2 size={20} aria-hidden="true" className="text-ok" />
           <p className="font-medium">Tudo em dia. Nenhuma pendência agora.</p>
@@ -215,17 +233,18 @@ export default function Dashboard() {
             Pendências
           </h2>
 
-          <Panel as="ul" className="grid gap-px overflow-hidden bg-line sm:grid-cols-2 xl:grid-cols-3">
-            {pendingItems.map((item) => (
+          <Panel
+            as="ul"
+            className={`grid gap-px overflow-hidden bg-line sm:grid-cols-2 ${PENDING_COLUMNS[actionItems.length] ?? "xl:grid-cols-4"}`}
+          >
+            {actionItems.map((item) => (
               <li key={item.key} className="bg-white">
                 <Link
                   to={item.to}
                   className={`group flex h-full items-center gap-4 px-4 py-4 transition-colors hover:bg-canvas ${urgencyRail(item.urgency)}`}
                 >
                   <span
-                    className={`w-14 shrink-0 text-right font-display text-4xl font-semibold leading-none tabular-nums ${
-                      item.urgency ? urgencyText(item.urgency) : "text-ink"
-                    }`}
+                    className={`w-14 shrink-0 text-right font-display text-4xl font-semibold leading-none tabular-nums ${urgencyText(item.urgency)}`}
                   >
                     {item.value}
                   </span>
@@ -245,6 +264,19 @@ export default function Dashboard() {
             ))}
           </Panel>
         </section>
+      )}
+
+      {infoItems.length > 0 && (
+        <ul className="-mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted">
+          {infoItems.map((item) => (
+            <li key={item.key}>
+              <Link to={item.to} className="underline-offset-4 hover:text-ink hover:underline">
+                <span className="font-semibold tabular-nums text-ink">{item.value}</span>{" "}
+                {INFO_TEXT[item.key]}
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
 
       <div className="grid gap-8 xl:grid-cols-[1.6fr_1fr]">
@@ -399,10 +431,10 @@ function Delta({ current, previous }) {
 
   if (!diff) return <span className="text-sm text-muted">igual ao mês anterior</span>;
 
+  // Queda fica em cinza: com números pequenos, vermelho alarma à toa
   return (
-    <span className={`text-sm ${diff > 0 ? "text-ok" : "text-alert-text"}`}>
-      {diff > 0 ? "+" : "−"}
-      {Math.abs(diff)} que o mês anterior
+    <span className={`text-sm ${diff > 0 ? "text-ok" : "text-muted"}`}>
+      {Math.abs(diff)} a {diff > 0 ? "mais" : "menos"} que no mês anterior
     </span>
   );
 }

@@ -1,7 +1,7 @@
 import { CalendarPlus, MessageCircle, Pencil, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import { Button, urgencyRail } from "../../ui";
+import { Button } from "../../ui";
 
 import { PREFERRED_SHIFT_LABELS } from "../../../constants/preferredShift";
 import { WAITING_REASON_CARD_LABELS } from "../../../constants/waitingListReasons";
@@ -45,11 +45,9 @@ export default function WaitingListRow({
     ? WAITING_REASON_CARD_LABELS[contact.waiting_list_reason] ?? contact.waiting_list_reason
     : null;
 
-  const longWait = days !== null && days > 60;
-
   return (
     <div
-      className={`grid gap-x-4 gap-y-2 border-b border-line px-4 py-3 last:border-b-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_9rem_auto] lg:items-center ${urgencyRail(longWait ? "attention" : undefined)}`}
+      className={`grid gap-x-4 gap-y-2 border-b border-line px-4 py-3 last:border-b-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_9rem_auto] lg:items-center`}
     >
       {/* QUEM */}
       <button
@@ -75,7 +73,7 @@ export default function WaitingListRow({
       {/* HÁ QUANTO TEMPO */}
       <p className="text-sm">
         {days !== null && (
-          <span className={longWait ? "text-attention-text" : "text-muted"}>
+          <span className="text-muted">
             {days === 0 ? "Entrou hoje" : `Espera há ${days} dia${days === 1 ? "" : "s"}`}
           </span>
         )}
