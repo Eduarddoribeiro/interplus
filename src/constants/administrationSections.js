@@ -13,7 +13,7 @@ export const ADMINISTRATION_SECTIONS = [
   {
   id: "training-groups",
   title: "Turmas",
-  description: "Gerencie as turmas e seus horários.",
+  description: "Turmas, horários e professores de cada horário.",
   icon: GraduationCap,
   path: ROUTES.TRAINING_GROUPS,
   enabled: true,
@@ -21,7 +21,7 @@ export const ADMINISTRATION_SECTIONS = [
   {
     id: "categories",
     title: "Categorias",
-    description: "Gerencie categorias.",
+    description: "Faixas de idade, do Sub-05 ao Sub-17.",
     icon: Layers3,
     path: ROUTES.CATEGORIES,
     enabled: true,
@@ -29,7 +29,7 @@ export const ADMINISTRATION_SECTIONS = [
   {
     id: "modalities",
     title: "Modalidades",
-    description: "Cadastre Society, Futsal e futuras modalidades.",
+    description: "Futsal, Society e as que vierem.",
     icon: Trophy,
     path: ROUTES.MODALITIES,
     enabled: true,
@@ -45,7 +45,7 @@ export const ADMINISTRATION_SECTIONS = [
   {
     id: "locations",
     title: "Locais",
-    description: "Ginásios e arenas onde acontecem os treinos.",
+    description: "Ginásios e arenas, com o endereço que os pais veem no formulário.",
     icon: MapPin,
     path: ROUTES.LOCATIONS,
     enabled: true,
