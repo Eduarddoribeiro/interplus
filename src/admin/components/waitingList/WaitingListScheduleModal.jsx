@@ -46,7 +46,7 @@ export default function WaitingListScheduleModal({
             <p className="rounded-lg bg-canvas p-3 text-sm text-neutral-700">
               Selecionado:{" "}
               <strong>
-                {slot.group.location?.name} · {WEEKDAY_LABELS[slot.weekday]}{" "}
+                {slot.group.location?.name}, {WEEKDAY_LABELS[slot.weekday]}{" "}
                 {formatDayMonth(slot.date)} às {slot.start_time.slice(0, 5)}
               </strong>
             </p>

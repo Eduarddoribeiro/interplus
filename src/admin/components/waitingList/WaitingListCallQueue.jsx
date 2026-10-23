@@ -79,7 +79,7 @@ export default function WaitingListCallQueue({
               </p>
 
               <p className="text-sm text-muted">
-                {contact.responsible_name || "Responsável não informado"} · {contact.phone}
+                {contact.responsible_name || "Responsável não informado"}, {contact.phone}
               </p>
 
               <pre className="mt-4 whitespace-pre-wrap rounded-lg bg-canvas p-4 font-sans text-sm leading-6 text-ink">

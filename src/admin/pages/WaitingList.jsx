@@ -195,7 +195,7 @@ export default function WaitingList() {
     const row = matrix.rows.find((item) => item.key === cell.rowKey);
     const column = matrix.columns.find((item) => item.key === cell.columnKey);
 
-    return `${row?.name ?? ""} · ${column?.name ?? ""}`;
+    return `${row?.name ?? ""}, ${column?.name ?? ""}`;
   }, [cell, matrix]);
 
   const callQueue = useMemo(
