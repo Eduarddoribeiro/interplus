@@ -18,32 +18,28 @@ import { Count } from "../ui";
 
 /*
  * Contador de cada item do menu a partir das pendências da Visão
- * geral. Vermelho = atrasado, âmbar = atenção, cinza = informativo.
+ * geral. Só aparece o que pede ação: vermelho = atrasado, âmbar =
+ * atenção. Números só informativos (lista de interesse, triagem)
+ * ficam nas próprias telas, para o menu não virar ruído.
  */
 function menuCount(key, pending) {
   if (!pending) return null;
 
   switch (key) {
-    case "contacts":
-      return pending.triage ? { value: pending.triage } : null;
     case "experimentals":
       if (pending.overdue) return { value: pending.overdue, urgency: "alert" };
       if (pending.toConfirm) return { value: pending.toConfirm, urgency: "attention" };
       return null;
     case "followUps":
       return pending.followUpsDue ? { value: pending.followUpsDue, urgency: "alert" } : null;
-    case "waitingList":
-      return pending.waitingNow ? { value: pending.waitingNow } : null;
     default:
       return null;
   }
 }
 
 const COUNT_TITLE = {
-  contacts: "contatos para triagem",
   experimentals: "experimentais com pendência",
   followUps: "retornos vencidos",
-  waitingList: "famílias podem agendar agora",
 };
 
 const menu = [

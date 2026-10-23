@@ -12,7 +12,7 @@ import {
   TrendingUp,
   Clock3,
   Target,
-  AlertCircle,
+  Info,
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
@@ -194,7 +194,7 @@ export default function Reports() {
               aria-label="Local"
               value={location}
               onChange={(event) => setLocation(event.target.value)}
-              className="h-10 rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-ink"
+              className="h-10 rounded-lg border border-line bg-white px-3 text-sm outline-none placeholder:text-neutral-500 focus:border-ink"
             >
               <option value="all">Todos os locais</option>
 
@@ -301,14 +301,15 @@ export default function Reports() {
             />
           </div>
 
-          <div className="mt-7 rounded-xl bg-attention-soft p-4">
+          <div className="mt-7 rounded-lg bg-canvas p-4">
             <div className="flex gap-3">
-              <AlertCircle
-                size={19}
-                className="mt-0.5 shrink-0 text-attention-text"
+              <Info
+                size={18}
+                aria-hidden="true"
+                className="mt-0.5 shrink-0 text-muted"
               />
 
-              <p className="text-xs leading-5 text-attention-text">
+              <p className="text-sm leading-6 text-muted">
                 Matrículas históricas sem experimental
                 registrada não entram na conversão
                 pós-aula. Assim, os dados importados não
