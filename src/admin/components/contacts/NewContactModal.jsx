@@ -751,7 +751,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                         <p className="mt-4 rounded-lg bg-white p-3 text-sm text-neutral-700">
                           Selecionado:{" "}
                           <strong>
-                            {slot.group.location?.name} ·{" "}
+                            {slot.group.location?.name},{" "}
                             {WEEKDAY_LABELS[slot.weekday]}{" "}
                             {formatDate(slot.date)} às{" "}
                             {formatTime(slot.start_time)}

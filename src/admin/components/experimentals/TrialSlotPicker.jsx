@@ -122,7 +122,7 @@ export default function TrialSlotPicker({ categoryId, value, onChange }) {
 
                 <p className="mt-0.5 text-xs text-muted">
                   {group.name}
-                  {group.modality?.name ? ` · ${group.modality.name}` : ""}
+                  {group.modality?.name ? `, ${group.modality.name}` : ""}
                 </p>
               </div>
 
@@ -147,7 +147,7 @@ export default function TrialSlotPicker({ categoryId, value, onChange }) {
               {group.schedules.map((schedule) => (
                 <div key={schedule.id}>
                   <p className="text-sm font-semibold text-neutral-700">
-                    {WEEKDAY_LABELS[schedule.weekday]} ·{" "}
+                    {WEEKDAY_LABELS[schedule.weekday]},{" "}
                     {formatTime(schedule.start_time)} às {formatTime(schedule.end_time)}
                   </p>
 
