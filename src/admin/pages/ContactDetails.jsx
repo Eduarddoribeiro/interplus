@@ -40,23 +40,16 @@ import { Button, Dialog, Panel, buttonClass, inputClass } from "../ui";
 import { formatPhone } from "../../helpers/phoneHelpers";
 import { getSourceLabel } from "../../constants/school";
 import { errorMessage } from "../../helpers/errorMessage";
+import { LOST_REASON_LABEL, LOST_REASON_OPTIONS, getLostReasonLabel } from "../../constants/lostReasons";
+import { CONTACT_STATUS_LABEL } from "../../constants/contactStatus";
 
 /* =========================================================
  * CONSTANTES
  * ========================================================= */
 
-const STATUS_LABELS = {
-  new: "Novo contato",
-  pending_confirmation: "Aguardando confirmação",
-  confirmed: "Experimental confirmada",
-  attended: "Compareceu",
-  no_show: "Não compareceu",
-  cancelled: "Cancelada",
-  follow_up: "Em retorno",
-  waiting_list: "Lista de interesse",
-  enrolled: "Matriculado",
-  lost: "Encerrado",
-};
+// Mesmos nomes de status em todo o painel; "new" é o antigo status
+// dos contatos criados pelo WhatsApp
+const STATUS_LABELS = { ...CONTACT_STATUS_LABEL, new: "Novo contato" };
 
 // Cor só onde a situação pede algo (ou é um bom resultado)
 const STATUS_TONE = {
@@ -83,16 +76,6 @@ const SESSION_STATUS_LABELS = {
 
  
 
-const LOST_REASONS = [
-  { value: "schedule", label: "Horário incompatível" },
-  { value: "location", label: "Localização/distância" },
-  { value: "financial", label: "Questão financeira" },
-  { value: "no_interest", label: "Sem interesse no momento" },
-  { value: "other_school", label: "Optou por outra escola" },
-  { value: "no_response", label: "Sem retorno do responsável" },
-  { value: "age_category", label: "Categoria/idade incompatível" },
-  { value: "other", label: "Outro motivo" },
-];
 
 /* =========================================================
  * HELPERS
@@ -453,7 +436,7 @@ const [waitingForm, setWaitingForm] = useState({
 
   function openCloseModal() {
     setCloseForm({
-      lostReason: contact?.lost_reason || "schedule",
+      lostReason: LOST_REASON_LABEL[contact?.lost_reason] ? contact.lost_reason : "schedule",
       notes: "",
     });
 
@@ -959,7 +942,7 @@ const [waitingForm, setWaitingForm] = useState({
               {contact.status === "lost" ? (
                 <Field
                   label="Motivo do encerramento"
-                  value={getReasonLabel(LOST_REASONS, contact.lost_reason)}
+                  value={getLostReasonLabel(contact.lost_reason) || "—"}
                 />
               ) : null}
             </dl>
@@ -1450,7 +1433,7 @@ const [waitingForm, setWaitingForm] = useState({
               <p className="mt-3 rounded-lg bg-canvas p-3 text-sm text-neutral-700">
                 Selecionado:{" "}
                 <strong>
-                  {experimentalForm.slot.group.location?.name} ·{" "}
+                  {experimentalForm.slot.group.location?.name},{" "}
                   {WEEKDAY_LABELS[experimentalForm.slot.weekday]}{" "}
                   {formatDate(experimentalForm.slot.date)} às{" "}
                   {formatTime(experimentalForm.slot.start_time)}
@@ -1547,7 +1530,7 @@ const [waitingForm, setWaitingForm] = useState({
               }
               className={inputClass}
             >
-              {LOST_REASONS.map((reason) => (
+              {LOST_REASON_OPTIONS.map((reason) => (
                 <option
                   key={reason.value}
                   value={reason.value}
