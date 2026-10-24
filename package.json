@@ -1,5 +1,5 @@
 {
-  "name": "clube-beneficios-inter-viamao",
+  "name": "crm-inter-viamao",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -12,9 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fontsource/bebas-neue": "^5.2.7",
     "@fontsource/inter": "^5.2.8",
-    "@fontsource/manrope": "^5.2.8",
     "@fontsource/teko": "^5.2.7",
     "@supabase/supabase-js": "^2.110.7",
     "framer-motion": "^11.18.2",
