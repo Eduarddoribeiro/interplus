@@ -16,8 +16,8 @@ import { errorMessage } from "../../helpers/errorMessage";
  * e "Painel da equipe" ficam no topo, o formulário logo abaixo, e o
  * botão volta ao vermelho (é a única ação da tela).
  *
- * Os campos usam 16px no celular: abaixo disso o iPhone dá zoom ao
- * tocar no campo.
+ * No celular os campos ficam mais altos (48px). O texto de 16px, que
+ * evita o zoom do iPhone, vem da regra geral em index.css.
  *
  * Para usar uma foto no painel da marca, coloque-a em public/ e
  * preencha BRAND_PHOTO (ex.: "/login-treino.jpg"). A camada vermelha
@@ -25,9 +25,7 @@ import { errorMessage } from "../../helpers/errorMessage";
  */
 const BRAND_PHOTO = null;
 
-const loginInputClass = inputClass
-  .replace("text-sm", "text-base lg:text-sm")
-  .replace("py-2.5", "py-3 lg:py-2.5");
+const loginInputClass = inputClass.replace("py-2.5", "py-3 lg:py-2.5");
 
 export default function Login() {
   const navigate = useNavigate();
