@@ -1,80 +1,26 @@
-# Clube de Benefícios – Família Inter Viamão
+# CRM — Escola Oficial do Inter, Unidade Viamão
 
-Site institucional premium para o Clube de Benefícios da Escola Oficial do Inter, Unidade Viamão.
+Site público e painel interno da Escola Oficial do Inter em Viamão/RS:
+
+- landing e formulário de aula experimental para os pais;
+- lista de presença para o professor (`/aula/:token`);
+- painel da equipe (`/admin`): contatos, experimentais, retornos, lista de interesse, relatórios e cadastros;
+- clube de benefícios (`/beneficios`).
 
 ## Stack
 
-- **React 18** + **Vite**
-- **Tailwind CSS**
-- **Framer Motion** (animações)
-- **Lucide React** (ícones)
-- Dados em **JSON** (sem banco de dados)
+React 18, Vite 5, Tailwind 3, React Router 7 e Supabase (Postgres + Auth). Deploy na Vercel a cada merge na `main`.
 
-## Instalação
+## Como rodar
+
+Crie um `.env` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` e rode:
 
 ```bash
 npm install
-npm run dev
-```
-
-## Build para produção
-
-```bash
+npm run dev      # http://localhost:5173
 npm run build
 ```
 
-## Deploy na Vercel
+## Documentação
 
-1. Faça push do projeto para GitHub
-2. Acesse [vercel.com](https://vercel.com) e importe o repositório
-3. A Vercel detecta Vite automaticamente
-4. Clique em **Deploy** ✅
-
-## Estrutura
-
-```
-src/
-├── components/
-│   ├── Navbar.jsx          # Navbar fixa com blur e menu mobile
-│   ├── Hero.jsx            # Hero com campo desfocado e overlay vermelho
-│   ├── Stats.jsx           # Cards de estatísticas com ícones
-│   ├── HowItWorks.jsx      # 3 passos com timeline
-│   ├── Partners.jsx        # Grid de parceiros com filtro por categoria
-│   ├── PartnerCard.jsx     # Card individual de parceiro
-│   ├── Banner.jsx          # Faixa dark com CTAs para redes sociais
-│   ├── BecomePartner.jsx   # Seção fundo vermelho para novos parceiros
-│   ├── FAQ.jsx             # Accordion de perguntas frequentes
-│   └── Footer.jsx          # Rodapé com links e contato
-├── data/
-│   ├── partners.json       # Lista de parceiros (edite aqui!)
-│   ├── stats.json          # Números das estatísticas
-│   └── faq.json            # Perguntas e respostas
-├── hooks/
-│   └── useScrolled.js      # Hook para detectar scroll da navbar
-├── App.jsx
-├── main.jsx
-└── index.css
-```
-
-## Adicionando parceiros
-
-Edite `src/data/partners.json` adicionando um objeto com os campos:
-
-```json
-{
-  "id": 9,
-  "nome": "Nome da Empresa",
-  "categoria": "Alimentação",
-  "logo": "🍽️",
-  "imagem": "https://url-da-imagem.com/foto.jpg",
-  "desconto": "10% OFF",
-  "descricao": "Descrição curta do benefício.",
-  "instagram": "https://instagram.com/empresa",
-  "site": "https://empresa.com.br",
-  "whatsapp": "5551999990000",
-  "endereco": "Rua Exemplo, 123",
-  "cidade": "Viamão"
-}
-```
-
-Categorias disponíveis: `Alimentação`, `Saúde`, `Esporte`, `Educação`, `Beleza`, `Serviços`
+As regras do projeto, a estrutura, o padrão visual e o histórico de mudanças estão no [CLAUDE.md](CLAUDE.md).
