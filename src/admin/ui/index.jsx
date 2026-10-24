@@ -17,8 +17,6 @@ const FOCUS = "focus-visible:outline focus-visible:outline-2 focus-visible:outli
 
 const BUTTON_VARIANTS = {
   primary: "bg-inter-red text-white hover:bg-inter-red-dark",
-  // Ação principal quando a tela já tem o vermelho da marca (login)
-  ink: "bg-ink text-white hover:bg-neutral-800",
   secondary: "border border-line bg-white text-ink hover:border-neutral-400",
   quiet: "text-muted hover:bg-neutral-100 hover:text-ink",
   whatsapp: "border border-line bg-white text-whatsapp hover:border-whatsapp",
