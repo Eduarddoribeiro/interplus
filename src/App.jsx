@@ -1,155 +1,162 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Benefits from "./pages/Benefits";
-import Landing from "./pages/Landing";
-import PublicRegistration from "./pages/PublicRegistration";
-import CoachSession from "./pages/CoachSession";
+// Cada tela é baixada só quando é aberta, para o site público
+// não carregar o código do painel.
 
-import Layout from "./admin/layout/Layout";
-import ProtectedRoute from "./admin/components/ProtectedRoute";
+const ProtectedRoute = lazy(() => import("./admin/components/ProtectedRoute"));
 
-import Login from "./admin/pages/Login";
-import Dashboard from "./admin/pages/Dashboard";
-import Contacts from "./admin/pages/Contacts";
-import Experimentals from "./admin/pages/Experimentals";
-import FollowUps from "./admin/pages/FollowUps";
-import Reports from "./admin/pages/Reports";
-import ContactDetails from "./admin/pages/ContactDetails";
-import WaitingList from "./admin/pages/WaitingList";
+const Benefits = lazy(() => import("./pages/Benefits"));
+const Landing = lazy(() => import("./pages/Landing"));
+const PublicRegistration = lazy(() => import("./pages/PublicRegistration"));
+const CoachSession = lazy(() => import("./pages/CoachSession"));
 
-import Administration from "./admin/pages/Administration";
+const Layout = lazy(() => import("./admin/layout/Layout"));
 
-import UnitsPage from "./admin/pages/administration/units/UnitsPage";
-import LocationsPage from "./admin/pages/administration/locations/LocationsPage";
-import ModalitiesPage from "./admin/pages/administration/modalities/ModalitiesPage";
-import CategoriesPage from "./admin/pages/administration/categories/CategoriesPage";
+const Login = lazy(() => import("./admin/pages/Login"));
+const Dashboard = lazy(() => import("./admin/pages/Dashboard"));
+const Contacts = lazy(() => import("./admin/pages/Contacts"));
+const Experimentals = lazy(() => import("./admin/pages/Experimentals"));
+const FollowUps = lazy(() => import("./admin/pages/FollowUps"));
+const Reports = lazy(() => import("./admin/pages/Reports"));
+const ContactDetails = lazy(() => import("./admin/pages/ContactDetails"));
+const WaitingList = lazy(() => import("./admin/pages/WaitingList"));
 
-import TrainingGroupsPage from "./admin/pages/administration/training-groups/TrainingGroupsPage";
-import TrainingGroupForm from "./admin/pages/administration/training-groups/TrainingGroupForm";
-import TrainingGroupDetails from "./admin/pages/administration/training-groups/TrainingGroupDetails";
+const Administration = lazy(() => import("./admin/pages/Administration"));
+
+const UnitsPage = lazy(() => import("./admin/pages/administration/units/UnitsPage"));
+const LocationsPage = lazy(() => import("./admin/pages/administration/locations/LocationsPage"));
+const ModalitiesPage = lazy(() => import("./admin/pages/administration/modalities/ModalitiesPage"));
+const CategoriesPage = lazy(() => import("./admin/pages/administration/categories/CategoriesPage"));
+
+const TrainingGroupsPage = lazy(() => import("./admin/pages/administration/training-groups/TrainingGroupsPage"));
+const TrainingGroupForm = lazy(() => import("./admin/pages/administration/training-groups/TrainingGroupForm"));
+const TrainingGroupDetails = lazy(() => import("./admin/pages/administration/training-groups/TrainingGroupDetails"));
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Suspense fallback={null}>
+        <Routes>
 
-        {/* SITE PÚBLICO */}
+          {/* SITE PÚBLICO */}
 
-        <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Landing />} />
 
-        {/* Clube de benefícios (ainda não lançado) */}
-        <Route path="/beneficios" element={<Benefits />} />
+          {/* Clube de benefícios (ainda não lançado) */}
+          <Route path="/beneficios" element={<Benefits />} />
 
-        <Route
-          path="/experimental"
-          element={<PublicRegistration />}
-        />
-
-        {/* Professores: presença das experimentais (link sem login) */}
-        <Route
-          path="/aula/:token"
-          element={<CoachSession />}
-        />
-
-        {/* LOGIN */}
-
-        <Route
-          path="/admin/login"
-          element={<Login />}
-        />
-
-        {/* ADMIN */}
-
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
           <Route
-            index
-            element={<Dashboard />}
+            path="/experimental"
+            element={<PublicRegistration />}
           />
 
+          {/* Professores: presença das experimentais (link sem login) */}
           <Route
-            path="contacts"
-            element={<Contacts />}
+            path="/aula/:token"
+            element={<CoachSession />}
           />
 
+          {/* LOGIN */}
+
           <Route
-            path="contacts/:id"
-            element={<ContactDetails />}
+            path="/admin/login"
+            element={<Login />}
           />
 
-          <Route
-            path="experimentals"
-            element={<Experimentals />}
-          />
+          {/* ADMIN */}
 
           <Route
-            path="follow-ups"
-            element={<FollowUps />}
-          />
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route
+              index
+              element={<Dashboard />}
+            />
 
-          <Route
-            path="waiting-list"
-            element={<WaitingList />}
-          />
+            <Route
+              path="contacts"
+              element={<Contacts />}
+            />
 
-          <Route
-            path="reports"
-            element={<Reports />}
-          />
+            <Route
+              path="contacts/:id"
+              element={<ContactDetails />}
+            />
 
-          <Route
-            path="administration"
-            element={<Administration />}
-          />
+            <Route
+              path="experimentals"
+              element={<Experimentals />}
+            />
 
-          <Route
-            path="administration/units"
-            element={<UnitsPage />}
-          />
+            <Route
+              path="follow-ups"
+              element={<FollowUps />}
+            />
 
-          <Route
-            path="administration/locations"
-            element={<LocationsPage />}
-          />
+            <Route
+              path="waiting-list"
+              element={<WaitingList />}
+            />
 
-          <Route
-            path="administration/modalities"
-            element={<ModalitiesPage />}
-          />
+            <Route
+              path="reports"
+              element={<Reports />}
+            />
 
-          <Route
-            path="administration/categories"
-            element={<CategoriesPage />}
-          />
+            <Route
+              path="administration"
+              element={<Administration />}
+            />
 
-          <Route
-            path="administration/training-groups"
-            element={<TrainingGroupsPage />}
-          />
-          <Route
-  path="administration/training-groups/new"
-  element={<TrainingGroupForm />}
-/>
+            <Route
+              path="administration/units"
+              element={<UnitsPage />}
+            />
 
-<Route
-  path="administration/training-groups/:id"
-  element={<TrainingGroupDetails />}
-/>
+            <Route
+              path="administration/locations"
+              element={<LocationsPage />}
+            />
 
-<Route
-  path="administration/training-groups/:id/edit"
-  element={<TrainingGroupForm />}
-/>
-          
-        </Route>
+            <Route
+              path="administration/modalities"
+              element={<ModalitiesPage />}
+            />
 
-      </Routes>
+            <Route
+              path="administration/categories"
+              element={<CategoriesPage />}
+            />
+
+            <Route
+              path="administration/training-groups"
+              element={<TrainingGroupsPage />}
+            />
+
+            <Route
+              path="administration/training-groups/new"
+              element={<TrainingGroupForm />}
+            />
+
+            <Route
+              path="administration/training-groups/:id"
+              element={<TrainingGroupDetails />}
+            />
+
+            <Route
+              path="administration/training-groups/:id/edit"
+              element={<TrainingGroupForm />}
+            />
+          </Route>
+
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
