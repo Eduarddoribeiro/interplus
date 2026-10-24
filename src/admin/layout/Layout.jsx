@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Outlet } from "react-router-dom";
 
 import Sidebar from "./Sidebar";
@@ -35,12 +35,15 @@ export default function Layout() {
         <Topbar onOpenMenu={() => setMenuOpen(true)} />
 
         <main className="mx-auto max-w-[1400px] p-4 sm:p-6 lg:px-10 lg:py-8">
-          <Outlet
-            context={{
-              openNewContact: () => setNewContactOpen(true),
-              contactsVersion,
-            }}
-          />
+          {/* O menu continua na tela enquanto a página é baixada */}
+          <Suspense fallback={null}>
+            <Outlet
+              context={{
+                openNewContact: () => setNewContactOpen(true),
+                contactsVersion,
+              }}
+            />
+          </Suspense>
         </main>
       </div>
 
