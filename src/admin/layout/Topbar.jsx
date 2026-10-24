@@ -17,11 +17,11 @@ export default function Topbar({ onOpenMenu }) {
       </button>
 
       <img
-        src="/logo-vermelho.png"
+        src="/logo-recorte-vermelho.svg"
         alt="Escola Oficial do Inter"
-        width={104}
-        height={40}
-        className="h-10 w-[104px] object-cover"
+        width={92}
+        height={37}
+        className="h-auto w-[92px]"
       />
     </header>
   );

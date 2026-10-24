@@ -104,11 +104,11 @@ export default function Sidebar({ open = false, onClose, pending }) {
         {/* Logo */}
         <div className="flex items-center justify-between px-5 py-5">
           <img
-            src="/logo-vermelho.png"
+            src="/logo-recorte-vermelho.svg"
             alt="Escola Oficial do Inter"
-            width={136}
-            height={52}
-            className="h-[52px] w-[136px] object-cover"
+            width={120}
+            height={49}
+            className="h-auto w-[120px]"
           />
 
           <button
