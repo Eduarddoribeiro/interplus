@@ -1,37 +1,40 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import { lazyPage } from "./helpers/lazyPage";
+
 // Cada tela é baixada só quando é aberta, para o site público
-// não carregar o código do painel.
+// não carregar o código do painel. Depois de um deploy, se a tela
+// não existir mais, a página recarrega (ver lazyPage).
 
-const ProtectedRoute = lazy(() => import("./admin/components/ProtectedRoute"));
+const ProtectedRoute = lazyPage(() => import("./admin/components/ProtectedRoute"));
 
-const Benefits = lazy(() => import("./pages/Benefits"));
-const Landing = lazy(() => import("./pages/Landing"));
-const PublicRegistration = lazy(() => import("./pages/PublicRegistration"));
-const CoachSession = lazy(() => import("./pages/CoachSession"));
+const Benefits = lazyPage(() => import("./pages/Benefits"));
+const Landing = lazyPage(() => import("./pages/Landing"));
+const PublicRegistration = lazyPage(() => import("./pages/PublicRegistration"));
+const CoachSession = lazyPage(() => import("./pages/CoachSession"));
 
-const Layout = lazy(() => import("./admin/layout/Layout"));
+const Layout = lazyPage(() => import("./admin/layout/Layout"));
 
-const Login = lazy(() => import("./admin/pages/Login"));
-const Dashboard = lazy(() => import("./admin/pages/Dashboard"));
-const Contacts = lazy(() => import("./admin/pages/Contacts"));
-const Experimentals = lazy(() => import("./admin/pages/Experimentals"));
-const FollowUps = lazy(() => import("./admin/pages/FollowUps"));
-const Reports = lazy(() => import("./admin/pages/Reports"));
-const ContactDetails = lazy(() => import("./admin/pages/ContactDetails"));
-const WaitingList = lazy(() => import("./admin/pages/WaitingList"));
+const Login = lazyPage(() => import("./admin/pages/Login"));
+const Dashboard = lazyPage(() => import("./admin/pages/Dashboard"));
+const Contacts = lazyPage(() => import("./admin/pages/Contacts"));
+const Experimentals = lazyPage(() => import("./admin/pages/Experimentals"));
+const FollowUps = lazyPage(() => import("./admin/pages/FollowUps"));
+const Reports = lazyPage(() => import("./admin/pages/Reports"));
+const ContactDetails = lazyPage(() => import("./admin/pages/ContactDetails"));
+const WaitingList = lazyPage(() => import("./admin/pages/WaitingList"));
 
-const Administration = lazy(() => import("./admin/pages/Administration"));
+const Administration = lazyPage(() => import("./admin/pages/Administration"));
 
-const UnitsPage = lazy(() => import("./admin/pages/administration/units/UnitsPage"));
-const LocationsPage = lazy(() => import("./admin/pages/administration/locations/LocationsPage"));
-const ModalitiesPage = lazy(() => import("./admin/pages/administration/modalities/ModalitiesPage"));
-const CategoriesPage = lazy(() => import("./admin/pages/administration/categories/CategoriesPage"));
+const UnitsPage = lazyPage(() => import("./admin/pages/administration/units/UnitsPage"));
+const LocationsPage = lazyPage(() => import("./admin/pages/administration/locations/LocationsPage"));
+const ModalitiesPage = lazyPage(() => import("./admin/pages/administration/modalities/ModalitiesPage"));
+const CategoriesPage = lazyPage(() => import("./admin/pages/administration/categories/CategoriesPage"));
 
-const TrainingGroupsPage = lazy(() => import("./admin/pages/administration/training-groups/TrainingGroupsPage"));
-const TrainingGroupForm = lazy(() => import("./admin/pages/administration/training-groups/TrainingGroupForm"));
-const TrainingGroupDetails = lazy(() => import("./admin/pages/administration/training-groups/TrainingGroupDetails"));
+const TrainingGroupsPage = lazyPage(() => import("./admin/pages/administration/training-groups/TrainingGroupsPage"));
+const TrainingGroupForm = lazyPage(() => import("./admin/pages/administration/training-groups/TrainingGroupForm"));
+const TrainingGroupDetails = lazyPage(() => import("./admin/pages/administration/training-groups/TrainingGroupDetails"));
 
 export default function App() {
   return (
