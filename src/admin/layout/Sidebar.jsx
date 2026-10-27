@@ -7,9 +7,11 @@ import {
   BarChart3,
   ShieldCheck,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   X,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import { signOut } from "../../services/auth";
@@ -48,6 +50,16 @@ const COUNT_TITLE = {
   followUps: "retornos vencidos",
 };
 
+const COLLAPSED_KEY = "admin-sidebar-collapsed";
+
+function readCollapsed() {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 const menu = [
   { key: "dashboard", label: "Visão geral", icon: LayoutDashboard, to: "/admin" },
   { key: "contacts", label: "Contatos", icon: Users, to: "/admin/contacts" },
@@ -66,6 +78,22 @@ const menu = [
 export default function Sidebar({ open = false, onClose, pending }) {
   const navigate = useNavigate();
   const closeRef = useRef(null);
+
+  // Computador: menu recolhido só com os ícones (fica lembrado neste
+  // navegador). No celular a gaveta abre sempre inteira.
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+
+  function toggleCollapsed() {
+    setCollapsed((current) => {
+      const next = !current;
+      try {
+        localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        // sem storage: vale só até recarregar
+      }
+      return next;
+    });
+  }
 
   // Gaveta aberta no celular: foco no botão de fechar e Esc fecha
   useEffect(() => {
@@ -103,19 +131,34 @@ export default function Sidebar({ open = false, onClose, pending }) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-line bg-white transition-transform duration-200 motion-reduce:transition-none lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-line bg-white transition-[transform,width] duration-200 motion-reduce:transition-none lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+          collapsed ? "lg:w-16" : "lg:w-64"
+        } ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between px-5 py-5">
+        <div className={`flex items-center justify-between px-5 py-5 ${collapsed ? "lg:justify-center lg:px-0" : ""}`}>
           <img
             src="/logo-recorte-vermelho.svg"
             alt="Escola Oficial do Inter"
             width={120}
             height={49}
-            className="h-auto w-[120px]"
+            className={`h-auto w-[120px] ${collapsed ? "lg:hidden" : ""}`}
           />
+
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+            title={collapsed ? "Expandir menu" : "Recolher menu"}
+            className="hidden rounded-lg p-2 text-muted transition-colors hover:bg-neutral-100 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink lg:inline-flex"
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={19} aria-hidden="true" />
+            ) : (
+              <PanelLeftClose size={19} aria-hidden="true" />
+            )}
+          </button>
 
           <button
             ref={closeRef}
@@ -129,7 +172,7 @@ export default function Sidebar({ open = false, onClose, pending }) {
         </div>
 
         {/* Menu */}
-        <nav aria-label="Painel" className="flex-1 overflow-y-auto px-3">
+        <nav aria-label="Painel" className={`flex-1 overflow-y-auto px-3 ${collapsed ? "lg:px-2" : ""}`}>
           <ul className="space-y-0.5">
             {menu.map((item) => {
               const Icon = item.icon;
@@ -141,20 +184,38 @@ export default function Sidebar({ open = false, onClose, pending }) {
                     to={item.to}
                     end={item.to === "/admin"}
                     onClick={onClose}
+                    title={collapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       `flex h-10 w-full items-center gap-3 rounded-lg border-l-[3px] pl-2.5 pr-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink ${
+                        collapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""
+                      } ${
                         isActive
                           ? "border-l-inter-red bg-neutral-100 text-ink"
                           : "border-l-transparent text-muted hover:bg-neutral-50 hover:text-ink"
                       }`
                     }
                   >
-                    <Icon size={18} aria-hidden="true" />
+                    <span className="relative shrink-0">
+                      <Icon size={18} aria-hidden="true" />
 
-                    <span className="flex-1">{item.label}</span>
+                      {/* Recolhido: o contador vira um ponto no ícone */}
+                      {count && collapsed && (
+                        <span
+                          aria-hidden="true"
+                          className={`absolute -right-1 -top-1 hidden h-2 w-2 rounded-full ring-2 ring-white lg:block ${
+                            count.urgency === "alert" ? "bg-alert" : "bg-attention"
+                          }`}
+                        />
+                      )}
+                    </span>
+
+                    <span className={`flex-1 ${collapsed ? "lg:sr-only" : ""}`}>{item.label}</span>
 
                     {count && (
-                      <span title={`${count.value} ${COUNT_TITLE[item.key]}`}>
+                      <span
+                        title={`${count.value} ${COUNT_TITLE[item.key]}`}
+                        className={collapsed ? "lg:sr-only" : ""}
+                      >
                         <Count value={count.value} urgency={count.urgency} />
                         <span className="sr-only"> {COUNT_TITLE[item.key]}</span>
                       </span>
@@ -167,12 +228,16 @@ export default function Sidebar({ open = false, onClose, pending }) {
         </nav>
 
         {/* Usuário */}
-        <div className="flex items-center gap-3 border-t border-line px-5 py-4">
+        <div
+          className={`flex items-center gap-3 border-t border-line px-5 py-4 ${
+            collapsed ? "lg:flex-col lg:gap-2 lg:px-0" : ""
+          }`}
+        >
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-sm font-semibold text-ink">
             {USER.name[0]}
           </div>
 
-          <div className="min-w-0 flex-1">
+          <div className={`min-w-0 flex-1 ${collapsed ? "lg:sr-only" : ""}`}>
             <p className="truncate text-sm font-semibold text-ink">{USER.name}</p>
             <p className="text-xs text-muted">{USER.role}</p>
           </div>
