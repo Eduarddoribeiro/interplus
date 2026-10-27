@@ -25,7 +25,8 @@ const AGENDA_SESSION = [
 ];
 
 // Dias à frente para "confirmar experimentais" e "próximos retornos"
-const CONFIRM_DAYS = 2;
+// Janela de "aulas para confirmar" (Visão geral e aba A confirmar)
+export const CONFIRM_DAYS = 2;
 const UPCOMING_FOLLOW_UP_DAYS = 7;
 
 export function toLocalISO(date = new Date()) {

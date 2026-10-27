@@ -164,6 +164,12 @@ export default function Dashboard() {
 
   const { pending } = data;
 
+  // Cada card abre uma lista com exatamente o número que mostra
+  const lateFollowUps = data.followUpsDue.filter(
+    (contact) => daysLate(contact.follow_up_date, data.today) > 0,
+  ).length;
+  const todayFollowUps = data.followUpsDue.length - lateFollowUps;
+
   const pendingItems = [
     {
       key: "overdue",
@@ -173,21 +179,32 @@ export default function Dashboard() {
       text: "Aulas que já passaram sem veio ou faltou",
       to: "/admin/experimentals?filtro=overdue",
     },
-    {
-      key: "followUpsDue",
-      urgency: "alert",
-      value: pending.followUpsDue,
-      title: "Retornos vencidos",
-      text: "Data de retorno é hoje ou já passou",
-      to: "/admin/follow-ups",
-    },
+    lateFollowUps
+      ? {
+          key: "followUpsDue",
+          urgency: "alert",
+          value: lateFollowUps,
+          title: "Retornos atrasados",
+          text: todayFollowUps
+            ? `A data já passou. Mais ${todayFollowUps} para hoje`
+            : "A data de retorno já passou",
+          to: "/admin/follow-ups?filtro=overdue",
+        }
+      : {
+          key: "followUpsDue",
+          urgency: "attention",
+          value: todayFollowUps,
+          title: "Retornos para hoje",
+          text: "Famílias para chamar hoje",
+          to: "/admin/follow-ups?filtro=today",
+        },
     {
       key: "toConfirm",
       urgency: "attention",
       value: pending.toConfirm,
       title: "Aulas para confirmar",
       text: "Nas próximas 48 horas",
-      to: "/admin/experimentals?filtro=future",
+      to: "/admin/experimentals?filtro=to_confirm",
     },
     {
       key: "awaitingResult",
@@ -363,7 +380,7 @@ export default function Dashboard() {
             {data.followUpsDue.length === 0 ? (
               <p className="px-4 py-5 text-sm text-muted">Nenhum retorno para hoje.</p>
             ) : (
-              <ul className="divide-y divide-line">
+              <ul>
                 {data.followUpsDue.slice(0, 8).map((contact) => {
                   const whatsappUrl = createWhatsAppUrl(contact.phone);
                   const late = daysLate(contact.follow_up_date, data.today);
@@ -371,7 +388,12 @@ export default function Dashboard() {
                   const name = contact.child_name || contact.responsible_name || "Sem nome";
 
                   return (
-                    <li key={contact.id} className={`flex items-center gap-3 px-4 py-2.5 ${urgencyRail(urgency)}`}>
+                    <li
+                      key={contact.id}
+                      // Borda de cima por linha (não divide-y): divide-y pintaria
+                      // de cinza a faixa de urgência da esquerda
+                      className={`flex items-center gap-3 border-t border-line px-4 py-2.5 first:border-t-0 ${urgencyRail(urgency)}`}
+                    >
                       <div className="min-w-0 flex-1">
                         <Link
                           to={`/admin/contacts/${contact.id}`}

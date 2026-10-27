@@ -383,7 +383,7 @@ export default function WaitingList() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Buscar por atleta, responsável ou telefone"
-          className="h-10 w-full rounded-lg border border-line bg-white pl-10 pr-3 text-sm outline-none focus:border-ink"
+          className="h-10 w-full rounded-lg border border-line bg-white pl-10 pr-3 text-sm outline-none placeholder:text-neutral-500 focus:border-ink"
         />
       </label>
 
