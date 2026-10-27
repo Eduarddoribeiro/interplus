@@ -1045,7 +1045,9 @@ const [waitingForm, setWaitingForm] = useState({
 
         {/* PRÓXIMA AÇÃO */}
 
-        <aside>
+        {/* Antes do xl a próxima ação vem primeiro: no celular é o que
+            se usa na hora, sem rolar por quatro painéis */}
+        <aside className="order-first xl:order-none">
           <Panel className="xl:sticky xl:top-6">
             <h2 className="px-4 pb-2 pt-4 font-semibold">Próxima ação</h2>
 

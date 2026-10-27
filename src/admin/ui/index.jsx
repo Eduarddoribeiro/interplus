@@ -24,8 +24,8 @@ const BUTTON_VARIANTS = {
 
 export function buttonClass(variant = "secondary", size = "md") {
   const sizes = {
-    sm: "h-9 px-3 text-sm",
-    md: "h-10 px-4 text-sm",
+    sm: "h-9 px-3 text-sm touch:h-11",
+    md: "h-10 px-4 text-sm touch:h-11",
   };
 
   return `inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS} ${sizes[size]} ${BUTTON_VARIANTS[variant]}`;
@@ -56,7 +56,7 @@ export function Tabs({ items, value, onChange, label }) {
             role="tab"
             aria-selected={selected}
             onClick={() => onChange(item.value)}
-            className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors ${FOCUS} ${
+            className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium touch:h-11 transition-colors ${FOCUS} ${
               selected ? "bg-ink text-white" : "text-muted hover:bg-neutral-100 hover:text-ink"
             }`}
           >
@@ -218,7 +218,7 @@ export function Dialog({ open, onClose, title, description, size = "md", busy = 
             onClick={onClose}
             disabled={busy}
             aria-label="Fechar"
-            className={`-mr-2 -mt-1 rounded-lg p-2 text-muted transition-colors hover:bg-neutral-100 hover:text-ink disabled:opacity-50 ${FOCUS}`}
+            className={`-mr-2 -mt-1 rounded-lg p-2 text-muted touch:p-3 transition-colors hover:bg-neutral-100 hover:text-ink disabled:opacity-50 ${FOCUS}`}
           >
             <X size={20} aria-hidden="true" />
           </button>

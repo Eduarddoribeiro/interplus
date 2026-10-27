@@ -126,6 +126,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Sem botão "Atualizar": as telas recarregam ao voltar para a aba (`visibilitychange`).
 - `SectionTitle` recebe `title`, `summary` e `actions`.
 - Janelas: sempre `Dialog` de `src/admin/ui`. O título diz a ação ("Agendar experimental") e a descrição diz de quem. A janela fecha com Esc, prende o foco, devolve o foco ao fechar e não fecha enquanto salva (`busy`). No celular abre de baixo, como uma folha. Botões com `DialogActions` + `Button`, nunca botões feitos à mão.
+- Telas de toque: a variante `touch:` do Tailwind (`(hover: none) and (pointer: coarse)`) deixa botões, abas e ícones de WhatsApp com 44px no celular e no tablet, sem mudar o computador. Use `touch:h-11` em alvos pequenos novos.
 - Campos de formulário: `inputClass`. Seleção (chips, cartões de opção) em tinta, nunca em vermelho, com `aria-pressed`.
 - Avisos: `toast(mensagem, { type, action })` de `common/Toaster`. Sucesso usa `role="status"`; com `action` (ex.: "Desfazer") o aviso fica 10 s e para enquanto o mouse está em cima.
 - Desfazer: depois de Confirmar/Veio/Faltou e depois de arquivar (um ou em lote). Encerrar e Mover para lista em lote não têm desfazer exato, então pedem confirmação com a quantidade ("Encerrar 23 contatos?").
@@ -161,3 +162,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-10-27: menu lateral recolhível no computador.
 - 2026-10-27: imagem do cartão do link da demo (`og:image`).
 - 2026-10-27: README de portfólio (problema, funcionalidades, decisões técnicas, como rodar a demo) com prints da demo em `docs/screenshots/`.
+- 2026-10-27: item 5, celular: botões e abas com 44px em telas de toque, "Próxima ação" no topo da página do contato abaixo do xl e ações da triagem numa linha própria no celular.

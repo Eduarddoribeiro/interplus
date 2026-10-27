@@ -1304,7 +1304,7 @@ const isReschedule =
               target="_blank"
               rel="noreferrer"
               aria-label={`WhatsApp de ${contact.responsible_name || contact.child_name || "contato"}`}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line text-whatsapp hover:border-whatsapp"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line text-whatsapp touch:h-11 touch:w-11 hover:border-whatsapp"
             >
               <MessageCircle size={17} aria-hidden="true" />
             </a>
