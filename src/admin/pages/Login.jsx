@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signIn } from "../../services/auth";
+import { isDemo } from "../../lib/supabase";
 
 export default function Login() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // Na demonstração o acesso já vem preenchido (qualquer senha entra)
+  const [email, setEmail] = useState(isDemo ? "demonstracao@exemplo.com" : "");
+  const [password, setPassword] = useState(isDemo ? "demonstracao" : "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +50,12 @@ export default function Login() {
             Entre com suas credenciais para acessar o painel.
           </p>
         </div>
+
+        {isDemo && (
+          <p className="mb-5 rounded-lg bg-canvas p-3 text-sm text-muted">
+            Demonstração com dados fictícios. O acesso já está preenchido: é só entrar.
+          </p>
+        )}
 
         <form
           onSubmit={handleSubmit}

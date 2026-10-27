@@ -7,6 +7,8 @@ import usePendingCounts from "./usePendingCounts";
 
 import NewContactModal from "../components/contacts/NewContactModal";
 import Toaster from "../components/common/Toaster";
+import DemoBanner from "../../demo/DemoBanner";
+import { isDemo } from "../../lib/supabase";
 
 export default function Layout() {
   const [newContactOpen, setNewContactOpen] =
@@ -32,6 +34,8 @@ export default function Layout() {
       />
 
       <div className="min-w-0 flex-1 bg-canvas text-ink">
+        {isDemo && <DemoBanner />}
+
         <Topbar onOpenMenu={() => setMenuOpen(true)} />
 
         <main className="mx-auto max-w-[1400px] p-4 sm:p-6 lg:px-10 lg:py-8">

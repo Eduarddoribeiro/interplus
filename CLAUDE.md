@@ -19,6 +19,7 @@ O painel é usado pela equipe cadastrada em `staff_users`.
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # verificação obrigatória antes de commitar (não há ESLint configurado)
+VITE_DEMO=1 npx vite --port 5174   # demonstração com dados fictícios, sem Supabase
 ```
 
 Mudanças no `tailwind.config.js` exigem reiniciar o servidor de desenvolvimento.
@@ -55,7 +56,18 @@ src/
   constants/             # status, rótulos e regras (contactStatus, followUpRules...)
 supabase/migrations/     # histórico parcial; o banco remoto NÃO está alinhado com ele
 server/                  # backend antigo da Evolution API, desativado; a remover
+src/demo/                # modo demonstração: cliente falso do Supabase + dados fictícios
 ```
+
+## Modo demonstração (portfólio)
+
+- Com `VITE_DEMO=1`, `src/lib/supabase.js` troca o cliente real por `createDemoClient()` (`src/demo/client.js`). Ele imita o que o painel usa do supabase-js (select com relações, filtros, insert/update/delete, rpc e auth) sobre tabelas na memória.
+- Os dados vêm de `src/demo/seed.js`: inventados, determinísticos e com datas calculadas a partir de hoje. Os telefones usam o DDD 00, que não existe.
+- O que o visitante muda fica na `sessionStorage` da aba. A faixa "Demonstração" no topo tem o botão "Restaurar dados".
+- O login já vem preenchido, e qualquer senha entra. No menu aparece "Visitante", nunca o nome de alguém real.
+- O build normal não inclui a demo: o módulo só é carregado quando `VITE_DEMO=1`.
+- Deploy da demo: um projeto **separado** na Vercel, a partir do mesmo repositório, com só `VITE_DEMO=1` nas variáveis (sem as do Supabase).
+- Se o painel passar a usar uma consulta nova (filtro, relação ou rpc), conferir se `src/demo/client.js` a cobre e se `seed.js` tem os campos.
 
 ## Dados (Supabase)
 
@@ -142,3 +154,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-10-19: formulário público revisado (acessibilidade e validação, PR #20). Painel redesenhado (PRs #22–#26). Aviso de duplicado não marca mais irmãos (#27).
 - 2026-10-22: horários das turmas sem os segundos (#28). Criado este CLAUDE.md (#29). Crítica Impeccable do painel: 26/40. Item 1: janela única (`Dialog`) em todas as janelas e Administração no padrão novo; a tela Modalidades, que quebrava ao abrir, foi refeita; o botão de salvar da qualificação, que estava invisível, foi corrigido (#30). Item 2: Desfazer na presença e no arquivamento, confirmação com quantidade nas ações em lote, erros sem texto técnico. Turmas inativas saem da lista principal e ficam na aba Inativas; turmas não são excluídas, para não perder o histórico das experimentais (#31). Lista de turmas sem a coluna Modalidade, e a unidade só aparece quando houver mais de uma (#32). Item 3, menos amarelo: sem faixa em "parado" e na lista de interesse, menu só com contadores de ação, informativos da Visão geral em linha discreta, nota dos Relatórios neutra, contraste do texto de exemplo dos campos e do zero nos dias de Experimentais (#33).
 - 2026-10-23: Contatos com 20 por página (antes 30), troca de página também no topo ("1–20 de 119") e a tela volta ao começo da lista ao trocar (#34). Item 4: nomes de status e motivos de encerramento unificados (três telas gravavam códigos diferentes), coluna "Categoria" em Contatos, estado das listas na URL, sem "·", sem "Comparecimento 0%" em semana sem aulas, código morto removido (StatCard, Categories.jsx, SchedulesPage, sombras do Tailwind) (#35, #36). Tela de Administração em duas colunas no computador, com os itens "em breve" numa célula só e descrições mais claras.
+- 2026-10-27: modo demonstração para o portfólio (`VITE_DEMO=1`), com cliente falso do Supabase e dados fictícios.
