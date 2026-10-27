@@ -500,7 +500,7 @@ function MonthResult({ month, previous }) {
           </dl>
 
           <p className="mt-5 text-sm text-muted">
-            Conversão (matrículas sobre quem compareceu):{" "}
+            Matrícula depois da aula (matrículas sobre quem compareceu):{" "}
             <strong className="text-ink">
               {month.conversion === null ? "sem dados" : `${month.conversion}%`}
             </strong>

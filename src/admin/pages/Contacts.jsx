@@ -392,7 +392,7 @@ export default function Contacts() {
     confirmBulk({
       title: `Mover ${plural(selected.size)} para a lista de interesse?`,
       description:
-        "Saem do funil ativo e ficam na lista para avisar quando abrir vaga.",
+        "Saem do acompanhamento e ficam na lista para avisar quando abrir vaga.",
       confirmLabel: `Mover ${plural(selected.size)}`,
       run: runMoveToWaitingList,
     });
@@ -403,7 +403,7 @@ export default function Contacts() {
       oneByOne(ids, onProgress, (id) =>
         addToWaitingList(id, {
           reason: "future_interest",
-          notes: "Movido em lote: lead parado, manter para avisar quando abrir vaga.",
+          notes: "Movido em lote: contato parado, manter para avisar quando abrir vaga.",
         }),
       ),
     );
@@ -415,7 +415,7 @@ export default function Contacts() {
       navigate(`/admin/contacts/${contact.id}`);
     } catch (err) {
       console.error("Erro ao marcar como lead:", err);
-      toast("Não foi possível marcar como lead.");
+      toast("Não foi possível marcar como interessado.");
     }
   }
 
@@ -514,7 +514,7 @@ export default function Contacts() {
       {tab === "triage" && (
         <p className="max-w-3xl text-sm text-muted">
           Entraram sozinhos pelo WhatsApp ou foram cadastrados sem o nome do atleta.
-          Decida se cada um é lead. Pais de alunos atuais vão para <strong className="text-ink">Já é aluno</strong> e
+          Decida se cada um é interessado. Pais de alunos atuais vão para <strong className="text-ink">Já é aluno</strong> e
           não contam como matrícula. Dá para marcar vários e arquivar de uma vez.
         </p>
       )}
@@ -620,7 +620,7 @@ export default function Contacts() {
                   onClick={() => archiveSelected(ARCHIVE_REASON.NOT_LEAD)}
                   icon={Archive}
                 >
-                  Não é lead
+                  Não é interessado
                 </BulkButton>
 
                 <BulkButton
@@ -880,9 +880,10 @@ function ContactRow({
       >
         {tab === "triage" && (
           <>
-            <Button size="sm" variant="primary" onClick={onPromote}>
+            {/* Secundário: vermelho só na ação principal da tela */}
+            <Button size="sm" onClick={onPromote}>
               <UserCheck size={15} aria-hidden="true" />
-              É lead
+              É interessado
             </Button>
 
             <Button size="sm" onClick={() => onArchive(ARCHIVE_REASON.CURRENT_STUDENT)}>
@@ -890,7 +891,7 @@ function ContactRow({
             </Button>
 
             <Button size="sm" onClick={() => onArchive(ARCHIVE_REASON.NOT_LEAD)}>
-              Não é lead
+              Não é interessado
             </Button>
           </>
         )}

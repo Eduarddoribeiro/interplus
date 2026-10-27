@@ -45,10 +45,10 @@ const ACTION_CONFIG = {
   },
 
   [FOLLOW_UP_ACTION.LOSE]: {
-    title: "Encerrar oportunidade",
+    title: "Encerrar",
     description:
-      "Registre por que este contato não converteu.",
-    button: "Registrar não conversão",
+      "Registre por que a família não vai seguir.",
+    button: "Encerrar",
     placeholder:
       "Ex.: Família informou que o horário não atende...",
   },

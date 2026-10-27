@@ -415,7 +415,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
       open={open}
       onClose={handleClose}
       title="Novo contato"
-      description="Cadastre uma nova oportunidade."
+      description="Cadastre uma família interessada."
       size="lg"
       busy={saving}
     >
@@ -490,7 +490,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
 
                     <p className="mt-1 text-xs leading-5 text-attention-text">
                       Faltando: {missingData.join(", ")}. Isso não impede salvar
-                      este lead.
+                      o contato.
                     </p>
                   </div>
                 </div>
@@ -586,7 +586,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
               </div>
 
               <p className="mt-3 text-xs text-muted">
-                O WhatsApp é obrigatório porque identifica o lead e permite
+                O WhatsApp é obrigatório porque identifica a família e permite
                 retomar o contato.
               </p>
             </FormSection>
@@ -625,7 +625,7 @@ export default function NewContactModal({ open, onClose, onCreated }) {
               </div>
 
               <p className="mt-3 text-xs text-muted">
-                Para leads antigos, use a data da primeira conversa encontrada
+                Para contatos antigos, use a data da primeira conversa encontrada
                 no WhatsApp.
               </p>
             </FormSection>

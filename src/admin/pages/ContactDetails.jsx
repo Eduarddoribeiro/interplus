@@ -638,7 +638,7 @@ const [waitingForm, setWaitingForm] = useState({
           lostReason: closeForm.lostReason,
           notes: closeForm.notes,
         }),
-      "Oportunidade encerrada."
+      "Contato encerrado."
     );
   }
 
@@ -1089,7 +1089,7 @@ const [waitingForm, setWaitingForm] = useState({
                   className="inline-flex items-center gap-2 text-sm font-medium text-alert-text hover:underline"
                 >
                   <XCircle size={16} aria-hidden="true" />
-                  Encerrar oportunidade
+                  Encerrar
                 </button>
               </div>
             ) : null}
@@ -1504,8 +1504,8 @@ const [waitingForm, setWaitingForm] = useState({
 
       <Dialog
         open={modal === "close"}
-        title="Encerrar oportunidade"
-        description="O contato deixará de aparecer como oportunidade ativa. O histórico será preservado."
+        title="Encerrar"
+        description="A família sai do acompanhamento. O histórico continua salvo."
         onClose={closeModal}
       >
         <form
@@ -1591,7 +1591,7 @@ const [waitingForm, setWaitingForm] = useState({
                 <XCircle size={16} />
               )}
 
-              Encerrar oportunidade
+              Encerrar
             </button>
           </div>
         </form>
@@ -1615,7 +1615,7 @@ const [waitingForm, setWaitingForm] = useState({
             Esta função corrige o histórico da aula. Se o
             aluno já avançou para matrícula, retorno, lista
             de interesse ou encerramento, essa situação
-            comercial será preservada.
+            continua como está.
           </div>
 
           <div>
@@ -1761,7 +1761,7 @@ const [waitingForm, setWaitingForm] = useState({
       <Dialog
         open={modal === "edit"}
         title="Editar contato"
-        description="Corrija informações cadastrais sem alterar manualmente a jornada comercial."
+        description="Corrija informações cadastrais sem alterar manualmente a etapa em que a família está."
         onClose={closeModal}
         size="lg"
       >

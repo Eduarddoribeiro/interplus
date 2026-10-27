@@ -574,7 +574,7 @@ export default function Experimentals() {
       );
 
       toast(
-        errorMessage(err, "Não foi possível encerrar a oportunidade.")
+        errorMessage(err, "Não foi possível encerrar o contato.")
       );
     } finally {
       setSavingCloseOpportunity(false);
@@ -1522,7 +1522,7 @@ function CoachNotesEditor({
           <p className="mt-1 text-xs text-muted">
             Apenas informações esportivas
             ou operacionais que podem ser
-            compartilhadas com a comissão.
+            compartilhadas com os professores.
           </p>
         </div>
 
@@ -1869,12 +1869,12 @@ function NoShowActions({
 
             <div>
               <p className="font-semibold text-ink">
-                Oportunidade encerrada
+                Contato encerrado
               </p>
 
               <p className="mt-1 text-sm text-muted">
-                Este contato não seguirá
-                no fluxo comercial.
+                A família não vai seguir
+                no acompanhamento.
               </p>
 
               {contact.lost_reason && (
@@ -1953,8 +1953,8 @@ function NoShowActions({
 
       <div className="mt-4 rounded-lg border border-line bg-white p-4 sm:p-5">
         <p className="font-semibold text-ink">
-          Não deixe essa oportunidade
-          morrer.
+          Não deixe essa família
+          sem resposta.
         </p>
 
         <p className="mt-1 text-sm text-muted">
@@ -2028,7 +2028,7 @@ function NoShowActionButtons({
         className="flex items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-canvas"
       >
         <ArchiveX size={17} />
-        Encerrar oportunidade
+        Encerrar
       </button>
     </div>
   );
@@ -2089,7 +2089,7 @@ function AttendedActions({
     return (
       <div className="flex items-center gap-2 text-sm font-semibold text-neutral-600">
         <XCircle size={17} />
-        Compareceu, mas não converteu.
+        Compareceu e não vai seguir.
       </div>
     );
   }
@@ -2108,7 +2108,7 @@ function AttendedActions({
 
         <p className="mt-1 text-sm text-muted">
           Quando houver uma definição,
-          registre o resultado comercial.
+          registre o resultado.
         </p>
 
         <button
@@ -2173,7 +2173,7 @@ function ExperimentalResultModal({
       !lostReason
     ) {
       toast(
-        "Informe o motivo da não conversão."
+        "Informe o motivo do encerramento."
       );
       return;
     }
@@ -2233,7 +2233,7 @@ function ExperimentalResultModal({
               result === "lost"
             }
             icon={XCircle}
-            label="Não converteu"
+            label="Encerrar"
             onClick={() =>
               setResult("lost")
             }
@@ -2266,7 +2266,7 @@ function ExperimentalResultModal({
           <LostReasonSelect
             value={lostReason}
             onChange={setLostReason}
-            label="Motivo da não conversão"
+            label="Motivo do encerramento"
           />
         )}
 
@@ -2285,7 +2285,7 @@ function ExperimentalResultModal({
               ? "Confirmar matrícula"
               : result === "follow_up"
               ? "Agendar retorno"
-              : "Registrar não conversão"
+              : "Encerrar"
           }
         />
       </form>
@@ -2599,7 +2599,7 @@ function CloseNoShowOpportunityModal({
       open
       onClose={onClose}
       busy={saving}
-      title="Encerrar oportunidade"
+      title="Encerrar"
       description={contact.child_name}
     >
 
@@ -2611,8 +2611,8 @@ function CloseNoShowOpportunityModal({
           </p>
 
           <p className="mt-1 text-sm text-attention-text">
-            Apenas a oportunidade
-            comercial será encerrada.
+            Só o acompanhamento da família
+            será encerrado.
           </p>
         </div>
 
@@ -2632,7 +2632,7 @@ function CloseNoShowOpportunityModal({
         <ModalActions
           saving={saving}
           onClose={onClose}
-          submitLabel="Encerrar oportunidade"
+          submitLabel="Encerrar"
         />
       </form>
     </Dialog>
