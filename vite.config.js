@@ -7,6 +7,8 @@ import react from '@vitejs/plugin-react'
  * LinkedIn e no WhatsApp. O site real mantém os textos da escola.
  */
 const DEMO_TITLE = 'CRM Escola do Inter Viamão — demonstração'
+// O LinkedIn exige endereço completo da imagem do cartão
+const DEMO_URL = 'https://crm-escola-demo.vercel.app'
 const DEMO_DESCRIPTION =
   'Painel de contatos, aulas experimentais, retornos e matrículas de uma escola de futebol infantil. Demonstração com dados fictícios.'
 
@@ -23,7 +25,17 @@ function demoMeta(isDemo) {
           `<meta name="description" content="${DEMO_DESCRIPTION}" />\n` +
             `    <meta property="og:title" content="${DEMO_TITLE}" />\n` +
             `    <meta property="og:description" content="${DEMO_DESCRIPTION}" />\n` +
-            `    <meta property="og:type" content="website" />`,
+            `    <meta property="og:type" content="website" />
+` +
+            `    <meta property="og:url" content="${DEMO_URL}/" />
+` +
+            `    <meta property="og:image" content="${DEMO_URL}/og-demo.png" />
+` +
+            `    <meta property="og:image:width" content="1200" />
+` +
+            `    <meta property="og:image:height" content="630" />
+` +
+            `    <meta name="twitter:card" content="summary_large_image" />`,
         )
     },
   }
