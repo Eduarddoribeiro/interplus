@@ -162,4 +162,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-10-27: menu lateral recolhível no computador.
 - 2026-10-27: imagem do cartão do link da demo (`og:image`).
 - 2026-10-27: README de portfólio (problema, funcionalidades, decisões técnicas, como rodar a demo) com prints da demo em `docs/screenshots/`.
-- 2026-10-27: item 5, celular: botões e abas com 44px em telas de toque, "Próxima ação" no topo da página do contato abaixo do xl e ações da triagem numa linha própria no celular.
+- 2026-10-27: item 5, celular: botões e abas com 44px em telas de toque, "Próxima ação" no topo da página do contato abaixo do xl e ações da triagem numa linha própria no celular. Stack do README descrita por camada, com PostgreSQL em destaque.

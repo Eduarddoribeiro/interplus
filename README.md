@@ -46,7 +46,10 @@ A escola recebia os interessados pelo WhatsApp. Pais perguntavam horários, marc
 
 ## Stack
 
-React 18, Vite, Tailwind CSS, React Router, Supabase (Postgres, Auth, RLS e funções SQL) e Vercel.
+- **Front-end:** React 18, React Router, Tailwind CSS e Vite.
+- **Banco de dados:** PostgreSQL, com Row Level Security para o controle de acesso e funções em PL/pgSQL para as regras de negócio (cadastro público em transação com trava de vaga, lista de presença do professor).
+- **Autenticação:** login da equipe por e-mail e senha.
+- **Infraestrutura:** PostgreSQL gerenciado pelo Supabase; deploy contínuo a cada merge.
 
 ## Rodar localmente
 
