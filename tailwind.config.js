@@ -20,7 +20,8 @@ export default {
         canvas: '#F6F7F8',
         alert: { DEFAULT: '#D92D20', text: '#B42318', soft: '#FEECEB' },
         attention: { DEFAULT: '#E8A400', text: '#8A5A00', soft: '#FFF6D6' },
-        ok: { DEFAULT: '#1E8E4E', soft: '#E7F6EC' },
+        // #17713E: contraste AA também sobre o fundo verde claro (soft)
+        ok: { DEFAULT: '#17713E', soft: '#E7F6EC' },
         whatsapp: '#1F9D55',
       },
       borderRadius: {

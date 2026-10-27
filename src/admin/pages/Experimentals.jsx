@@ -29,6 +29,7 @@ import { Button, Dialog, DialogActions, Panel, Tabs, buttonClass, inputClass, ur
 import { toast } from "../components/common/Toaster";
 import { getSessionMessages } from "../../helpers/whatsappMessages";
 import { isAwaitingResult } from "../../helpers/experimentalRules";
+import { CONFIRM_DAYS } from "../../helpers/dashboardSummary";
 import TrialSlotPicker from "../components/experimentals/TrialSlotPicker";
 import {
   buildCoachLinkUrl,
@@ -68,6 +69,8 @@ const STATUS_DONE_LABEL = {
 const FILTERS = [
   { value: "week", label: "Semana" },
   { value: "today", label: "Hoje" },
+  // Aguardando confirmação nas próximas 48h (mesma regra da Visão geral)
+  { value: "to_confirm", label: "A confirmar" },
   { value: "future", label: "Todos futuros" },
   { value: "history", label: "Histórico" },
   // Já passaram e ainda estão "aguardando" ou "confirmado"
@@ -185,6 +188,15 @@ export default function Experimentals() {
 
   const today = getTodayISO();
   const tomorrow = addDaysISO(today, 1);
+  const confirmUntil = addDaysISO(today, CONFIRM_DAYS);
+
+  function isToConfirm(item) {
+    return (
+      item.status === "pending_confirmation" &&
+      item.experimental_date >= today &&
+      item.experimental_date <= confirmUntil
+    );
+  }
 
   const weekStart = useMemo(
     () => getMondayISO(weekAnchor),
@@ -642,6 +654,7 @@ export default function Experimentals() {
       week: count((item) => item.experimental_date >= weekStart && item.experimental_date <= weekEnd),
       today: count((item) => item.experimental_date === today),
       future: count((item) => item.experimental_date >= today),
+      to_confirm: count(isToConfirm),
       overdue: count(
         (item) =>
           item.experimental_date < today &&
@@ -787,6 +800,11 @@ export default function Experimentals() {
                   item.experimental_date <=
                     weekEnd
               );
+            break;
+
+          case "to_confirm":
+            result =
+              scopedExperimentals.filter(isToConfirm);
             break;
 
           case "future":
@@ -971,7 +989,7 @@ export default function Experimentals() {
             urgency:
               filter.value === "overdue" && filterCounts.overdue
                 ? "alert"
-                : filter.value === "no_result" && filterCounts.no_result
+                : ["no_result", "to_confirm"].includes(filter.value) && filterCounts[filter.value]
                   ? "attention"
                   : undefined,
           }))}

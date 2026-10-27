@@ -675,7 +675,7 @@ function ReportBox({
 }) {
   return (
     <Panel className="p-5">
-      <h3 className="font-semibold">{title}</h3>
+      <h2 className="font-semibold">{title}</h2>
 
       {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
 

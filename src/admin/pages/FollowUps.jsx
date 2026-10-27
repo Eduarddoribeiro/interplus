@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { ChevronRight } from "lucide-react";
 
@@ -33,7 +33,19 @@ export default function FollowUps() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  const [activeFilter, setActiveFilter] = useState(FOLLOW_UP_FILTER.TODAY);
+  // A aba fica na URL (?filtro=overdue): a Visão geral abre direto nela
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlFilter = searchParams.get("filtro");
+  const [activeFilter, setActiveFilter] = useState(() =>
+    Object.values(FOLLOW_UP_FILTER).includes(urlFilter) ? urlFilter : FOLLOW_UP_FILTER.TODAY,
+  );
+
+  useEffect(() => {
+    setSearchParams(
+      activeFilter === FOLLOW_UP_FILTER.TODAY ? {} : { filtro: activeFilter },
+      { replace: true },
+    );
+  }, [activeFilter, setSearchParams]);
 
   const [actionContact, setActionContact] = useState(null);
   const [actionType, setActionType] = useState(null);
@@ -73,7 +85,7 @@ export default function FollowUps() {
         (item) => item.follow_up_date && item.follow_up_date < today,
       );
 
-      if (!keepFilter && !hasToday && hasOverdue) {
+      if (!keepFilter && !urlFilter && !hasToday && hasOverdue) {
         setActiveFilter(FOLLOW_UP_FILTER.OVERDUE);
       }
     } catch (err) {
