@@ -141,7 +141,7 @@ onSave({
     <Dialog
       open
       onClose={onClose}
-      title="Qualificação comercial"
+      title="Qualificação da família"
       description={contact.child_name || "Contato sem nome"}
       size="lg"
       busy={saving}

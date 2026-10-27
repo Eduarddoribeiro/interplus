@@ -342,7 +342,7 @@ export default function WaitingList() {
       <SectionTitle
         title="Lista de interesse"
         summary={
-          `${items.length} famílias aguardando vaga, nova turma ou oportunidade.` +
+          `${items.length} famílias aguardando vaga ou nova turma.` +
           (nowCount
             ? ` ${nowCount} ${nowCount === 1 ? "pode" : "podem"} agendar agora, porque já há turma com vaga.`
             : "")

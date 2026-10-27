@@ -106,6 +106,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Commits: usar a skill `commit-semantico` (Conventional Commits em português, aprovação antes do commit).
 - No Chrome, só olhar o layout, numa aba própria, sem copiar dados pessoais.
 - Interface em português do Brasil.
+- Vocabulário da escola, não de vendas: "família", "interessado", "contato", "acompanhamento", "matrícula". Nunca "lead", "oportunidade", "funil", "comercial" ou "conversão" na tela (nos nomes internos do código pode). Fechar um contato é sempre "Encerrar": item do menu, título da janela e botão.
 
 ## Padrão visual do painel
 
@@ -164,3 +165,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-10-27: README de portfólio (problema, funcionalidades, decisões técnicas, como rodar a demo) com prints da demo em `docs/screenshots/`.
 - 2026-10-27: item 5, celular: botões e abas com 44px em telas de toque, "Próxima ação" no topo da página do contato abaixo do xl e ações da triagem numa linha própria no celular. Stack do README descrita por camada, com PostgreSQL em destaque.
 - 2026-10-27: números da Visão geral batem com a lista que abrem (retornos atrasados, aba "A confirmar" em Experimentais, Retornos com filtro na URL); faixa de urgência corrigida em "Retornos para fazer" (`divide-y` pintava de cinza); verde `ok` escurecido para contraste AA; placeholder da busca da Lista de interesse; título h2 nos Relatórios.
+- 2026-10-27: vocabulário da escola em todo o painel ("É interessado" no lugar de "É lead", "Encerrar" no menu, título e botão, Relatórios sem "funil comercial"); "É interessado" da triagem passa a ser botão secundário.

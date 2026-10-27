@@ -172,7 +172,7 @@ function ActionMenu({ canReschedule, limitReached, onAction }) {
     canReschedule && { type: FOLLOW_UP_ACTION.RESCHEDULE, label: "Reagendar retorno", icon: RotateCcw },
     {
       type: FOLLOW_UP_ACTION.LOSE,
-      label: limitReached ? "Encerrar oportunidade" : "Não converteu",
+      label: "Encerrar",
       icon: XCircle,
     },
   ].filter(Boolean);

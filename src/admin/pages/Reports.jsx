@@ -239,8 +239,8 @@ export default function Reports() {
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
         <ReportBox
-          title="Funil comercial"
-          description="Conversão entre cada etapa da jornada comercial."
+          title="Do contato à matrícula"
+          description="Quantas famílias passam de uma etapa para a outra."
         >
           <div className="space-y-6">
             <FunnelRow
@@ -302,16 +302,16 @@ export default function Reports() {
 
               <p className="text-sm leading-6 text-muted">
                 Matrículas históricas sem experimental
-                registrada não entram na conversão
-                pós-aula. Assim, os dados importados não
-                distorcem a taxa comercial.
+                registrada não entram na taxa de
+                matrícula depois da aula. Assim, os dados
+                importados não distorcem a conta.
               </p>
             </div>
           </div>
         </ReportBox>
 
         <ReportBox
-          title="Oportunidades abertas"
+          title="Em acompanhamento"
           description="Famílias que ainda podem avançar."
         >
           <div className="space-y-3">
@@ -346,7 +346,7 @@ export default function Reports() {
                 </p>
 
                 <p className="mt-1 text-sm text-muted">
-                  Oportunidades não encerradas
+                  Famílias ainda não encerradas
                 </p>
               </div>
 
@@ -363,7 +363,7 @@ export default function Reports() {
       <div className="grid gap-6 xl:grid-cols-2">
         <ReportBox
           title="Origem dos contatos"
-          description="De onde chegam as oportunidades."
+          description="Como as famílias conheceram a escola."
         >
           <Ranking
             items={report.sources}
@@ -396,8 +396,8 @@ export default function Reports() {
         </ReportBox>
 
         <ReportBox
-          title="Motivos de perda"
-          description="Por que oportunidades não avançaram."
+          title="Motivos de encerramento"
+          description="Por que as famílias não seguiram."
         >
           <Ranking
             items={report.lostReasons}
@@ -411,7 +411,7 @@ export default function Reports() {
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         <SmallMetric
           icon={TrendingUp}
-          label="Conversão pós-experimental"
+          label="Matrícula depois da aula"
           value={`${percentage(
             report.enrolledAfterExperimental,
             report.attended
