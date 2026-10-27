@@ -15,6 +15,12 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "../../services/auth";
 import { toast } from "../components/common/Toaster";
 import { Count } from "../ui";
+import { isDemo } from "../../lib/supabase";
+
+// Na demonstração o painel não mostra o nome de ninguém real
+const USER = isDemo
+  ? { name: "Visitante", role: "Demonstração" }
+  : { name: "Eduardo Ribeiro", role: "Administrador" };
 
 /*
  * Contador de cada item do menu a partir das pendências da Visão
@@ -163,12 +169,12 @@ export default function Sidebar({ open = false, onClose, pending }) {
         {/* Usuário */}
         <div className="flex items-center gap-3 border-t border-line px-5 py-4">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-sm font-semibold text-ink">
-            E
+            {USER.name[0]}
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-ink">Eduardo Ribeiro</p>
-            <p className="text-xs text-muted">Administrador</p>
+            <p className="truncate text-sm font-semibold text-ink">{USER.name}</p>
+            <p className="text-xs text-muted">{USER.role}</p>
           </div>
 
           <button

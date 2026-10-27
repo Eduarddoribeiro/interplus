@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { signIn } from "../../services/auth";
-import { supabase } from "../../lib/supabase";
+import { isDemo, supabase } from "../../lib/supabase";
 import { Button, inputClass } from "../ui";
 import { errorMessage } from "../../helpers/errorMessage";
 
@@ -33,8 +33,9 @@ export default function Login() {
   const passwordRef = useRef(null);
 
   const [checkingSession, setCheckingSession] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // Na demonstração o acesso já vem preenchido (qualquer senha entra)
+  const [email, setEmail] = useState(isDemo ? "demonstracao@exemplo.com" : "");
+  const [password, setPassword] = useState(isDemo ? "demonstracao" : "");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -173,6 +174,12 @@ export default function Login() {
               Use o e-mail e a senha da sua conta da equipe.
             </p>
           </div>
+
+          {isDemo && (
+            <p className="mb-5 rounded-lg border border-line bg-white p-3 text-sm text-muted">
+              Demonstração com dados fictícios. O acesso já está preenchido: é só entrar.
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} aria-busy={loading}>
             <fieldset disabled={loading} className="space-y-5">
