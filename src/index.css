@@ -17,6 +17,18 @@
   }
 }
 
+/*
+ * Em telas de toque, campos com texto menor que 16px fazem o iPhone
+ * dar zoom ao tocar. Ali todo campo pequeno sobe para 16px; no
+ * computador (mouse) continua como está. O !important é para valer
+ * também nos campos feitos à mão, com text-sm/text-xs na classe.
+ */
+@media (hover: none) and (pointer: coarse) {
+  :is(input, select, textarea):is(.text-sm, .text-xs) {
+    font-size: 16px !important;
+  }
+}
+
 /* ---------- SWIPER ---------- */
 
 .partners-swiper .swiper-button-next,

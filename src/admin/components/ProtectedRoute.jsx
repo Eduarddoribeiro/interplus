@@ -34,9 +34,17 @@ export default function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted">
-          Carregando...
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas">
+        <img
+          src="/logo-recorte-vermelho.svg"
+          alt="Escola Oficial do Inter, Viamão"
+          width={160}
+          height={65}
+          className="h-auto w-40"
+        />
+
+        <p role="status" className="text-sm text-muted">
+          Carregando…
         </p>
       </div>
     );
