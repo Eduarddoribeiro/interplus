@@ -1,7 +1,10 @@
 import { Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 
 import { lazyPage } from "./helpers/lazyPage";
+
+// Na demonstração a raiz abre direto o painel (a landing é da escola real)
+const isDemo = import.meta.env.VITE_DEMO === "1";
 
 // Cada tela é baixada só quando é aberta, para o site público
 // não carregar o código do painel. Depois de um deploy, se a tela
@@ -44,7 +47,7 @@ export default function App() {
 
           {/* SITE PÚBLICO */}
 
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={isDemo ? <Navigate to="/admin" replace /> : <Landing />} />
 
           {/* Clube de benefícios (ainda não lançado) */}
           <Route path="/beneficios" element={<Benefits />} />
