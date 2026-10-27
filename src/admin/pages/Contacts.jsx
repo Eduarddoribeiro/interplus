@@ -870,7 +870,14 @@ function ContactRow({
         {stale && <span className="block">parado</span>}
       </span>
 
-      <div className="col-start-3 row-span-2 row-start-1 flex flex-wrap justify-end gap-2 lg:col-start-auto lg:row-span-1 lg:row-start-auto">
+      {/* Triagem no celular: as ações ganham uma linha só delas, embaixo */}
+      <div
+        className={`flex flex-wrap gap-2 lg:col-span-1 lg:col-start-auto lg:row-span-1 lg:row-start-auto lg:justify-end ${
+          tab === "triage"
+            ? "col-span-2 col-start-2 row-start-3 mt-2 lg:mt-0"
+            : "col-start-3 row-span-2 row-start-1 justify-end"
+        }`}
+      >
         {tab === "triage" && (
           <>
             <Button size="sm" variant="primary" onClick={onPromote}>
@@ -894,7 +901,7 @@ function ContactRow({
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`WhatsApp de ${title}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line text-whatsapp hover:border-whatsapp"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line text-whatsapp touch:h-11 touch:w-11 hover:border-whatsapp"
           >
             <MessageCircle size={17} aria-hidden="true" />
           </a>
