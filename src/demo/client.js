@@ -545,26 +545,59 @@ function publicRegister({ p }) {
   return { type: "scheduled" };
 }
 
+// Mesmos campos e regras de coach_session_list no banco real
 function coachSessionList({ p_token: token }) {
   const link = table("coach_links").find((row) => row.token === token);
-  if (!link) return [];
+  const today = todayISO();
+
+  if (!link || today > addDays(link.session_date, 1)) {
+    throw new Error("Link inválido ou expirado.");
+  }
+
+  const ageOn = (birth, date) => {
+    if (!birth) return null;
+    const [by, bm, bd] = birth.split("-").map(Number);
+    const [y, m, d] = date.split("-").map(Number);
+    return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0);
+  };
 
   return table("experimental_sessions")
-    .filter((session) => session.experimental_date === link.session_date)
+    .filter(
+      (session) =>
+        session.experimental_date === link.session_date &&
+        ["pending_confirmation", "confirmed", "attended", "no_show"].includes(session.status),
+    )
     .map((session) => {
       const contact = byId("contacts", session.contact_id) ?? {};
-      const category = byId("categories", session.category_id);
+      const schedule = byId("training_group_schedules", session.training_group_schedule_id);
+      const group = schedule && byId("training_groups", schedule.training_group_id);
+      const location = group && byId("locations", group.location_id);
+      const [firstName = "", secondName = ""] = (contact.child_name ?? "").trim().split(/\s+/);
+
       return {
-        session_id: session.id,
-        first_name: (contact.child_name ?? "").split(" ")[0],
-        birth_date: contact.birth_date,
-        category_name: category?.name ?? null,
-        experimental_time: session.experimental_time,
-        status: session.status,
-        coach_notes: session.coach_notes,
-        coach_feedback: session.coach_feedback ?? null,
+        contact,
+        location,
+        row: {
+          session_id: session.id,
+          session_date: session.experimental_date,
+          experimental_time: session.experimental_time ?? schedule?.start_time ?? null,
+          child_label: `${firstName}${secondName ? ` ${secondName[0]}.` : ""}`,
+          age: ageOn(contact.birth_date, session.experimental_date),
+          category_name: byId("categories", session.category_id)?.name ?? null,
+          group_name: group?.name ?? null,
+          location_name: location?.name ?? null,
+          coach_notes: session.coach_notes ?? null,
+          status: session.status,
+          coach_feedback: session.coach_feedback ?? null,
+          can_mark: today >= session.experimental_date,
+        },
       };
-    });
+    })
+    .filter(({ contact, location }) =>
+      !contact.archived_at && (!link.location_id || sameValue(location?.id, link.location_id)),
+    )
+    .map(({ row }) => row)
+    .sort((a, b) => compare(a.experimental_time, b.experimental_time) || compare(a.child_label, b.child_label));
 }
 
 function coachMarkAttendance({ p_session_id: sessionId, p_attended: attended, p_feedback: feedback }) {
