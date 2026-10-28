@@ -1,27 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Check, Clock, Loader2, MapPin, X } from "lucide-react";
+import { Check, CheckCircle2, Loader2, MapPin, X } from "lucide-react";
 
 import {
   getCoachSessionList,
   markCoachAttendance,
 } from "../services/coachLinks";
+import { errorMessage } from "../helpers/errorMessage";
 
-const formatTime = (time) => time?.slice(0, 5);
+const formatTime = (time) => time?.slice(0, 5) ?? "";
 
 function formatDate(iso) {
   if (!iso) return "";
 
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
+  const text = new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
     weekday: "long",
-    day: "2-digit",
+    day: "numeric",
     month: "long",
   });
+
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+function joinNames(names) {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} e ${names.at(-1)}`;
+}
+
+const isMarked = (session) => ["attended", "no_show"].includes(session.status);
+
 /*
- * Página do professor (sem login): experimentais do dia/local do
- * link, com "Veio / Faltou" e avaliação interna.
+ * Página do professor (sem login), aberta no celular, na quadra:
+ * experimentais do dia/local do link, agrupadas por horário, com
+ * Veio / Faltou grandes e a avaliação interna depois do Veio.
  */
 export default function CoachSession() {
   const { token } = useParams();
@@ -37,7 +48,9 @@ export default function CoachSession() {
         setSessions(await getCoachSessionList(token));
       } catch (err) {
         console.error("Erro ao carregar a aula:", err);
-        setError(err?.message || "Não foi possível abrir a lista.");
+        setError(
+          errorMessage(err, "Não foi possível abrir a lista. Confira a internet e tente de novo."),
+        );
       } finally {
         setLoading(false);
       }
@@ -54,79 +67,135 @@ export default function CoachSession() {
     );
   }
 
+  const groups = useMemo(() => {
+    const byTime = new Map();
+
+    sessions.forEach((session) => {
+      const time = formatTime(session.experimental_time);
+      if (!byTime.has(time)) byTime.set(time, []);
+      byTime.get(time).push(session);
+    });
+
+    return [...byTime.entries()];
+  }, [sessions]);
+
   const first = sessions[0];
   const locations = [...new Set(sessions.map((session) => session.location_name).filter(Boolean))];
-  const pending = sessions.filter(
-    (session) => !["attended", "no_show"].includes(session.status),
-  ).length;
+  const marked = sessions.filter(isMarked).length;
+  const canMarkAny = sessions.some((session) => session.can_mark);
 
   return (
-    <main className="min-h-screen bg-neutral-100 px-4 py-6">
-      <div className="mx-auto max-w-lg">
-        <header className="text-center">
+    <div className="min-h-screen bg-canvas text-ink">
+      <header className="border-b border-line bg-white">
+        <div className="mx-auto max-w-lg px-4 pb-4 pt-5">
           <img
-            src="/logo-vermelho.png"
-            alt="Escola do Inter Viamão"
-            className="mx-auto h-14 w-40 object-cover"
+            src="/logo-recorte-vermelho.svg"
+            alt="Escola Oficial do Inter, Viamão"
+            width={112}
+            height={46}
+            className="h-auto w-28"
           />
 
-          <h1 className="mt-3 text-2xl font-bold text-neutral-900">
+          <h1 className="mt-4 font-display text-[2.4rem] font-semibold leading-[0.9]">
             Experimentais do dia
           </h1>
 
           {first && (
-            <p className="mt-1 capitalize text-neutral-600">
+            <p className="mt-1.5 text-sm text-muted">
               {formatDate(first.session_date)}
+              {locations.length > 0 && (
+                <span className="mt-0.5 flex items-center gap-1.5 text-ink">
+                  <MapPin size={15} aria-hidden="true" className="shrink-0 text-muted" />
+                  {joinNames(locations)}
+                </span>
+              )}
             </p>
           )}
 
-          {locations.length > 0 && (
-            <p className="mt-1 flex items-center justify-center gap-1.5 text-sm font-semibold text-neutral-700">
-              <MapPin size={15} className="text-red-600" />
-              {locations.join(" · ")}
-            </p>
-          )}
-        </header>
+          {sessions.length > 0 && canMarkAny && (
+            <div className="mt-4">
+              <p className="text-sm font-medium tabular-nums" aria-live="polite">
+                {marked === sessions.length
+                  ? "Tudo marcado. Obrigado!"
+                  : `${marked} de ${sessions.length} marcadas`}
+              </p>
 
-        <div className="mt-6 space-y-3">
-          {loading && (
-            <div className="flex items-center justify-center gap-2 py-16 text-neutral-500">
-              <Loader2 size={18} className="animate-spin" />
-              Carregando...
+              <div
+                className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line"
+                role="progressbar"
+                aria-label="Presenças marcadas"
+                aria-valuemin={0}
+                aria-valuemax={sessions.length}
+                aria-valuenow={marked}
+              >
+                <div
+                  className="h-full rounded-full bg-ok transition-[width] duration-300 motion-reduce:transition-none"
+                  style={{ width: `${(marked / sessions.length) * 100}%` }}
+                />
+              </div>
             </div>
           )}
+        </div>
+      </header>
 
-          {!loading && error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center font-semibold text-red-700">
-              {error}
-            </div>
-          )}
+      <main className="mx-auto max-w-lg px-4 pb-12 pt-5">
+        {loading && (
+          <p role="status" className="flex items-center justify-center gap-2 py-16 text-muted">
+            <Loader2 size={18} aria-hidden="true" className="animate-spin" />
+            Abrindo a lista…
+          </p>
+        )}
 
-          {!loading && !error && sessions.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center text-neutral-500">
-              Nenhuma experimental marcada para este dia.
-            </div>
-          )}
+        {!loading && error && (
+          <p role="alert" className="rounded-xl border border-line bg-white p-5 text-center">
+            <span className="block font-semibold text-alert-text">{error}</span>
+            <span className="mt-1 block text-sm text-muted">
+              Se o link for de outro dia, peça um novo à coordenação.
+            </span>
+          </p>
+        )}
 
-          {!loading && !error && sessions.length > 0 && (
-            <p className="text-center text-sm text-neutral-500">
-              {pending === 0
-                ? "Tudo marcado. Obrigado! 🙌"
-                : `${pending} para marcar`}
-            </p>
-          )}
+        {!loading && !error && sessions.length === 0 && (
+          <p className="rounded-xl border border-line bg-white p-6 text-center text-muted">
+            Nenhuma experimental marcada para este dia.
+          </p>
+        )}
 
-          {sessions.map((session) => (
-            <SessionCard
-              key={session.session_id}
-              token={token}
-              session={session}
-              onChange={(changes) => updateSession(session.session_id, changes)}
-            />
+        {!loading && !error && sessions.length > 0 && marked === sessions.length && (
+          <p className="mb-5 flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 text-sm font-medium text-ok">
+            <CheckCircle2 size={18} aria-hidden="true" className="shrink-0" />
+            Todas as presenças marcadas. A coordenação já vê no painel.
+          </p>
+        )}
+
+        <div className="space-y-6">
+          {groups.map(([time, items]) => (
+            <section key={time} aria-labelledby={`hora-${time}`}>
+              <h2
+                id={`hora-${time}`}
+                className="mb-2 flex items-baseline gap-2 font-display text-[1.75rem] font-semibold leading-none tabular-nums"
+              >
+                {time}
+                <span className="font-sans text-sm font-normal text-muted">
+                  {items.length} {items.length === 1 ? "criança" : "crianças"}
+                </span>
+              </h2>
+
+              <div className="space-y-3">
+                {items.map((session) => (
+                  <SessionCard
+                    key={session.session_id}
+                    token={token}
+                    session={session}
+                    onChange={(changes) => updateSession(session.session_id, changes)}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
 
@@ -138,6 +207,13 @@ function SessionCard({ token, session, onChange }) {
 
   const attended = session.status === "attended";
   const noShow = session.status === "no_show";
+  const feedbackId = `avaliacao-${session.session_id}`;
+
+  const meta = [
+    session.age != null ? `${session.age} anos` : null,
+    session.category_name,
+    session.group_name,
+  ].filter(Boolean);
 
   async function mark(value) {
     try {
@@ -149,7 +225,7 @@ function SessionCard({ token, session, onChange }) {
       onChange({ status });
     } catch (err) {
       console.error("Erro ao marcar presença:", err);
-      setError(err?.message || "Não foi possível salvar.");
+      setError(errorMessage(err, "Não foi possível salvar. Confira a internet e toque de novo."));
     } finally {
       setSaving(null);
     }
@@ -166,115 +242,111 @@ function SessionCard({ token, session, onChange }) {
       onChange({ coach_feedback: feedback });
     } catch (err) {
       console.error("Erro ao salvar avaliação:", err);
-      setError(err?.message || "Não foi possível salvar a avaliação.");
+      setError(errorMessage(err, "Não foi possível salvar a avaliação. Tente de novo."));
     } finally {
       setSaving(null);
     }
   }
 
+  const choiceClass = (selected, tone) =>
+    `flex h-12 items-center justify-center gap-2 rounded-lg border text-base font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-60 ${
+      selected
+        ? tone === "ok"
+          ? "border-ok bg-ok text-white"
+          : "border-ink bg-ink text-white"
+        : "border-line bg-white text-ink hover:border-neutral-400"
+    }`;
+
+  const feedbackChanged = feedback.trim() !== savedFeedback.trim();
+
   return (
-    <article
-      className={`rounded-2xl border bg-white p-4 ${
-        attended ? "border-green-300" : noShow ? "border-red-200" : "border-neutral-200"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="flex items-center gap-1.5 text-sm font-bold text-red-600">
-            <Clock size={14} />
-            {formatTime(session.experimental_time)} · {session.category_name}
-          </p>
-
-          <h2 className="mt-1 text-xl font-bold text-neutral-900">{session.child_label}</h2>
-
-          <p className="text-sm text-neutral-500">
-            {session.age != null ? `${session.age} anos` : ""}
-            {session.group_name ? ` · ${session.group_name}` : ""}
-          </p>
-        </div>
-
-        {(attended || noShow) && (
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-              attended ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700"
-            }`}
-          >
-            {attended ? "Veio" : "Faltou"}
-          </span>
-        )}
-      </div>
+    <article className="rounded-xl border border-line bg-white p-4">
+      <h3 className="text-lg font-semibold leading-tight">{session.child_label}</h3>
+      {meta.length > 0 && <p className="mt-0.5 text-sm text-muted">{meta.join(", ")}</p>}
 
       {session.coach_notes && (
-        <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-          📝 {session.coach_notes}
+        <p className="mt-3 border-l-2 border-line pl-3 text-sm">
+          <span className="block text-muted">Recado da coordenação</span>
+          {session.coach_notes}
         </p>
       )}
 
       {session.can_mark ? (
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-2 gap-2" role="group" aria-label={`Presença de ${session.child_label}`}>
           <button
             type="button"
+            aria-pressed={attended}
             disabled={saving !== null}
             onClick={() => mark(true)}
-            className={`flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold transition ${
-              attended
-                ? "bg-green-600 text-white"
-                : "border border-green-300 text-green-800 hover:bg-green-50"
-            } disabled:opacity-60`}
+            className={choiceClass(attended, "ok")}
           >
-            {saving === "attended" ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+            {saving === "attended" ? (
+              <Loader2 size={18} aria-hidden="true" className="animate-spin" />
+            ) : (
+              <Check size={18} aria-hidden="true" />
+            )}
             Veio
           </button>
 
           <button
             type="button"
+            aria-pressed={noShow}
             disabled={saving !== null}
             onClick={() => mark(false)}
-            className={`flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold transition ${
-              noShow
-                ? "bg-red-600 text-white"
-                : "border border-red-200 text-red-700 hover:bg-red-50"
-            } disabled:opacity-60`}
+            className={choiceClass(noShow, "ink")}
           >
-            {saving === "no_show" ? <Loader2 size={18} className="animate-spin" /> : <X size={18} />}
+            {saving === "no_show" ? (
+              <Loader2 size={18} aria-hidden="true" className="animate-spin" />
+            ) : (
+              <X size={18} aria-hidden="true" />
+            )}
             Faltou
           </button>
         </div>
       ) : (
-        <p className="mt-4 rounded-xl bg-neutral-50 p-3 text-center text-sm text-neutral-500">
-          A presença pode ser marcada no dia da aula.
-        </p>
+        <p className="mt-4 text-sm text-muted">A presença pode ser marcada no dia da aula.</p>
       )}
 
       {attended && (
-        <div className="mt-4">
-          <label className="text-sm font-semibold text-neutral-800">
-            Como foi? <span className="font-normal text-neutral-400">(só a equipe vê)</span>
+        <div className="mt-4 border-t border-line pt-4">
+          <label htmlFor={feedbackId} className="text-sm font-medium">
+            Como foi? <span className="font-normal text-muted">(só a coordenação vê)</span>
           </label>
 
           <textarea
+            id={feedbackId}
             rows={3}
             value={feedback}
             onChange={(event) => setFeedback(event.target.value)}
-            placeholder="Ex.: Bom nível, um pouco tímido. Gostou do treino."
-            className="mt-2 w-full resize-none rounded-xl border border-neutral-200 px-3 py-2.5 text-base outline-none focus:border-red-500"
+            placeholder="Ex.: Bom passe, um pouco tímido. Gostou do treino."
+            className="mt-1.5 w-full resize-none rounded-lg border border-line bg-white px-3 py-2.5 text-base text-ink placeholder:text-neutral-500 focus:border-ink focus:outline-none focus:ring-2 focus:ring-neutral-200"
           />
 
-          {feedback.trim() !== savedFeedback.trim() && (
+          {feedbackChanged ? (
             <button
               type="button"
               disabled={saving !== null || !feedback.trim()}
               onClick={saveFeedback}
-              className="mt-2 w-full rounded-xl bg-neutral-900 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ink text-base font-semibold text-white transition-colors hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50"
             >
-              {saving === "feedback" ? "Salvando..." : "Salvar avaliação"}
+              {saving === "feedback" && <Loader2 size={18} aria-hidden="true" className="animate-spin" />}
+              {saving === "feedback" ? "Salvando…" : "Salvar avaliação"}
             </button>
+          ) : (
+            savedFeedback.trim() && (
+              <p className="mt-2 flex items-center gap-1.5 text-sm text-ok">
+                <Check size={16} aria-hidden="true" />
+                Avaliação salva
+              </p>
+            )
           )}
         </div>
       )}
 
       {error && (
-        <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>
+        <p role="alert" className="mt-3 rounded-lg bg-alert-soft p-3 text-sm font-medium text-alert-text">
+          {error}
+        </p>
       )}
     </article>
   );
