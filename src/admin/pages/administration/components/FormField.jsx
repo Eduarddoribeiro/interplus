@@ -1,16 +1,10 @@
-export default function FormField({
-  label,
-  children,
-}) {
+// Rótulo + campo. É uma div (não <label>) porque alguns campos são
+// grupos de botões, e um <label> repassaria o clique ao primeiro deles.
+export default function FormField({ label, children }) {
   return (
-    <div className="space-y-2">
-
-      <label className="text-sm font-medium text-neutral-700">
-        {label}
-      </label>
-
+    <div>
+      <p className="mb-1.5 text-sm font-medium text-ink">{label}</p>
       {children}
-
     </div>
   );
 }

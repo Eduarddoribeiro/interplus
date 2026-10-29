@@ -50,7 +50,7 @@ export default function DaySelector({
                 ${
                   selected
                     ? "border-inter-red bg-inter-red text-white"
-                    : "border-neutral-200 bg-white text-neutral-700 hover:border-inter-red"
+                    : "border-line bg-white text-neutral-700 hover:border-inter-red"
                 }
                 ${
                   disabled

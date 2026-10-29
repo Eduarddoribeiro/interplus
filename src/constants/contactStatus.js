@@ -14,14 +14,14 @@ export const CONTACT_STATUS = {
 export const CONTACT_STATUS_LABEL = {
   new_contact: "Novo contato",
   pending_confirmation: "Aguardando confirmação",
-  confirmed: "Confirmado",
+  confirmed: "Aula confirmada",
   attended: "Compareceu",
   no_show: "Não compareceu",
-  cancelled: "Cancelado",
-  follow_up: "Retorno pendente",
+  cancelled: "Aula cancelada",
+  follow_up: "Em retorno",
   waiting_list: "Lista de interesse",
   enrolled: "Matriculado",
-  lost: "Não convertido",
+  lost: "Encerrado",
 };
 
 export const CONTACT_STATUS_COLORS = {

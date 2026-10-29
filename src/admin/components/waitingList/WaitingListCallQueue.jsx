@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Check, MessageCircle, SkipForward, X } from "lucide-react";
+import { Check, MessageCircle, SkipForward } from "lucide-react";
+
+import { buttonClass, Dialog } from "../../ui";
 
 /*
  * "Chamar todos desta célula": passa pelas famílias uma a uma.
@@ -42,41 +44,22 @@ export default function WaitingListCallQueue({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-neutral-100 p-6">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
-              Chamar pelo WhatsApp
-            </p>
-
-            <h2 className="mt-1 text-xl font-bold text-neutral-900">{title}</h2>
-
-            <p className="mt-1 text-sm text-neutral-500">
-              {Math.min(index + 1, contacts.length)} de {contacts.length} · {done.length} chamad
-              {done.length === 1 ? "a" : "as"}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="p-6">
+    <Dialog
+      open
+      onClose={onClose}
+      title="Chamar pelo WhatsApp"
+      description={`${title}: ${Math.min(index + 1, contacts.length)} de ${contacts.length}, ${done.length} ${done.length === 1 ? "chamada" : "chamadas"}`}
+    >
+        <div>
           {finished ? (
             <div className="py-6 text-center">
-              <Check size={36} className="mx-auto text-green-600" />
+              <Check size={36} className="mx-auto text-ok" />
 
-              <p className="mt-3 font-semibold text-neutral-900">
+              <p className="mt-3 font-semibold text-ink">
                 Fila concluída
               </p>
 
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-1 text-sm text-muted">
                 {done.length} família{done.length === 1 ? "" : "s"} chamada
                 {done.length === 1 ? "" : "s"}.
               </p>
@@ -84,34 +67,34 @@ export default function WaitingListCallQueue({
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-5 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white"
+                className={`mt-5 ${buttonClass("primary")}`}
               >
                 Fechar
               </button>
             </div>
           ) : (
             <>
-              <p className="font-bold text-neutral-900">
+              <p className="font-bold text-ink">
                 {contact.child_name || "Sem nome"}
               </p>
 
-              <p className="text-sm text-neutral-500">
-                {contact.responsible_name || "Responsável não informado"} · {contact.phone}
+              <p className="text-sm text-muted">
+                {contact.responsible_name || "Responsável não informado"}, {contact.phone}
               </p>
 
-              <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-neutral-50 p-4 font-sans text-sm leading-6 text-neutral-800">
+              <pre className="mt-4 whitespace-pre-wrap rounded-lg bg-canvas p-4 font-sans text-sm leading-6 text-ink">
                 {buildMessage(contact)}
               </pre>
 
               {error && (
-                <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>
+                <p className="mt-3 rounded-lg bg-alert-soft p-3 text-sm text-alert-text">{error}</p>
               )}
 
               <div className="mt-5 flex flex-col gap-2 sm:flex-row">
                 <button
                   type="button"
                   onClick={handleCall}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700"
+                  className={`flex-1 ${buttonClass("primary")} !bg-whatsapp hover:!brightness-95`}
                 >
                   <MessageCircle size={17} />
                   Abrir WhatsApp e marcar
@@ -120,7 +103,7 @@ export default function WaitingListCallQueue({
                 <button
                   type="button"
                   onClick={() => setIndex((current) => current + 1)}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+                  className={buttonClass("secondary")}
                 >
                   <SkipForward size={17} />
                   Pular
@@ -129,7 +112,6 @@ export default function WaitingListCallQueue({
             </>
           )}
         </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

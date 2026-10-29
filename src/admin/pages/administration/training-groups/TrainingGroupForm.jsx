@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import SectionTitle from "../../../components/common/SectionTitle";
@@ -18,6 +18,8 @@ import {
   TRAINING_GROUP_STATUS,
   TRAINING_GROUP_STATUS_OPTIONS,
 } from "../../../../constants/trainingGroupStatus";
+import { BackLink } from "../components/CrudPage";
+import { Button, inputClass } from "../../../ui";
 
 const EMPTY_FORM = {
   name: "",
@@ -151,39 +153,30 @@ export default function TrainingGroupForm() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
 
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900"
-      >
-        <ArrowLeft size={18} />
-        Voltar
-      </button>
-
-      <SectionTitle
-        title={isEditing ? "Editar Turma" : "Nova Turma"}
-        subtitle={
-          isEditing
-            ? "Altere os dados e a situação da turma."
-            : "Cadastre uma nova turma."
-        }
+      <BackLink
+        to={isEditing ? `/admin/administration/training-groups/${id}` : "/admin/administration/training-groups"}
+        label={isEditing ? "Voltar para a turma" : "Turmas"}
       />
+
+      <SectionTitle title={isEditing ? "Editar turma" : "Nova turma"} />
 
       <form
         onSubmit={handleSubmit}
-        className="rounded-2xl border border-neutral-200 bg-white p-8 space-y-6"
+        className="max-w-3xl space-y-6 rounded-xl border border-line bg-white p-5 sm:p-6"
       >
 
         <div>
-          <label>Nome</label>
+          <label htmlFor="group-name" className="mb-1.5 block text-sm font-medium text-ink">Nome</label>
 
           <input
+            id="group-name"
             name="name"
             value={form.name}
             onChange={handleChange}
             placeholder="Ex.: Sub-09 Noite"
-            className="mt-2 w-full rounded-xl border px-4 py-3"
+            className={inputClass}
           />
         </div>
 
@@ -214,7 +207,7 @@ export default function TrainingGroupForm() {
 
         {/* CATEGORIAS */}
         <fieldset>
-          <legend className="mb-2">Categorias atendidas</legend>
+          <legend className="mb-1.5 text-sm font-medium text-ink">Categorias atendidas</legend>
 
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => {
@@ -224,11 +217,12 @@ export default function TrainingGroupForm() {
                 <button
                   key={category.id}
                   type="button"
+                  aria-pressed={selected}
                   onClick={() => toggleCategory(category.id)}
-                  className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                  className={`h-9 rounded-lg border px-3 text-sm font-medium transition-colors ${
                     selected
-                      ? "border-red-600 bg-red-50 text-red-700"
-                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
+                      ? "border-ink bg-ink text-white"
+                      : "border-line bg-white text-ink hover:border-neutral-400"
                   }`}
                 >
                   {category.name}
@@ -237,14 +231,14 @@ export default function TrainingGroupForm() {
             })}
           </div>
 
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-2 text-sm text-muted">
             Marque mais de uma quando a turma juntar categorias (ex.: Sub-15 e Sub-17).
           </p>
         </fieldset>
 
         {/* SITUAÇÃO */}
         <fieldset className="space-y-3">
-          <legend className="mb-2">Situação</legend>
+          <legend className="mb-1.5 text-sm font-medium text-ink">Situação</legend>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             {TRAINING_GROUP_STATUS_OPTIONS.map((option) => {
@@ -253,10 +247,10 @@ export default function TrainingGroupForm() {
               return (
                 <label
                   key={option.value}
-                  className={`cursor-pointer rounded-xl border p-4 transition ${
+                  className={`cursor-pointer rounded-lg border p-4 transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ink ${
                     selected
-                      ? "border-red-600 bg-red-50"
-                      : "border-neutral-200 hover:border-neutral-300"
+                      ? "border-ink ring-1 ring-ink"
+                      : "border-line hover:border-neutral-400"
                   }`}
                 >
                   <input
@@ -268,11 +262,11 @@ export default function TrainingGroupForm() {
                     className="sr-only"
                   />
 
-                  <span className="block font-semibold text-neutral-900">
+                  <span className="block font-semibold text-ink">
                     {option.label}
                   </span>
 
-                  <span className="mt-1 block text-sm text-neutral-500">
+                  <span className="mt-1 block text-sm text-muted">
                     {option.description}
                   </span>
                 </label>
@@ -287,29 +281,26 @@ export default function TrainingGroupForm() {
             name="featured"
             checked={form.featured}
             onChange={handleChange}
-            className="mt-1"
+            className="mt-1 h-4 w-4 accent-ink"
           />
 
           <span>
-            <span className="block">Destacar no formulário</span>
-            <span className="block text-sm text-neutral-500">
+            <span className="block text-sm font-medium">Destacar no formulário</span>
+            <span className="block text-sm text-muted">
               Turmas em destaque aparecem primeiro para os pais.
             </span>
           </span>
         </label>
 
         {error && (
-          <p className="text-sm font-medium text-red-600">{error}</p>
+          <p className="text-sm font-medium text-alert-text">{error}</p>
         )}
 
-        <div className="flex justify-end">
-          <button
-            disabled={saving}
-            className="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-white disabled:opacity-50"
-          >
-            <Save size={18} />
-            {saving ? "Salvando..." : "Salvar Turma"}
-          </button>
+        <div className="flex justify-end border-t border-line pt-5">
+          <Button type="submit" variant="primary" disabled={saving}>
+            <Save size={17} aria-hidden="true" />
+            {saving ? "Salvando…" : "Salvar turma"}
+          </Button>
         </div>
 
       </form>
@@ -327,17 +318,19 @@ function Select({
 }) {
   return (
     <div>
-
-      <label>{label}</label>
+      <label htmlFor={`group-${name}`} className="mb-1.5 block text-sm font-medium text-ink">
+        {label}
+      </label>
 
       <select
+        id={`group-${name}`}
         name={name}
         value={value}
         onChange={onChange}
-        className="mt-2 w-full rounded-xl border px-4 py-3"
+        className={inputClass}
       >
         <option value="">
-          Selecione...
+          Selecione…
         </option>
 
         {items.map((item) => (

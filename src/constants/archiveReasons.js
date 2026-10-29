@@ -14,7 +14,7 @@ export const ARCHIVE_REASON = Object.freeze({
 
 export const ARCHIVE_REASON_LABEL = {
   [ARCHIVE_REASON.CURRENT_STUDENT]: "Já é aluno",
-  [ARCHIVE_REASON.NOT_LEAD]: "Não é lead",
+  [ARCHIVE_REASON.NOT_LEAD]: "Não é interessado",
   [ARCHIVE_REASON.DUPLICATE]: "Duplicado",
   [ARCHIVE_REASON.OTHER]: "Outro",
 };

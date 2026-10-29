@@ -1,5 +1,7 @@
-import { CalendarPlus, MessageCircle, MoreHorizontal, XCircle } from "lucide-react";
+import { CalendarPlus, MessageCircle, Pencil, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+import { Button } from "../../ui";
 
 import { PREFERRED_SHIFT_LABELS } from "../../../constants/preferredShift";
 import { WAITING_REASON_CARD_LABELS } from "../../../constants/waitingListReasons";
@@ -31,108 +33,97 @@ export default function WaitingListRow({
   const category = getInterestCategory(contact);
   const days = getWaitingDays(contact);
 
+  const wants = [
+    category?.name ?? "Sem categoria",
+    contact.location?.name ?? "qualquer local",
+    contact.preferred_shift && contact.preferred_shift !== "any"
+      ? PREFERRED_SHIFT_LABELS[contact.preferred_shift]?.toLowerCase()
+      : null,
+  ].filter(Boolean);
+
+  const reason = contact.waiting_list_reason
+    ? WAITING_REASON_CARD_LABELS[contact.waiting_list_reason] ?? contact.waiting_list_reason
+    : null;
+
   return (
-    <div className="flex flex-col gap-3 border-b border-neutral-100 px-4 py-3 last:border-b-0 lg:flex-row lg:items-center">
+    <div
+      className={`grid gap-x-4 gap-y-2 border-b border-line px-4 py-3 last:border-b-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_9rem_auto] lg:items-center`}
+    >
       {/* QUEM */}
       <button
         type="button"
         onClick={() => navigate(`/admin/contacts/${contact.id}`)}
-        className="min-w-0 text-left lg:w-64"
+        className="min-w-0 text-left"
       >
-        <p className="truncate font-semibold text-neutral-900 hover:underline">
+        <span className="block truncate font-semibold hover:underline">
           {contact.child_name || "Sem nome"}
-        </p>
+        </span>
 
-        <p className="truncate text-xs text-neutral-500">
+        <span className="block truncate text-sm text-muted">
           {contact.responsible_name || "Responsável não informado"}
-        </p>
+        </span>
       </button>
 
       {/* O QUE QUER */}
-      <div className="flex flex-1 flex-wrap items-center gap-1.5 text-xs">
-        <span className="rounded-md bg-red-50 px-2 py-1 font-semibold text-red-700">
-          {category?.name ?? "Sem categoria"}
-        </span>
-
-        <span className="rounded-md bg-neutral-100 px-2 py-1 font-medium text-neutral-700">
-          {contact.location?.name ?? "Qualquer local"}
-        </span>
-
-        {contact.preferred_shift && contact.preferred_shift !== "any" && (
-          <span className="rounded-md bg-neutral-100 px-2 py-1 font-medium text-neutral-700">
-            {PREFERRED_SHIFT_LABELS[contact.preferred_shift]}
-          </span>
-        )}
-
-        {contact.waiting_list_reason && (
-          <span className="rounded-md px-2 py-1 text-neutral-500">
-            {WAITING_REASON_CARD_LABELS[contact.waiting_list_reason] ??
-              contact.waiting_list_reason}
-          </span>
-        )}
-      </div>
+      <p className="text-sm">
+        {wants.join(", ")}
+        {reason && <span className="block text-muted">{reason}</span>}
+      </p>
 
       {/* HÁ QUANTO TEMPO */}
-      <div className="text-xs lg:w-36 lg:text-right">
+      <p className="text-sm">
         {days !== null && (
-          <p
-            className={`font-semibold ${
-              days > 60 ? "text-amber-700" : "text-neutral-700"
-            }`}
-          >
+          <span className="text-muted">
             {days === 0 ? "Entrou hoje" : `Espera há ${days} dia${days === 1 ? "" : "s"}`}
-          </p>
+          </span>
         )}
 
         {contact.waiting_list_contacted_at && (
-          <p className="text-green-700">
+          <span className="block text-ok">
             Chamado em {formatShortDate(contact.waiting_list_contacted_at)}
-          </p>
+          </span>
         )}
-      </div>
+      </p>
 
       {/* AÇÕES */}
-      <div className="flex flex-wrap gap-2 lg:justify-end">
+      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
         {contact.phone && (
           <button
             type="button"
             onClick={() => onWhatsApp(contact)}
-            className="flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-800 hover:bg-green-100"
+            aria-label={`WhatsApp de ${contact.responsible_name || contact.child_name || "contato"}`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line text-whatsapp touch:h-11 touch:w-11 hover:border-whatsapp"
           >
-            <MessageCircle size={15} />
-            WhatsApp
+            <MessageCircle size={17} aria-hidden="true" />
           </button>
         )}
 
         {canSchedule && (
-          <button
-            type="button"
-            onClick={() => onSchedule(contact)}
-            className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
-          >
-            <CalendarPlus size={15} />
+          <Button size="sm" onClick={() => onSchedule(contact)}>
+            <CalendarPlus size={16} aria-hidden="true" />
             Agendar
-          </button>
+          </Button>
         )}
 
-        <button
-          type="button"
+        <Button
+          size="sm"
+          variant="quiet"
           onClick={() => onQualify(contact)}
-          title="Completar cadastro / preferências"
-          className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+          aria-label="Editar cadastro e preferências"
+          title="Editar cadastro e preferências"
         >
-          <MoreHorizontal size={15} />
-          Editar
-        </button>
+          <Pencil size={16} aria-hidden="true" />
+        </Button>
 
-        <button
-          type="button"
+        <Button
+          size="sm"
+          variant="quiet"
           onClick={() => onClose(contact)}
+          aria-label="Encerrar"
           title="Encerrar"
-          className="flex items-center rounded-lg border border-neutral-200 px-2.5 py-2 text-neutral-500 hover:bg-neutral-50"
         >
-          <XCircle size={15} />
-        </button>
+          <XCircle size={16} aria-hidden="true" />
+        </Button>
       </div>
     </div>
   );

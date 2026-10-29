@@ -66,7 +66,7 @@ export default function TrialSlotPicker({ categoryId, value, onChange }) {
 
   if (!categoryId) {
     return (
-      <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+      <p className="rounded-xl border border-attention/40 bg-attention-soft p-4 text-sm font-semibold text-attention-text">
         Informe a categoria para ver os horários.
       </p>
     );
@@ -74,7 +74,7 @@ export default function TrialSlotPicker({ categoryId, value, onChange }) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-neutral-500">
+      <div className="flex items-center gap-2 text-sm text-muted">
         <Loader2 size={17} className="animate-spin" />
         Carregando horários...
       </div>
@@ -83,18 +83,18 @@ export default function TrialSlotPicker({ categoryId, value, onChange }) {
 
   if (error) {
     return (
-      <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>
+      <p className="rounded-xl bg-alert-soft p-3 text-sm text-alert-text">{error}</p>
     );
   }
 
   if (!groups.length) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <p className="text-sm font-semibold text-amber-800">
+      <div className="rounded-xl border border-attention/40 bg-attention-soft p-4">
+        <p className="text-sm font-semibold text-attention-text">
           Nenhuma turma ativa para esta categoria.
         </p>
 
-        <p className="mt-1 text-xs text-amber-700">
+        <p className="mt-1 text-xs text-attention-text">
           Considere colocar o contato na lista de interesse.
         </p>
       </div>
@@ -109,20 +109,20 @@ export default function TrialSlotPicker({ categoryId, value, onChange }) {
         return (
           <div
             key={group.id}
-            className={`rounded-2xl border bg-white p-4 ${
-              closed ? "border-amber-200" : "border-neutral-200"
+            className={`rounded-xl border bg-white p-4 ${
+              closed ? "border-attention/40" : "border-line"
             }`}
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <p className="flex items-center gap-1.5 font-bold text-neutral-900">
+                <p className="flex items-center gap-1.5 font-bold text-ink">
                   <MapPin size={15} className="text-red-600" />
                   {group.location?.name ?? "Sem local"}
                 </p>
 
-                <p className="mt-0.5 text-xs text-neutral-500">
+                <p className="mt-0.5 text-xs text-muted">
                   {group.name}
-                  {group.modality?.name ? ` · ${group.modality.name}` : ""}
+                  {group.modality?.name ? `, ${group.modality.name}` : ""}
                 </p>
               </div>
 
@@ -137,7 +137,7 @@ export default function TrialSlotPicker({ categoryId, value, onChange }) {
             </div>
 
             {closed && (
-              <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-700">
+              <p className="mt-2 flex items-center gap-1.5 text-xs text-attention-text">
                 <AlertTriangle size={13} />
                 Turma fechada: marque só se combinado com o professor.
               </p>
@@ -147,7 +147,7 @@ export default function TrialSlotPicker({ categoryId, value, onChange }) {
               {group.schedules.map((schedule) => (
                 <div key={schedule.id}>
                   <p className="text-sm font-semibold text-neutral-700">
-                    {WEEKDAY_LABELS[schedule.weekday]} ·{" "}
+                    {WEEKDAY_LABELS[schedule.weekday]},{" "}
                     {formatTime(schedule.start_time)} às {formatTime(schedule.end_time)}
                   </p>
 
@@ -174,10 +174,10 @@ export default function TrialSlotPicker({ categoryId, value, onChange }) {
                           }
                           className={`rounded-xl border px-3 py-2 text-left text-sm transition ${
                             selected
-                              ? "border-red-600 bg-red-50 text-red-700"
+                              ? "border-red-600 bg-alert-soft text-alert-text"
                               : full
-                                ? "cursor-not-allowed border-neutral-200 bg-neutral-50 text-neutral-400"
-                                : "border-neutral-200 hover:border-red-300"
+                                ? "cursor-not-allowed border-line bg-canvas text-muted"
+                                : "border-line hover:border-red-300"
                           }`}
                         >
                           <span className="block font-semibold">

@@ -1,65 +1,56 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
-import {
-  AlertCircle,
-  CalendarClock,
-  CircleCheckBig,
-  ListPlus,
-  PhoneCall,
-  RefreshCw,
-  UserRound,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
+import { Button, Panel, Tabs } from "../ui";
 
 import FollowUpCard from "../components/followUps/FollowUpCard";
-import WaitingListCard from "../components/followUps/WaitingListCard";
 import FollowUpActionModal from "../components/followUps/ContactActionModal";
-import WaitingListQualificationModal from "../components/followUps/WaitingListQualificationModal";
 import { getTodayISO } from "../../helpers/contactPresentation";
-import {
-  FOLLOW_UP_FILTER,
-  FOLLOW_UP_FILTER_OPTIONS,
-} from "../../constants/followUpFilters";
+import { FOLLOW_UP_FILTER } from "../../constants/followUpFilters";
 import { FOLLOW_UP_ACTION } from "../../constants/followUpActions";
 
 import { CONTACT_STATUS } from "../../constants/contactStatus";
-import { INITIAL_WAITING_LIST_FILTERS } from "../../constants/waitingListFilters";
-import WaitingListFilters from "../components/waitingList/WaitingListFilters";
 import {
   getFollowUpCenter,
   scheduleFollowUp,
   enrollFromFollowUp,
   loseFromFollowUp,
-  closeWaitingListContact,
-  updateContact,
-  addContactInternalNote,
 } from "../../services/contacts";
-import { filterWaitingList } from "../../helpers/waitingListFilters";
+import { errorMessage } from "../../helpers/errorMessage";
 
+/*
+ * Retornos: famílias que precisam de novo contato.
+ * A lista de interesse tem tela própria (/admin/waiting-list).
+ */
 export default function FollowUps() {
   const [followUps, setFollowUps] = useState([]);
-  const [waitingList, setWaitingList] = useState([]);
+  const [waitingCount, setWaitingCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  const [activeFilter, setActiveFilter] = useState(FOLLOW_UP_FILTER.TODAY);
-
-  const [waitingListFilters, setWaitingListFilters] = useState(
-    INITIAL_WAITING_LIST_FILTERS,
+  // A aba fica na URL (?filtro=overdue): a Visão geral abre direto nela
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlFilter = searchParams.get("filtro");
+  const [activeFilter, setActiveFilter] = useState(() =>
+    Object.values(FOLLOW_UP_FILTER).includes(urlFilter) ? urlFilter : FOLLOW_UP_FILTER.TODAY,
   );
 
+  useEffect(() => {
+    setSearchParams(
+      activeFilter === FOLLOW_UP_FILTER.TODAY ? {} : { filtro: activeFilter },
+      { replace: true },
+    );
+  }, [activeFilter, setSearchParams]);
+
   const [actionContact, setActionContact] = useState(null);
-
   const [actionType, setActionType] = useState(null);
-
+  const [actionError, setActionError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  const [
-  qualificationContact,
-  setQualificationContact,
-] = useState(null);
 
   const today = getTodayISO();
 
@@ -67,15 +58,36 @@ export default function FollowUps() {
     loadData();
   }, []);
 
-  async function loadData() {
+  // Recarrega ao voltar para a aba do navegador (sem botão Atualizar)
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible") loadData({ keepFilter: true });
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  async function loadData({ keepFilter = false } = {}) {
     try {
       setLoading(true);
       setError("");
 
       const data = await getFollowUpCenter();
+      const list = data.followUps || [];
 
-      setFollowUps(data.followUps || []);
-      setWaitingList(data.waitingList || []);
+      setFollowUps(list);
+      setWaitingCount((data.waitingList || []).length);
+
+      // Sem retorno hoje mas com atrasados: abre direto nos atrasados
+      const hasToday = list.some((item) => item.follow_up_date === today);
+      const hasOverdue = list.some(
+        (item) => item.follow_up_date && item.follow_up_date < today,
+      );
+
+      if (!keepFilter && !urlFilter && !hasToday && hasOverdue) {
+        setActiveFilter(FOLLOW_UP_FILTER.OVERDUE);
+      }
     } catch (err) {
       console.error("Erro ao carregar retornos:", err);
 
@@ -86,10 +98,7 @@ export default function FollowUps() {
   }
 
   function openAction(contact, type) {
-    if (type === FOLLOW_UP_ACTION.QUALIFY) {
-      setQualificationContact(contact);
-      return;
-    }
+    setActionError("");
     setActionContact(contact);
     setActionType(type);
   }
@@ -110,6 +119,7 @@ export default function FollowUps() {
 
     try {
       setSaving(true);
+      setActionError("");
 
       let updated;
 
@@ -134,11 +144,8 @@ export default function FollowUps() {
       }
 
       /*
-       * Se continuou sendo retorno,
-       * atualizamos o card.
-       *
-       * Se matriculou/perdeu,
-       * removemos da fila.
+       * Se continuou sendo retorno, atualizamos o card.
+       * Se matriculou/perdeu, removemos da fila.
        */
       if (updated?.status === CONTACT_STATUS.FOLLOW_UP) {
         setFollowUps((current) =>
@@ -150,78 +157,18 @@ export default function FollowUps() {
         );
       }
 
-      closeActionForce();
+      setNotice("Retorno atualizado.");
+      window.setTimeout(() => setNotice(""), 4000);
+
+      setActionContact(null);
+      setActionType(null);
     } catch (err) {
       console.error("Erro ao atualizar retorno:", err);
 
-      alert(err?.message || "Não foi possível atualizar o retorno.");
+      setActionError(errorMessage(err, "Não foi possível atualizar o retorno."));
     } finally {
       setSaving(false);
     }
-  }
-
-  /*
-   * Encerra alguém que estava
-   * na lista de interesse.
-   */
-  async function handleCloseWaitingList(payload) {
-    if (!actionContact) return;
-
-    try {
-      setSaving(true);
-
-      await closeWaitingListContact(actionContact.id, {
-        lostReason: payload.lostReason,
-        notes: payload.notes,
-      });
-
-      setWaitingList((current) =>
-        current.filter((item) => item.id !== actionContact.id),
-      );
-
-      closeActionForce();
-    } catch (err) {
-      console.error("Erro ao encerrar lista de interesse:", err);
-
-      alert(err?.message || "Não foi possível encerrar o contato.");
-    } finally {
-      setSaving(false);
-    }
-  }
-  async function handleSaveQualification(payload) {
-    if (!qualificationContact) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      const { notes, ...contactUpdates } = payload;
-
-      await updateContact(qualificationContact.id, contactUpdates);
-
-      if (notes?.trim()) {
-        await addContactInternalNote(
-          qualificationContact.id,
-          `Qualificação da lista de interesse: ${notes.trim()}`,
-        );
-      }
-
-      setQualificationContact(null);
-
-      await loadData();
-    } catch (err) {
-      console.error("Erro ao salvar qualificação:", err);
-
-      alert(err?.message || "Não foi possível salvar a qualificação.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function closeActionForce() {
-    setActionContact(null);
-    setActionType(null);
   }
 
   /*
@@ -245,19 +192,14 @@ export default function FollowUps() {
       overdue,
       today: todayCount,
       upcoming,
-      waiting: waitingList.length,
     };
-  }, [followUps, waitingList, today]);
+  }, [followUps, today]);
 
   /*
    * FILTRO DA FILA
    */
 
   const filteredFollowUps = useMemo(() => {
-    if (activeFilter === FOLLOW_UP_FILTER.WAITING_LIST) {
-      return [];
-    }
-
     let result = [...followUps];
 
     if (activeFilter === FOLLOW_UP_FILTER.TODAY) {
@@ -281,252 +223,89 @@ export default function FollowUps() {
     );
   }, [followUps, activeFilter, today]);
 
-  const filteredWaitingList = useMemo(() => {
-    return filterWaitingList(waitingList, waitingListFilters);
-  }, [waitingList, waitingListFilters]);
-
-  const waitingListCategories = useMemo(() => {
-    const map = new Map();
-
-    waitingList.forEach((item) => {
-      const category = item.interest_category || item.category;
-
-      if (!category?.id) {
-        return;
-      }
-
-      map.set(String(category.id), category);
-    });
-
-    return Array.from(map.values()).sort((a, b) =>
-      (a.name || "").localeCompare(b.name || "", "pt-BR"),
-    );
-  }, [waitingList]);
+  const tabs = [
+    {
+      value: FOLLOW_UP_FILTER.OVERDUE,
+      label: "Atrasados",
+      count: stats.overdue,
+      urgency: stats.overdue ? "alert" : undefined,
+    },
+    {
+      value: FOLLOW_UP_FILTER.TODAY,
+      label: "Hoje",
+      count: stats.today,
+      urgency: stats.today ? "attention" : undefined,
+    },
+    { value: FOLLOW_UP_FILTER.UPCOMING, label: "Próximos", count: stats.upcoming },
+    { value: FOLLOW_UP_FILTER.ALL, label: "Todos", count: followUps.length },
+  ];
 
   return (
-    <div className="space-y-8">
-      {/* TÍTULO */}
-
+    <div className="space-y-5">
       <SectionTitle
         title="Retornos"
-        description="Acompanhe oportunidades que precisam de novo contato e famílias aguardando vaga ou turma."
+        summary={`${stats.overdue} atrasados, ${stats.today} para hoje, ${stats.upcoming} agendados.`}
       />
 
-      {/* INDICADORES */}
+      {notice && (
+        <p role="status" className="rounded-lg bg-ink px-4 py-3 text-sm font-medium text-white">
+          {notice}
+        </p>
+      )}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
-        <StatCard
-          title="Atrasados"
-          value={stats.overdue}
-          subtitle="Precisam de atenção"
-          icon={AlertCircle}
-          danger={stats.overdue > 0}
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Tabs label="Filtrar retornos" value={activeFilter} onChange={setActiveFilter} items={tabs} />
 
-        <StatCard
-          title="Hoje"
-          value={stats.today}
-          subtitle="Contatos para hoje"
-          icon={PhoneCall}
-        />
-
-        <StatCard
-          title="Próximos"
-          value={stats.upcoming}
-          subtitle="Agendados"
-          icon={CalendarClock}
-        />
-
-        <StatCard
-          title="Lista de interesse"
-          value={stats.waiting}
-          subtitle="Aguardando oportunidade"
-          icon={ListPlus}
-        />
-      </div>
-
-      {/* CABEÇALHO */}
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-neutral-900">
-            Central de oportunidades
-          </h2>
-
-          <p className="mt-1 text-sm text-neutral-500">
-            Veja quem precisa ser contatado e registre o próximo passo.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={loadData}
-          disabled={loading}
-          className="
-            flex
-            items-center
-            justify-center
-            gap-2
-            rounded-xl
-            border
-            border-neutral-200
-            bg-white
-            px-4
-            py-3
-            text-sm
-            font-semibold
-            text-neutral-700
-            transition
-            hover:bg-neutral-50
-            disabled:opacity-50
-          "
-        >
-          <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
-          Atualizar
-        </button>
-      </div>
-
-      {/* FILTROS */}
-
-      <div
-        className="
-          flex
-          flex-wrap
-          gap-2
-          rounded-2xl
-          border
-          border-neutral-200
-          bg-white
-          p-3
-        "
-      >
-        {FOLLOW_UP_FILTER_OPTIONS.map((filter) => {
-          const active = activeFilter === filter.value;
-
-          return (
-            <button
-              key={filter.value}
-              type="button"
-              onClick={() => setActiveFilter(filter.value)}
-              className={`
-        rounded-xl
-        px-4
-        py-2.5
-        text-sm
-        font-semibold
-        transition
-        ${
-          active
-            ? "bg-neutral-900 text-white"
-            : "text-neutral-600 hover:bg-neutral-100"
-        }
-      `}
-            >
-              {filter.label}
-            </button>
-          );
-        })}
+        {waitingCount > 0 && (
+          <Link
+            to="/admin/waiting-list"
+            className="inline-flex h-9 items-center gap-1 text-sm text-muted hover:text-ink"
+          >
+            {waitingCount} famíli{waitingCount === 1 ? "a" : "as"} na lista de interesse
+            <ChevronRight size={16} aria-hidden="true" />
+          </Link>
+        )}
       </div>
 
       {/* LOADING */}
 
-      {loading && (
-        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
-          <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-neutral-200 border-t-red-600" />
-
-          <p className="mt-4 text-sm text-neutral-500">
-            Carregando retornos...
-          </p>
-        </div>
+      {loading && followUps.length === 0 && (
+        <p role="status" className="py-12 text-center text-muted">
+          Carregando retornos…
+        </p>
       )}
 
       {/* ERRO */}
 
       {!loading && error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-          <p className="font-semibold text-red-700">{error}</p>
+        <Panel className="p-5">
+          <p role="alert" className="font-medium text-alert-text">
+            {error} Confira sua internet e tente de novo.
+          </p>
 
-          <button
-            type="button"
-            onClick={loadData}
-            className="mt-3 text-sm font-semibold text-red-700 underline"
-          >
-            Tentar novamente
-          </button>
-        </div>
+          <Button className="mt-3" onClick={() => loadData()}>
+            Tentar de novo
+          </Button>
+        </Panel>
       )}
 
       {/* RETORNOS */}
 
-      {!loading && !error && activeFilter !== FOLLOW_UP_FILTER.WAITING_LIST && (
-        <>
-          {filteredFollowUps.length === 0 ? (
-            <EmptyState type={activeFilter} />
-          ) : (
-            <div className="space-y-4">
-              {filteredFollowUps.map((item) => (
-                <FollowUpCard
-                  key={item.id}
-                  item={item}
-                  today={today}
-                  onAction={openAction}
-                />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* LISTA DE INTERESSE */}
-      {/* LISTA DE INTERESSE */}
-
-      {!loading && !error && activeFilter === FOLLOW_UP_FILTER.WAITING_LIST && (
-        <div className="space-y-4">
-          <WaitingListFilters
-            categories={waitingListCategories}
-            filters={waitingListFilters}
-            onChange={setWaitingListFilters}
-            onClear={() =>
-              setWaitingListFilters({
-                ...INITIAL_WAITING_LIST_FILTERS,
-              })
-            }
-          />
-
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-sm text-neutral-500">
-              {filteredWaitingList.length === waitingList.length
-                ? `${waitingList.length} ${
-                    waitingList.length === 1 ? "família" : "famílias"
-                  } na lista`
-                : `${filteredWaitingList.length} de ${waitingList.length} famílias`}
-            </p>
-          </div>
-
-          {filteredWaitingList.length === 0 ? (
-            waitingList.length === 0 ? (
-              <EmptyState type={FOLLOW_UP_FILTER.WAITING_LIST} />
-            ) : (
-              <WaitingListFilteredEmptyState
-                onClear={() =>
-                  setWaitingListFilters({
-                    ...INITIAL_WAITING_LIST_FILTERS,
-                  })
-                }
+      {!(loading && followUps.length === 0) && !error && (
+        filteredFollowUps.length === 0 ? (
+          <EmptyState type={activeFilter} />
+        ) : (
+          <Panel>
+            {filteredFollowUps.map((item) => (
+              <FollowUpCard
+                key={item.id}
+                item={item}
+                today={today}
+                onAction={openAction}
               />
-            )
-          ) : (
-            <div className="space-y-4">
-              {filteredWaitingList.map((item) => (
-                <WaitingListCard
-                  key={item.id}
-                  item={item}
-                  onAction={openAction}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+            ))}
+          </Panel>
+        )
       )}
 
       {/* MODAL */}
@@ -536,72 +315,11 @@ export default function FollowUps() {
           contact={actionContact}
           type={actionType}
           saving={saving}
+          error={actionError}
           onClose={closeAction}
-          onSave={
-            actionType === FOLLOW_UP_ACTION.CLOSE_WAITING_LIST
-              ? handleCloseWaitingList
-              : handleFollowUpAction
-          }
+          onSave={handleFollowUpAction}
         />
       )}
-
-      {qualificationContact && (
-        <WaitingListQualificationModal
-          contact={qualificationContact}
-          categories={waitingListCategories}
-          saving={saving}
-          onClose={() => setQualificationContact(null)}
-          onSave={handleSaveQualification}
-        />
-      )}
-    </div>
-  );
-}
-
-/*
- * CARD DE INDICADOR
- */
-
-function StatCard({ title, value, subtitle, icon: Icon, danger = false }) {
-  return (
-    <div
-      className={`
-        rounded-2xl
-        border
-        bg-white
-        p-4
-        sm:p-6
-        ${danger ? "border-red-200" : "border-neutral-200"}
-      `}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium text-neutral-500 sm:text-sm">
-            {title}
-          </p>
-
-          <p className="mt-2 text-2xl font-bold text-neutral-900 sm:text-3xl">
-            {value}
-          </p>
-
-          <p className="mt-1 text-xs text-neutral-400">{subtitle}</p>
-        </div>
-
-        <div
-          className={`
-            rounded-xl
-            p-2.5
-            sm:p-3
-            ${
-              danger
-                ? "bg-red-50 text-red-600"
-                : "bg-neutral-100 text-neutral-600"
-            }
-          `}
-        >
-          <Icon size={20} />
-        </div>
-      </div>
     </div>
   );
 }
@@ -614,73 +332,31 @@ function EmptyState({ type }) {
   const content = {
     [FOLLOW_UP_FILTER.TODAY]: {
       title: "Nenhum retorno para hoje",
-      description: "Sua agenda de contatos está livre hoje.",
-      icon: PhoneCall,
+      description: "Confira os atrasados e os próximos nas outras abas.",
     },
 
     [FOLLOW_UP_FILTER.OVERDUE]: {
       title: "Nenhum retorno atrasado",
       description: "Todos os acompanhamentos estão em dia.",
-      icon: CircleCheckBig,
     },
 
     [FOLLOW_UP_FILTER.UPCOMING]: {
       title: "Nenhum próximo retorno",
-      description: "Não existem contatos agendados para os próximos dias.",
-      icon: CalendarClock,
+      description: "Não há contatos agendados para os próximos dias.",
     },
 
     [FOLLOW_UP_FILTER.ALL]: {
       title: "Nenhum retorno pendente",
-      description: "Não existem oportunidades aguardando acompanhamento.",
-      icon: UserRound,
-    },
-
-    [FOLLOW_UP_FILTER.WAITING_LIST]: {
-      title: "Lista de interesse vazia",
-      description: "Nenhuma família está aguardando vaga ou abertura de turma.",
-      icon: ListPlus,
+      description: "Não há famílias aguardando acompanhamento.",
     },
   };
 
   const selected = content[type] || content[FOLLOW_UP_FILTER.ALL];
 
-  const Icon = selected.icon;
-
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
-      <Icon size={32} className="mx-auto text-neutral-300" />
-
-      <h3 className="mt-4 text-lg font-bold text-neutral-900">
-        {selected.title}
-      </h3>
-
-      <p className="mt-2 text-sm text-neutral-500">{selected.description}</p>
-    </div>
-  );
-}
-
-function WaitingListFilteredEmptyState({ onClear }) {
-  return (
-    <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
-      <UserRound size={32} className="mx-auto text-neutral-300" />
-
-      <h3 className="mt-4 text-lg font-bold text-neutral-900">
-        Nenhuma família encontrada
-      </h3>
-
-      <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">
-        Nenhum contato da lista de interesse corresponde aos filtros
-        selecionados.
-      </p>
-
-      <button
-        type="button"
-        onClick={onClear}
-        className="mt-5 text-sm font-semibold text-red-600 transition hover:text-red-700"
-      >
-        Limpar filtros
-      </button>
-    </div>
+    <Panel className="px-6 py-10 text-center">
+      <p className="font-semibold">{selected.title}</p>
+      <p className="mt-1 text-sm text-muted">{selected.description}</p>
+    </Panel>
   );
 }

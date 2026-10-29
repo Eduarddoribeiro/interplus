@@ -1,17 +1,80 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+
 import { signIn } from "../../services/auth";
+import { isDemo, supabase } from "../../lib/supabase";
+import { Button, inputClass } from "../ui";
+import { errorMessage } from "../../helpers/errorMessage";
+
+/*
+ * Login da equipe.
+ *
+ * No computador, a tela se divide: o painel vermelho com o logo da
+ * escola e o formulário; ali o botão Entrar fica em tinta, para não
+ * competir com o painel. No celular e no tablet, o logo centralizado
+ * e "Painel da equipe" ficam no topo, o formulário logo abaixo, e o
+ * botão volta ao vermelho (é a única ação da tela).
+ *
+ * No celular os campos ficam mais altos (48px). O texto de 16px, que
+ * evita o zoom do iPhone, vem da regra geral em index.css.
+ *
+ * Para usar uma foto no painel da marca, coloque-a em public/ e
+ * preencha BRAND_PHOTO (ex.: "/login-treino.jpg"). A camada vermelha
+ * por cima é forte (85%), então a foto aparece só como textura.
+ */
+const BRAND_PHOTO = null;
+
+const loginInputClass = inputClass.replace("py-2.5", "py-3 lg:py-2.5");
 
 export default function Login() {
   const navigate = useNavigate();
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
+  // Na demonstração o acesso já vem preenchido (qualquer senha entra)
+  const [email, setEmail] = useState(isDemo ? "demonstracao@exemplo.com" : "");
+  const [password, setPassword] = useState(isDemo ? "demonstracao" : "");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Quem já está logado vai direto para o painel, sem ver o formulário
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate("/admin", { replace: true });
+      else setCheckingSession(false);
+    });
+  }, [navigate]);
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = "Entrar – Painel da equipe";
+
+    // Adianta o download do painel, para não ficar tela em branco
+    // depois de entrar
+    import("../components/ProtectedRoute").catch(() => {});
+    import("../layout/Layout").catch(() => {});
+    import("./Dashboard").catch(() => {});
+
+    return () => {
+      document.title = previousTitle;
+    };
+  }, []);
+
+  // Foco no e-mail só no computador: no celular abriria o teclado
+  // assim que a tela aparece
+  useEffect(() => {
+    if (!checkingSession && window.matchMedia("(min-width: 1024px)").matches) {
+      emailRef.current?.focus();
+    }
+  }, [checkingSession]);
+
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (loading) return;
 
     try {
       setLoading(true);
@@ -23,90 +86,190 @@ export default function Login() {
         replace: true,
       });
     } catch (err) {
-      console.error("Erro no login:", err);
-
-      setError("E-mail ou senha inválidos.");
+      setError(
+        /invalid login credentials/i.test(err?.message ?? "")
+          ? "E-mail ou senha incorretos."
+          : errorMessage(err, "Não foi possível entrar. Confira sua conexão e tente de novo.")
+      );
     } finally {
       setLoading(false);
     }
   }
 
+  // Enter no e-mail passa para a senha (a tecla mostra "Próximo")
+  function handleEmailKeyDown(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      passwordRef.current?.focus();
+    }
+  }
+
+  if (checkingSession) {
+    return <div className="min-h-screen bg-canvas" />;
+  }
+
+  const fieldError = error
+    ? { "aria-invalid": true, "aria-describedby": "login-error" }
+    : {};
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-100 px-4">
-      <div className="w-full max-w-md rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen bg-canvas">
+      {/* Painel da marca (só no computador) */}
+      <aside className="relative hidden w-[44%] max-w-xl flex-col justify-between overflow-hidden bg-inter-red p-12 text-white lg:flex">
+        {BRAND_PHOTO && (
+          <>
+            <img
+              src={BRAND_PHOTO}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-inter-red/85" aria-hidden="true" />
+          </>
+        )}
 
-        <div className="mb-8">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-red-600">
-            Escola do Inter • Viamão
-          </span>
+        <img
+          src="/logo-recorte-branco.svg"
+          alt="Escola Oficial do Inter, Viamão"
+          width={220}
+          height={89}
+          className="relative h-auto w-[220px]"
+        />
 
-          <h1 className="mt-3 text-3xl font-bold text-neutral-900">
-            Acesso Administrativo
-          </h1>
+        <div className="relative">
+          <p className="font-display text-6xl font-semibold leading-[0.85]">
+            Painel da equipe
+          </p>
 
-          <p className="mt-2 text-sm text-neutral-500">
-            Entre com suas credenciais para acessar o painel.
+          <p className="mt-4 max-w-sm">
+            Contatos, aulas experimentais e retornos da Escola Oficial do Inter em Viamão/RS.
           </p>
         </div>
+      </aside>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5"
-        >
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
-              E-mail
-            </label>
-
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
-              placeholder="seu@email.com"
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none transition focus:border-red-600"
+      {/* Formulário */}
+      <main className="flex flex-1 justify-center px-4 pb-10 pt-12 sm:px-6 sm:pt-20 lg:items-center lg:py-10">
+        <div className="w-full max-w-sm">
+          {/* Celular e tablet: marca centralizada no topo */}
+          <div className="mb-8 text-center lg:hidden">
+            <img
+              src="/logo-recorte-vermelho.svg"
+              alt="Escola Oficial do Inter, Viamão"
+              width={192}
+              height={78}
+              className="mx-auto h-auto w-48"
             />
+
+            <h1 className="mt-5 font-display text-[2.25rem] font-semibold leading-[0.9] text-ink">
+              Painel da equipe
+            </h1>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
-              Senha
-            </label>
+          {/* Computador: a marca já está no painel vermelho */}
+          <div className="hidden lg:mb-8 lg:block">
+            <h1 className="font-display text-[2.6rem] font-semibold leading-[0.9] text-ink">
+              Entrar
+            </h1>
 
-            <input
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
-              placeholder="••••••••"
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none transition focus:border-red-600"
-            />
+            <p className="mt-2 text-sm text-muted">
+              Use o e-mail e a senha da sua conta da equipe.
+            </p>
           </div>
 
-          {error && (
-            <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
-              {error}
-            </div>
+          {isDemo && (
+            <p className="mb-5 rounded-lg border border-line bg-white p-3 text-sm text-muted">
+              Demonstração com dados fictícios. O acesso já está preenchido: é só entrar.
+            </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading
-              ? "Entrando..."
-              : "Entrar no painel"}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} aria-busy={loading}>
+            <fieldset disabled={loading} className="space-y-5">
+              <div>
+                <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-ink">
+                  E-mail
+                </label>
 
-      </div>
+                <input
+                  ref={emailRef}
+                  id="login-email"
+                  type="email"
+                  required
+                  autoComplete="username"
+                  enterKeyHint="next"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError("");
+                  }}
+                  onKeyDown={handleEmailKeyDown}
+                  placeholder="seu@email.com"
+                  className={loginInputClass}
+                  {...fieldError}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-ink">
+                  Senha
+                </label>
+
+                <div className="relative">
+                  <input
+                    ref={passwordRef}
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="current-password"
+                    enterKeyHint="go"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError("");
+                    }}
+                    className={`${loginInputClass} pr-12`}
+                    {...fieldError}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
+                    aria-pressed={showPassword}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-lg text-muted hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ink"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            </fieldset>
+
+            {error && (
+              <p
+                id="login-error"
+                role="alert"
+                className="mt-5 rounded-lg bg-alert-soft px-3 py-2.5 text-sm text-alert-text"
+              >
+                {error}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              aria-disabled={loading}
+              className={`mt-6 h-12 w-full text-base lg:h-11 lg:bg-ink lg:text-sm lg:hover:bg-neutral-800 ${
+                loading ? "cursor-wait" : ""
+              }`}
+            >
+              {loading && <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+              {loading ? "Entrando…" : "Entrar"}
+            </Button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-muted">
+            Esqueceu a senha? Fale com a coordenação.
+          </p>
+        </div>
+      </main>
     </div>
   );
 }

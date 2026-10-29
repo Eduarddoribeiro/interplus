@@ -1,10 +1,11 @@
 // src/admin/pages/WaitingList.jsx
 
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, RefreshCw, Search, X } from "lucide-react";
+import { Megaphone, Search, X } from "lucide-react";
 
 import WaitingListFilters from "../components/waitingList/WaitingListFilters";
-import WaitingListHeader from "../components/waitingList/WaitingListHeader";
+import SectionTitle from "../components/common/SectionTitle";
+import { Button, Count, Panel } from "../ui";
 import WaitingListDemandMatrix from "../components/waitingList/WaitingListDemandMatrix";
 import WaitingListRow from "../components/waitingList/WaitingListRow";
 import WaitingListCallQueue from "../components/waitingList/WaitingListCallQueue";
@@ -37,6 +38,7 @@ import {
 import { INITIAL_WAITING_LIST_FILTERS } from "../../constants/waitingListFilters";
 import { CONTACT_STATUS } from "../../constants/contactStatus";
 import { FOLLOW_UP_ACTION } from "../../constants/followUpActions";
+import { errorMessage } from "../../helpers/errorMessage";
 
 // Quem foi chamado há menos que isso não entra na fila "chamar todas"
 const RECENT_CALL_DAYS = 7;
@@ -73,6 +75,16 @@ export default function WaitingList() {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  // Recarrega ao voltar para a aba do navegador (sem botão Atualizar)
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible") loadData();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
   async function loadData() {
@@ -183,7 +195,7 @@ export default function WaitingList() {
     const row = matrix.rows.find((item) => item.key === cell.rowKey);
     const column = matrix.columns.find((item) => item.key === cell.columnKey);
 
-    return `${row?.name ?? ""} · ${column?.name ?? ""}`;
+    return `${row?.name ?? ""}, ${column?.name ?? ""}`;
   }, [cell, matrix]);
 
   const callQueue = useMemo(
@@ -267,7 +279,7 @@ export default function WaitingList() {
       );
     } catch (error) {
       console.error("Erro ao agendar experimental:", error);
-      setActionError(error?.message || "Não foi possível agendar a experimental.");
+      setActionError(errorMessage(error, "Não foi possível agendar a experimental."));
     } finally {
       setSaving(false);
     }
@@ -294,7 +306,7 @@ export default function WaitingList() {
       setQualificationContact(null);
     } catch (error) {
       console.error("Erro ao salvar qualificação:", error);
-      showNotice(error?.message || "Não foi possível salvar a qualificação.");
+      showNotice(errorMessage(error, "Não foi possível salvar a qualificação."));
     } finally {
       setSaving(false);
     }
@@ -315,7 +327,7 @@ export default function WaitingList() {
       setActionContact(null);
     } catch (error) {
       console.error("Erro ao encerrar lista de interesse:", error);
-      showNotice(error?.message || "Não foi possível encerrar o contato.");
+      showNotice(errorMessage(error, "Não foi possível encerrar o contato."));
     } finally {
       setSaving(false);
     }
@@ -327,65 +339,53 @@ export default function WaitingList() {
 
   return (
     <div className="space-y-6">
-      <WaitingListHeader total={items.length} />
+      <SectionTitle
+        title="Lista de interesse"
+        summary={
+          `${items.length} famílias aguardando vaga ou nova turma.` +
+          (nowCount
+            ? ` ${nowCount} ${nowCount === 1 ? "pode" : "podem"} agendar agora, porque já há turma com vaga.`
+            : "")
+        }
+      />
 
       {notice && (
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-900 px-5 py-3 text-sm font-semibold text-white">
+        <p role="status" className="rounded-lg bg-ink px-4 py-3 text-sm font-medium text-white">
           {notice}
-        </div>
+        </p>
       )}
 
       {loadError && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-          <p className="font-semibold text-red-700">{loadError}</p>
-
-          <button
-            type="button"
-            onClick={loadData}
-            className="mt-2 text-sm font-semibold text-red-700 underline"
-          >
-            Tentar novamente
-          </button>
-        </div>
-      )}
-
-      {!loading && nowCount > 0 && (
-        <div className="flex flex-col gap-2 rounded-2xl border border-green-200 bg-green-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-semibold text-green-900">
-            {nowCount} famíli{nowCount === 1 ? "a pode" : "as podem"} ser chamada
-            {nowCount === 1 ? "" : "s"} agora: já existe turma aberta com vaga para elas.
+        <Panel className="p-5">
+          <p role="alert" className="font-medium text-alert-text">
+            {loadError}
           </p>
-        </div>
+
+          <Button className="mt-3" onClick={loadData}>
+            Tentar de novo
+          </Button>
+        </Panel>
       )}
 
       <WaitingListDemandMatrix matrix={matrix} selected={cell} onSelect={setCell} />
 
       {/* BUSCA + FILTROS */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <label className="relative flex-1">
-          <Search
-            size={17}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
-          />
+      <label className="relative block">
+        <span className="sr-only">Buscar na lista de interesse</span>
+        <Search
+          size={17}
+          aria-hidden="true"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+        />
 
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por atleta, responsável ou telefone"
-            className="w-full rounded-xl border border-neutral-200 bg-white py-3 pl-11 pr-4 text-sm outline-none focus:border-red-500"
-          />
-        </label>
-
-        <button
-          type="button"
-          onClick={loadData}
-          disabled={loading}
-          className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          Atualizar
-        </button>
-      </div>
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Buscar por atleta, responsável ou telefone"
+          className="h-10 w-full rounded-lg border border-line bg-white pl-10 pr-3 text-sm outline-none placeholder:text-neutral-500 focus:border-ink"
+        />
+      </label>
 
       <WaitingListFilters
         categories={categories}
@@ -396,66 +396,56 @@ export default function WaitingList() {
 
       {/* CÉLULA SELECIONADA */}
       {cell && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-neutral-800">
-            <strong>{cellLabel}</strong> · {filteredItems.length} famíli
+        <Panel className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="px-1 text-sm">
+            <strong>{cellLabel}</strong>: {filteredItems.length} famíli
             {filteredItems.length === 1 ? "a" : "as"}
           </p>
 
           <div className="flex gap-2">
-            <button
-              type="button"
+            <Button
+              variant="whatsapp"
               disabled={!callQueue.length}
               onClick={() => setQueueContacts(callQueue)}
-              className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
             >
-              <Megaphone size={16} />
+              <Megaphone size={16} aria-hidden="true" />
               Chamar todas ({callQueue.length})
-            </button>
+            </Button>
 
-            <button
-              type="button"
-              onClick={() => setCell(null)}
-              className="flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-semibold text-neutral-700"
-            >
-              <X size={16} />
+            <Button variant="quiet" onClick={() => setCell(null)}>
+              <X size={16} aria-hidden="true" />
               Limpar
-            </button>
+            </Button>
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* GRUPOS */}
-      {loading ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-12 text-center text-neutral-500">
-          Carregando lista de interesse...
-        </div>
+      {loading && items.length === 0 ? (
+        <p role="status" className="py-12 text-center text-muted">
+          Carregando lista de interesse…
+        </p>
       ) : groups.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-12 text-center text-neutral-500">
-          Nenhum contato encontrado.
-        </div>
+        <Panel className="px-6 py-10 text-center">
+          <p className="font-semibold">Nenhum contato encontrado.</p>
+          <p className="mt-1 text-sm text-muted">Tente limpar a busca ou os filtros.</p>
+        </Panel>
       ) : (
         <div className="space-y-8">
           {groups.map((group) => (
             <section key={group.key}>
-              <div className="mb-3 flex items-end justify-between gap-3">
-                <div>
-                  <h2
-                    className={`text-lg font-bold ${
-                      group.key === "now" ? "text-green-800" : "text-neutral-900"
-                    }`}
-                  >
-                    {group.title}{" "}
-                    <span className="text-neutral-400">({group.items.length})</span>
-                  </h2>
+              <div className="mb-2">
+                <h2 className="flex items-center gap-2 font-semibold">
+                  {group.title}
+                  <Count value={group.items.length} />
+                </h2>
 
-                  <p className="text-sm text-neutral-500">{group.description}</p>
-                </div>
+                <p className="text-sm text-muted">{group.description}</p>
               </div>
 
               <div
-                className={`overflow-hidden rounded-2xl border bg-white ${
-                  group.key === "now" ? "border-green-200" : "border-neutral-200"
+                className={`overflow-hidden rounded-xl border bg-white ${
+                  group.key === "now" ? "border-ok/40" : "border-line"
                 }`}
               >
                 {group.items.map((item) => (

@@ -1,3 +1,5 @@
+import { Loader2 } from "lucide-react";
+
 import { WEEKDAY_LABELS } from "../../../constants/weekdays";
 import { SCHOOL, SOURCE_LABEL } from "../../../constants/school";
 
@@ -36,7 +38,7 @@ export default function ReviewCard({
 
             {/* Cabeçalho */}
       <div>
-        <h2 className="text-2xl font-bold text-neutral-900 sm:text-3xl">
+        <h2 className="text-2xl font-bold text-neutral-900 outline-none sm:text-3xl">
           {form.interest_reason
             ? "Revise seus dados"
             : "Revise sua solicitação"}
@@ -163,13 +165,6 @@ export default function ReviewCard({
           value={form.phone}
         />
 
-        {form.email && (
-          <Info
-            label="E-mail"
-            value={form.email}
-          />
-        )}
-
         {form.neighborhood && (
           <Info
             label="Bairro"
@@ -254,7 +249,7 @@ export default function ReviewCard({
           type="button"
           onClick={onBack}
           disabled={submitting}
-          className="w-full rounded-xl border border-neutral-300 px-6 py-3 font-semibold text-neutral-700 transition hover:bg-neutral-100 disabled:opacity-50 sm:w-auto"
+          className="w-full rounded-xl border border-neutral-300 px-6 py-3 font-semibold text-neutral-700 transition hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-red-600/30 disabled:opacity-50 sm:w-auto"
         >
           Voltar
         </button>
@@ -263,10 +258,14 @@ export default function ReviewCard({
           type="button"
           onClick={onFinish}
           disabled={submitting}
-          className="w-full rounded-xl bg-red-600 px-8 py-3.5 font-semibold text-white transition hover:bg-red-700 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-8 py-3.5 font-semibold text-white transition hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-600/40 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
         >
+          {submitting && (
+            <Loader2 size={18} aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
+          )}
+
           {submitting
-            ? "Enviando..."
+            ? "Enviando…"
             : form.interest_reason
               ? "Entrar na lista de interesse"
               : "Confirmar solicitação"}
@@ -315,7 +314,7 @@ function Info({
       </p>
 
       <p
-        className={`min-w-0 max-w-[65%] break-all text-right text-sm font-semibold ${
+        className={`min-w-0 max-w-[65%] break-words text-right text-sm font-semibold ${
           highlight
             ? "text-red-600"
             : "text-neutral-900"

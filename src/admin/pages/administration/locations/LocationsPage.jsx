@@ -12,6 +12,7 @@ import {
   updateLocation,
 } from "../../../../services/administration/locations";
 import { getUnits } from "../../../../services/administration/units";
+import { Button, inputClass } from "../../../ui";
 
 const EMPTY_FORM = {
   unit_id: "",
@@ -117,8 +118,7 @@ export default function LocationsPage() {
     <>
       <CrudPage
         title="Locais"
-        subtitle="Ginásios e arenas onde acontecem os treinos. O endereço aparece para os pais no formulário."
-        createLabel="Novo Local"
+        createLabel="Novo local"
         onCreate={handleCreate}
       >
         <CrudTable
@@ -126,45 +126,42 @@ export default function LocationsPage() {
             "Local",
             "Unidade",
             "Endereço",
-            "Status",
-            "Ações",
+            "Situação",
+            "",
           ]}
           emptyMessage={
             loading
-              ? "Carregando..."
+              ? "Carregando…"
               : "Nenhum local cadastrado."
           }
         >
           {locations.map((location) => (
             <tr
               key={location.id}
-              className="border-b border-neutral-100"
+              className="border-t border-line"
             >
-              <td className="px-6 py-4 font-medium">
+              <td className="px-4 py-3 font-medium">
                 {location.name}
               </td>
 
-              <td className="px-6 py-4">
+              <td className="px-4 py-3">
                 {location.unit?.name}
               </td>
 
-              <td className="px-6 py-4">
+              <td className="px-4 py-3">
                 {location.address || (
-                  <span className="text-neutral-400">Sem endereço</span>
+                  <span className="text-muted">Sem endereço</span>
                 )}
               </td>
 
-              <td className="px-6 py-4">
+              <td className="px-4 py-3">
                 <StatusBadge active={location.active} />
               </td>
 
-              <td className="px-6 py-4 text-right">
-                <button
-                  onClick={() => handleEdit(location)}
-                  className="rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
-                >
+              <td className="px-4 py-2 text-right">
+                <Button size="sm" variant="quiet" onClick={() => handleEdit(location)}>
                   Editar
-                </button>
+                </Button>
               </td>
             </tr>
           ))}
@@ -173,7 +170,7 @@ export default function LocationsPage() {
 
       <CrudModal
         open={open}
-        title={editing ? "Editar Local" : "Novo Local"}
+        title={editing ? "Editar local" : "Novo local"}
         onClose={() => setOpen(false)}
         onSave={handleSave}
       >
@@ -183,7 +180,7 @@ export default function LocationsPage() {
             onChange={(e) =>
               setForm({ ...form, unit_id: e.target.value })
             }
-            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+            className={inputClass}
           >
             <option value="">Selecione...</option>
 
@@ -202,7 +199,7 @@ export default function LocationsPage() {
               setForm({ ...form, name: e.target.value })
             }
             placeholder="Ex.: Ginásio do Krahe"
-            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+            className={inputClass}
           />
         </FormField>
 
@@ -213,13 +210,14 @@ export default function LocationsPage() {
               setForm({ ...form, address: e.target.value })
             }
             placeholder="Rua, número, bairro"
-            className="w-full rounded-xl border border-neutral-300 px-4 py-3"
+            className={inputClass}
           />
         </FormField>
 
         <label className="flex items-center gap-3">
           <input
             type="checkbox"
+            className="h-4 w-4 accent-ink"
             checked={form.active}
             onChange={(e) =>
               setForm({ ...form, active: e.target.checked })
@@ -230,7 +228,7 @@ export default function LocationsPage() {
         </label>
 
         {error && (
-          <p className="text-sm font-medium text-red-600">{error}</p>
+          <p className="text-sm font-medium text-alert-text">{error}</p>
         )}
       </CrudModal>
     </>

@@ -6,6 +6,7 @@ import { getSourceLabel } from "../constants/school";
 
 import { WHATSAPP_AUTO_STATUS, isTriage } from "./contactTabs";
 import { getBoardGroupKey } from "./waitingListBoard";
+import { isAwaitingResult } from "./experimentalRules";
 
 /*
  * Visão geral calculada a partir das experimentais e contatos.
@@ -24,7 +25,8 @@ const AGENDA_SESSION = [
 ];
 
 // Dias à frente para "confirmar experimentais" e "próximos retornos"
-const CONFIRM_DAYS = 2;
+// Janela de "aulas para confirmar" (Visão geral e aba A confirmar)
+export const CONFIRM_DAYS = 2;
 const UPCOMING_FOLLOW_UP_DAYS = 7;
 
 export function toLocalISO(date = new Date()) {
@@ -160,6 +162,9 @@ export function buildDashboard({ sessions, contacts, availability }) {
 
   const triage = contacts.filter(isTriage).length;
 
+  // Vieram na experimental e a família ainda não decidiu
+  const awaitingResult = liveSessions.filter(isAwaitingResult).length;
+
   // Agenda: hoje + próximo dia com experimental
   const agendaSessions = liveSessions.filter(
     (session) => session.experimental_date >= today && AGENDA_SESSION.includes(session.status),
@@ -212,6 +217,7 @@ export function buildDashboard({ sessions, contacts, availability }) {
       followUpsDue: followUpsDue.length,
       waitingNow,
       triage,
+      awaitingResult,
     },
     agenda,
     followUpsDue,

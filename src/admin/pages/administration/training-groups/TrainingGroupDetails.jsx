@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil, Plus, Power, Trash2 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Pencil, Plus, Power, Trash2 } from "lucide-react";
+import { useParams } from "react-router-dom";
 
 import SectionTitle from "../../../components/common/SectionTitle";
 
@@ -21,6 +21,8 @@ import {
 import { WEEKDAY_LABELS } from "../../../../constants/weekdays";
 
 import CrudTable from "../components/CrudTable";
+import { BackLink } from "../components/CrudPage";
+import { Button, Panel } from "../../../ui";
 import StatusBadge from "../components/StatusBadge";
 import TrainingGroupStatusBadge from "../components/TrainingGroupStatusBadge";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -42,7 +44,6 @@ function getScheduleCoaches(schedule) {
 
 export default function TrainingGroupDetails() {
   const { id } = useParams();
-  const navigate = useNavigate();
 
   const [group, setGroup] = useState(null);
 
@@ -167,158 +168,108 @@ export default function TrainingGroupDetails() {
   }
 
   if (!group) {
-    return <p>Carregando...</p>;
+    return <p className="text-sm text-muted">Carregando turma…</p>;
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
+      <BackLink to="/admin/administration/training-groups" label="Turmas" />
 
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900"
-      >
-        <ArrowLeft size={18} />
-        Voltar
-      </button>
+      <SectionTitle
+        title={group.name}
+        actions={
+          <>
+            <Button to={`/admin/administration/training-groups/${group.id}/edit`}>
+              <Pencil size={17} aria-hidden="true" />
+              Editar turma
+            </Button>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <SectionTitle
-          title={group.name}
-          subtitle="Gerencie os dados e horários desta turma."
-        />
+            <Button variant="primary" onClick={handleCreate}>
+              <Plus size={18} aria-hidden="true" />
+              Novo horário
+            </Button>
+          </>
+        }
+      />
 
-        <button
-          onClick={() =>
-            navigate(`/admin/administration/training-groups/${group.id}/edit`)
-          }
-          className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-3 font-medium hover:bg-neutral-50"
-        >
-          <Pencil size={18} />
-          Editar turma
-        </button>
-      </div>
+      <Panel className="p-5">
+        <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-5">
+          <Info label="Categorias" value={getTrainingGroupCategoryNames(group)} />
+          <Info label="Modalidade" value={group.modality?.name} />
+          <Info label="Local" value={group.location?.name} />
+          <Info label="Unidade" value={group.unit?.name} />
 
-      <div className="grid grid-cols-2 gap-6 rounded-2xl border border-neutral-200 bg-white p-6 md:grid-cols-3">
-
-        <Info label="Categorias" value={getTrainingGroupCategoryNames(group)} />
-        <Info label="Modalidade" value={group.modality?.name} />
-        <Info label="Local" value={group.location?.name} />
-        <Info label="Unidade" value={group.unit?.name} />
-
-        <div>
-          <p className="text-sm text-neutral-500">Situação</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <TrainingGroupStatusBadge status={group.status} />
-            {group.featured && (
-              <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-                Destaque
-              </span>
-            )}
+          <div>
+            <dt className="text-sm text-muted">Situação</dt>
+            <dd className="mt-0.5 text-sm">
+              <TrainingGroupStatusBadge status={group.status} />
+              {group.featured && <span className="text-muted">, destaque</span>}
+            </dd>
           </div>
-        </div>
+        </dl>
+      </Panel>
 
-      </div>
-
-      <div className="flex items-center justify-between">
-
-        <h2 className="text-xl font-semibold">
-          Horários
-        </h2>
-
-        <button
-          onClick={handleCreate}
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-medium text-white hover:bg-red-700"
-        >
-          <Plus size={18} />
-          Novo Horário
-        </button>
-
-      </div>
+      <h2 className="pt-2 font-semibold">Horários</h2>
 
       <CrudTable
-        columns={[
-          "Dia",
-          "Hora inicial",
-          "Hora final",
-          "Professores",
-          "Limite de experimentais",
-          "Permite experimental",
-          "Status",
-          "Ações",
-        ]}
-        emptyMessage={
-          loading
-            ? "Carregando..."
-            : "Nenhum horário cadastrado."
-        }
+        columns={["Dia", "Horário", "Professores", "Experimentais", "Situação", ""]}
+        emptyMessage={loading ? "Carregando horários…" : "Nenhum horário cadastrado."}
       >
-        {schedules.map((schedule) => (
-          <tr
-            key={schedule.id}
-            className="border-b border-neutral-100 last:border-0"
-          >
-            <td className="px-6 py-4">
-              {WEEKDAY_LABELS[schedule.weekday]}
-            </td>
+        {schedules.length
+          ? schedules.map((schedule) => (
+              <tr key={schedule.id} className="border-t border-line">
+                <td className="whitespace-nowrap px-4 py-3 font-medium">
+                  {WEEKDAY_LABELS[schedule.weekday]}
+                </td>
 
-            <td className="px-6 py-4">
-              {schedule.start_time}
-            </td>
+                <td className="whitespace-nowrap px-4 py-3 tabular-nums">
+                  {schedule.start_time?.slice(0, 5)} às {schedule.end_time?.slice(0, 5)}
+                </td>
 
-            <td className="px-6 py-4">
-              {schedule.end_time}
-            </td>
+                <td className="px-4 py-3">
+                  {getScheduleCoaches(schedule)
+                    .map((coach) => coach.name)
+                    .join(", ") || "—"}
+                </td>
 
-            <td className="px-6 py-4">
-              {getScheduleCoaches(schedule)
-                .map((coach) => coach.name)
-                .join(", ") || "-"}
-            </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  {schedule.allow_trial ? (
+                    <span className="tabular-nums">Até {schedule.experimental_limit} por aula</span>
+                  ) : (
+                    <span className="text-muted">Não aceita</span>
+                  )}
+                </td>
 
-            <td className="px-6 py-4">
-              {schedule.experimental_limit}
-            </td>
+                <td className="px-4 py-3">
+                  <StatusBadge active={schedule.active} />
+                </td>
 
-            <td className="px-6 py-4">
-              {schedule.allow_trial ? "Sim" : "Não"}
-            </td>
+                <td className="px-4 py-2">
+                  <div className="flex justify-end gap-1">
+                    <Button size="sm" variant="quiet" onClick={() => handleEdit(schedule)}>
+                      <Pencil size={15} aria-hidden="true" />
+                      Editar
+                    </Button>
 
-            <td className="px-6 py-4">
-              <StatusBadge active={schedule.active} />
-            </td>
+                    <Button size="sm" variant="quiet" onClick={() => handleToggle(schedule)}>
+                      <Power size={15} aria-hidden="true" />
+                      {schedule.active ? "Desativar" : "Reativar"}
+                    </Button>
 
-            <td className="px-6 py-4">
-              <div className="flex justify-end gap-2">
-
-                <button
-                  onClick={() => handleEdit(schedule)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
-                >
-                  <Pencil size={16} />
-                  Editar
-                </button>
-
-                <button
-                  onClick={() => handleToggle(schedule)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
-                >
-                  <Power size={16} />
-                  {schedule.active ? "Desativar" : "Reativar"}
-                </button>
-
-                <button
-                  onClick={() => setScheduleToDelete(schedule)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 size={16} />
-                  Excluir
-                </button>
-
-              </div>
-            </td>
-
-          </tr>
-        ))}
+                    <Button
+                      size="sm"
+                      variant="quiet"
+                      onClick={() => setScheduleToDelete(schedule)}
+                      className="hover:!bg-alert-soft hover:!text-alert-text"
+                    >
+                      <Trash2 size={15} aria-hidden="true" />
+                      Excluir
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          : null}
       </CrudTable>
 
       <ScheduleModal
@@ -342,7 +293,7 @@ export default function TrainingGroupDetails() {
       <ConfirmDialog
         open={!!scheduleToDelete}
         title="Excluir horário"
-        description="Tem certeza que deseja excluir este horário? Essa ação não pode ser desfeita."
+        description="O horário sai da turma e não aparece mais no formulário. Não dá para desfazer."
         onCancel={() => setScheduleToDelete(null)}
         onConfirm={handleDelete}
       />
@@ -354,8 +305,8 @@ export default function TrainingGroupDetails() {
 function Info({ label, value }) {
   return (
     <div>
-      <p className="text-sm text-neutral-500">{label}</p>
-      <p className="font-semibold">{value ?? "-"}</p>
+      <dt className="text-sm text-muted">{label}</dt>
+      <dd className="mt-0.5 text-sm font-medium">{value || "—"}</dd>
     </div>
   );
 }

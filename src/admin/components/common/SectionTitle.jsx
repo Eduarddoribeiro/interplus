@@ -1,25 +1,23 @@
-import { motion } from 'framer-motion'
-
-export default function SectionTitle({
-  title,
-  description
-}) {
+/*
+ * Cabeçalho das páginas do painel: título em Teko (sem caixa alta)
+ * e, opcionalmente, um resumo de uma linha e as ações à direita.
+ *
+ * `description` (texto explicativo antigo) não é mais exibido:
+ * quem usa o painel todo dia já sabe o que a tela faz. Use
+ * `summary` para um resumo curto com dados ("7 nesta semana").
+ */
+export default function SectionTitle({ title, summary, actions }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: .4 }}
-      className="mb-8"
-    >
-      <h2 className="font-display text-4xl uppercase leading-none text-neutral-900">
-        {title}
-      </h2>
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0">
+        <h1 className="font-display text-[2.6rem] font-semibold leading-[0.9] text-ink">
+          {title}
+        </h1>
 
-      {description && (
-        <p className="mt-3 text-neutral-500 max-w-xl">
-          {description}
-        </p>
-      )}
-    </motion.div>
-  )
+        {summary && <p className="mt-1 text-sm text-muted">{summary}</p>}
+      </div>
+
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    </div>
+  );
 }

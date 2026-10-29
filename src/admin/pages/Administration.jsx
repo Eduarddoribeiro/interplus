@@ -1,63 +1,56 @@
+import { Link } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
+
 import SectionTitle from "../components/common/SectionTitle";
+import { Panel } from "../ui";
 import { ADMINISTRATION_SECTIONS } from "../../constants/administrationSections";
-import { useNavigate } from "react-router-dom";
 
+/*
+ * Cadastros da escola. Uma coluna no celular, duas no computador.
+ * Os itens "em breve" ocupam juntos a última célula, em cinza,
+ * para a grade não ficar com buraco.
+ */
 export default function Administration() {
-  const navigate = useNavigate();
-  return (
-    
-    <div className="space-y-8">
-      <SectionTitle
-        title="Administração"
-        subtitle="Gerencie todas as configurações do sistema."
-      />
+  const enabled = ADMINISTRATION_SECTIONS.filter((section) => section.enabled);
+  const upcoming = ADMINISTRATION_SECTIONS.filter((section) => !section.enabled);
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {ADMINISTRATION_SECTIONS.map((section) => {
+  return (
+    <div className="space-y-5">
+      <SectionTitle title="Administração" />
+
+      <Panel as="ul" className="grid gap-px overflow-hidden bg-line lg:grid-cols-2">
+        {enabled.map((section) => {
           const Icon = section.icon;
 
           return (
-            <button
-  key={section.id}
-  disabled={!section.enabled}
-  onClick={() => navigate(section.path)}
-  className={`rounded-3xl border p-6 text-left transition ${
-    section.enabled
-      ? "border-neutral-200 bg-white hover:-translate-y-1 hover:shadow-lg"
-      : "cursor-not-allowed border-dashed border-neutral-300 bg-neutral-50 opacity-70"
-  }`}
->
-              <div className="flex items-center gap-3">
-                <div
-                  className={`rounded-2xl p-3 ${
-                    section.enabled
-                      ? "bg-red-50 text-red-600"
-                      : "bg-neutral-200 text-neutral-500"
-                  }`}
-                >
-                  <Icon size={24} />
-                </div>
+            <li key={section.id} className="bg-white">
+              <Link
+                to={section.path}
+                className="group flex h-full items-center gap-4 px-5 py-4 transition-colors hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"
+              >
+                <Icon size={20} aria-hidden="true" className="shrink-0 text-ink" />
 
-                <div>
-                  <h3 className="font-semibold text-neutral-900">
-                    {section.title}
-                  </h3>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold">{section.title}</span>
+                  <span className="block text-sm text-muted">{section.description}</span>
+                </span>
 
-                  {!section.enabled && (
-                    <span className="text-xs text-neutral-500">
-                      Em breve
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <p className="mt-5 text-sm text-neutral-500">
-                {section.description}
-              </p>
-            </button>
+                <ChevronRight
+                  size={18}
+                  aria-hidden="true"
+                  className="shrink-0 text-neutral-300 group-hover:text-ink"
+                />
+              </Link>
+            </li>
           );
         })}
-      </div>
+
+        {upcoming.length > 0 && (
+          <li className="flex items-center bg-white px-5 py-4 text-sm text-muted">
+            Em breve: {upcoming.map((section) => section.title.toLowerCase()).join(" e ")} da equipe.
+          </li>
+        )}
+      </Panel>
     </div>
   );
 }

@@ -16,7 +16,6 @@ import {
   ShieldCheck,
   UserRound,
   UserRoundCheck,
-  X,
   XCircle,
 } from "lucide-react";
 
@@ -37,22 +36,34 @@ import { WAITING_LIST_REASONS } from "../../constants/waitingListReasons";
 import { WEEKDAY_LABELS } from "../../constants/weekdays";
 import { supabase } from "../../lib/supabase";
 import TrialSlotPicker from "../components/experimentals/TrialSlotPicker";
+import { Button, Dialog, Panel, buttonClass, inputClass } from "../ui";
+import { formatPhone } from "../../helpers/phoneHelpers";
+import { getSourceLabel } from "../../constants/school";
+import { errorMessage } from "../../helpers/errorMessage";
+import { LOST_REASON_LABEL, LOST_REASON_OPTIONS, getLostReasonLabel } from "../../constants/lostReasons";
+import { CONTACT_STATUS_LABEL } from "../../constants/contactStatus";
 
 /* =========================================================
  * CONSTANTES
  * ========================================================= */
 
-const STATUS_LABELS = {
-  new: "Novo contato",
-  pending_confirmation: "Aguardando confirmação",
-  confirmed: "Experimental confirmada",
-  attended: "Compareceu",
-  no_show: "Não compareceu",
-  cancelled: "Cancelada",
-  follow_up: "Em retorno",
-  waiting_list: "Lista de interesse",
-  enrolled: "Matriculado",
-  lost: "Encerrado",
+// Mesmos nomes de status em todo o painel; "new" é o antigo status
+// dos contatos criados pelo WhatsApp
+const STATUS_LABELS = { ...CONTACT_STATUS_LABEL, new: "Novo contato" };
+
+// Cor só onde a situação pede algo (ou é um bom resultado)
+const STATUS_TONE = {
+  pending_confirmation: "text-attention-text",
+  follow_up: "text-attention-text",
+  no_show: "text-alert-text",
+  lost: "text-alert-text",
+  enrolled: "text-ok",
+};
+
+const ENTRY_CHANNEL_LABELS = {
+  public_form: "Formulário do site",
+  admin: "Cadastro no painel",
+  whatsapp: "WhatsApp",
 };
 
 const SESSION_STATUS_LABELS = {
@@ -65,16 +76,6 @@ const SESSION_STATUS_LABELS = {
 
  
 
-const LOST_REASONS = [
-  { value: "schedule", label: "Horário incompatível" },
-  { value: "location", label: "Localização/distância" },
-  { value: "financial", label: "Questão financeira" },
-  { value: "no_interest", label: "Sem interesse no momento" },
-  { value: "other_school", label: "Optou por outra escola" },
-  { value: "no_response", label: "Sem retorno do responsável" },
-  { value: "age_category", label: "Categoria/idade incompatível" },
-  { value: "other", label: "Outro motivo" },
-];
 
 /* =========================================================
  * HELPERS
@@ -160,32 +161,32 @@ function normalizePhone(phone) {
 function getStatusClass(status) {
   switch (status) {
     case "enrolled":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "bg-ok-soft text-ok border-ok/30";
 
     case "attended":
-      return "bg-blue-50 text-blue-700 border-blue-200";
+      return "bg-canvas text-ink border-line";
 
     case "confirmed":
-      return "bg-indigo-50 text-indigo-700 border-indigo-200";
+      return "bg-canvas text-ink border-line";
 
     case "pending_confirmation":
-      return "bg-amber-50 text-amber-700 border-amber-200";
+      return "bg-attention-soft text-attention-text border-attention/40";
 
     case "follow_up":
-      return "bg-orange-50 text-orange-700 border-orange-200";
+      return "bg-attention-soft text-attention-text border-attention/40";
 
     case "waiting_list":
-      return "bg-violet-50 text-violet-700 border-violet-200";
+      return "bg-canvas text-ink border-line";
 
     case "no_show":
     case "lost":
-      return "bg-red-50 text-red-700 border-red-200";
+      return "bg-alert-soft text-alert-text border-alert/30";
 
     case "cancelled":
-      return "bg-neutral-100 text-neutral-600 border-neutral-200";
+      return "bg-neutral-100 text-neutral-600 border-line";
 
     default:
-      return "bg-neutral-100 text-neutral-700 border-neutral-200";
+      return "bg-neutral-100 text-neutral-700 border-line";
   }
 }
 
@@ -202,61 +203,13 @@ function getReasonLabel(options, value) {
  * COMPONENTES AUXILIARES
  * ========================================================= */
 
-function Modal({
-  open,
-  title,
-  description,
-  children,
-  onClose,
-  maxWidth = "max-w-lg",
-}) {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div
-        className={`w-full ${maxWidth} overflow-hidden rounded-2xl bg-white shadow-2xl`}
-      >
-        <div className="flex items-start justify-between border-b border-neutral-200 px-6 py-5">
-          <div>
-            <h2 className="text-lg font-bold text-neutral-900">
-              {title}
-            </h2>
-
-            {description ? (
-              <p className="mt-1 text-sm text-neutral-500">
-                {description}
-              </p>
-            ) : null}
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="max-h-[75vh] overflow-y-auto p-6">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Field({ label, value }) {
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-        {label}
-      </p>
-
-      <p className="mt-1 whitespace-pre-wrap text-sm font-medium text-neutral-800">
+    <div className="min-w-0">
+      <dt className="text-sm text-muted">{label}</dt>
+      <dd className="mt-0.5 whitespace-pre-wrap break-words text-sm font-medium">
         {value || "—"}
-      </p>
+      </dd>
     </div>
   );
 }
@@ -266,46 +219,22 @@ function ActionButton({
   title,
   description,
   onClick,
-  danger = false,
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
-        danger
-          ? "border-red-200 bg-red-50 hover:bg-red-100"
-          : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50"
-      }`}
-    >
-      <div
-        className={`rounded-lg p-2 ${
-          danger
-            ? "bg-red-100 text-red-700"
-            : "bg-neutral-100 text-neutral-700"
-        }`}
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex w-full items-start gap-3 border-t border-line px-4 py-3 text-left transition-colors hover:bg-canvas"
       >
-        <Icon size={18} />
-      </div>
+        <Icon size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-muted" />
 
-      <div>
-        <p
-          className={`text-sm font-bold ${
-            danger ? "text-red-800" : "text-neutral-900"
-          }`}
-        >
-          {title}
-        </p>
-
-        <p
-          className={`mt-1 text-xs leading-relaxed ${
-            danger ? "text-red-600" : "text-neutral-500"
-          }`}
-        >
-          {description}
-        </p>
-      </div>
-    </button>
+        <span>
+          <span className="block text-sm font-semibold">{title}</span>
+          <span className="block text-sm text-muted">{description}</span>
+        </span>
+      </button>
+    </li>
   );
 }
 
@@ -431,8 +360,7 @@ const [waitingForm, setWaitingForm] = useState({
     } catch (err) {
       console.error(err);
       setError(
-        err?.message ||
-          "Não foi possível carregar a ficha do contato."
+        errorMessage(err, "Não foi possível carregar a ficha do contato.")
       );
     } finally {
       setLoading(false);
@@ -508,7 +436,7 @@ const [waitingForm, setWaitingForm] = useState({
 
   function openCloseModal() {
     setCloseForm({
-      lostReason: contact?.lost_reason || "schedule",
+      lostReason: LOST_REASON_LABEL[contact?.lost_reason] ? contact.lost_reason : "schedule",
       notes: "",
     });
 
@@ -579,8 +507,7 @@ const [waitingForm, setWaitingForm] = useState({
       console.error(err);
 
       setError(
-        err?.message ||
-          "Não foi possível concluir a operação."
+        errorMessage(err, "Não foi possível concluir a operação.")
       );
     } finally {
       setActionLoading(false);
@@ -711,7 +638,7 @@ const [waitingForm, setWaitingForm] = useState({
           lostReason: closeForm.lostReason,
           notes: closeForm.notes,
         }),
-      "Oportunidade encerrada."
+      "Contato encerrado."
     );
   }
 
@@ -806,7 +733,7 @@ const [waitingForm, setWaitingForm] = useState({
             className="mx-auto animate-spin text-neutral-700"
           />
 
-          <p className="mt-3 text-sm text-neutral-500">
+          <p className="mt-3 text-sm text-muted">
             Carregando ficha do contato...
           </p>
         </div>
@@ -816,8 +743,8 @@ const [waitingForm, setWaitingForm] = useState({
 
   if (!contact) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-        <h2 className="font-bold text-red-800">
+      <div className="rounded-xl border border-alert/30 bg-alert-soft p-6">
+        <h2 className="font-bold text-alert-text">
           Contato não encontrado
         </h2>
 
@@ -829,7 +756,7 @@ const [waitingForm, setWaitingForm] = useState({
         <button
           type="button"
           onClick={() => navigate("/admin/contacts")}
-          className="mt-4 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white"
+          className={`mt-4 ${buttonClass("secondary")}`}
         >
           Voltar para contatos
         </button>
@@ -841,39 +768,38 @@ const [waitingForm, setWaitingForm] = useState({
    * RENDER
    * ======================================================= */
 
+  const statusTone = STATUS_TONE[contact.status] ?? "text-ink";
+  const lastSession = sessions[0];
+  const sessionLocation = lastSession?.schedule?.training_group?.location?.name;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* CABEÇALHO */}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex items-start gap-3">
-          <button
-            type="button"
+          <Button
+            variant="quiet"
             onClick={() => navigate("/admin/contacts")}
-            className="mt-1 rounded-xl border border-neutral-200 bg-white p-2.5 text-neutral-600 transition hover:bg-neutral-50"
+            aria-label="Voltar para contatos"
+            className="mt-1"
           >
-            <ArrowLeft size={19} />
-          </button>
+            <ArrowLeft size={19} aria-hidden="true" />
+          </Button>
 
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold text-neutral-900">
-                {contact.child_name}
-              </h1>
+          <div className="min-w-0">
+            <h1 className="font-display text-[2.6rem] font-semibold leading-[0.9]">
+              {contact.child_name || "Sem nome"}
+            </h1>
 
-              <span
-                className={`rounded-full border px-3 py-1 text-xs font-bold ${getStatusClass(
-                  contact.status
-                )}`}
-              >
-                {STATUS_LABELS[contact.status] ||
-                  contact.status ||
-                  "Sem status"}
+            <p className="mt-1 text-sm">
+              <span className={`font-semibold ${statusTone}`}>
+                {STATUS_LABELS[contact.status] || contact.status || "Sem status"}
               </span>
-            </div>
-
-            <p className="mt-1 text-sm text-neutral-500">
-              Ficha completa do contato e histórico comercial.
+              <span className="text-muted">
+                {contact.category?.name && `, ${contact.category.name}`}
+                {age !== null && `, ${age} ${age === 1 ? "ano" : "anos"}`}
+              </span>
             </p>
           </div>
         </div>
@@ -884,472 +810,304 @@ const [waitingForm, setWaitingForm] = useState({
               href={whatsappUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
+              className={buttonClass("whatsapp")}
             >
-              <MessageCircle size={17} />
+              <MessageCircle size={17} aria-hidden="true" />
               WhatsApp
             </a>
           ) : null}
 
-          <button
-            type="button"
-            onClick={openEditModal}
-            className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
-          >
-            <Edit3 size={17} />
+          <Button onClick={openEditModal}>
+            <Edit3 size={17} aria-hidden="true" />
             Editar contato
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* MENSAGENS */}
 
       {success ? (
-        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-          <CheckCircle2 size={18} />
+        <p role="status" className="flex items-center gap-2 rounded-lg bg-ok-soft px-4 py-3 text-sm font-medium text-ok">
+          <CheckCircle2 size={18} aria-hidden="true" />
           {success}
-        </div>
+        </p>
       ) : null}
 
       {error && !modal ? (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
-          <XCircle size={18} />
+        <p role="alert" className="flex items-center gap-2 rounded-lg bg-alert-soft px-4 py-3 text-sm font-medium text-alert-text">
+          <XCircle size={18} aria-hidden="true" />
           {error}
-        </div>
+        </p>
       ) : null}
 
       {/* GRID PRINCIPAL */}
 
-      <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-        <div className="space-y-6">
-          {/* DADOS DO ALUNO */}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="space-y-5">
+          {/* CONTATO */}
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <div className="mb-5 flex items-center gap-2">
-              <UserRound
-                size={20}
-                className="text-neutral-500"
-              />
+          <Panel className="p-5">
+            <h2 className="font-semibold">Contato</h2>
 
-              <h2 className="font-bold text-neutral-900">
-                Dados do aluno
-              </h2>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              <Field
-                label="Aluno"
-                value={contact.child_name}
-              />
-
+            <dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Responsável" value={contact.responsible_name} />
+              <Field label="Telefone" value={contact.phone ? formatPhone(contact.phone) : null} />
+              {contact.email ? <Field label="E-mail" value={contact.email} /> : null}
               <Field
                 label="Nascimento"
-                value={formatDate(contact.birth_date)}
-              />
-
-              <Field
-                label="Idade atual"
                 value={
-                  age !== null
-                    ? `${age} ${age === 1 ? "ano" : "anos"}`
-                    : "—"
+                  contact.birth_date
+                    ? `${formatDate(contact.birth_date)}${age !== null ? ` (${age} anos)` : ""}`
+                    : null
                 }
               />
-
-
+              <Field label="Bairro" value={contact.neighborhood} />
+              <Field label="Como conheceu" value={contact.source ? getSourceLabel(contact.source) : null} />
               <Field
-                label="Responsável"
-                value={contact.responsible_name}
+                label="Entrou por"
+                value={
+                  contact.entry_channel
+                    ? ENTRY_CHANNEL_LABELS[contact.entry_channel] ?? contact.entry_channel
+                    : null
+                }
               />
-
-              <Field
-                label="Telefone"
-                value={contact.phone}
-              />
-
-              <Field
-                label="E-mail"
-                value={contact.email}
-              />
-
-              <Field
-                label="Bairro"
-                value={contact.neighborhood}
-              />
-
-              <Field
-                label="Origem"
-                value={contact.source}
-              />
-            </div>
-          </section>
-
-          {/* CONTEXTO DO LEAD */}
-
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-5 font-bold text-neutral-900">
-              Contexto do lead
-            </h2>
-
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <Field
                 label="Primeiro contato"
-                value={formatDateTime(
-                  contact.first_contact_at
-                )}
+                value={contact.first_contact_at ? formatDateTime(contact.first_contact_at) : null}
               />
-
               <Field
-                label="Canal de entrada"
-                value={contact.entry_channel}
-              />
-
-              <Field
-                label="Já treinou em outra escola?"
+                label="Já treinou em outra escola"
                 value={
-                  contact.trained_elsewhere ? "Sim" : "Não"
+                  contact.trained_elsewhere
+                    ? `Sim${contact.previous_club ? `: ${contact.previous_club}` : ""}`
+                    : "Não"
                 }
               />
-
-              <Field
-                label="Escola / clube anterior"
-                value={contact.previous_club}
-              />
-
-              <Field
-                label="Criado no sistema"
-                value={formatDateTime(contact.created_at)}
-              />
-
-              <Field
-                label="Última atualização"
-                value={formatDateTime(contact.updated_at)}
-              />
-            </div>
+            </dl>
 
             {contact.observations ? (
-              <div className="mt-6 border-t border-neutral-100 pt-5">
-                <Field
-                  label="Observações"
-                  value={contact.observations}
-                />
-              </div>
+              <dl className="mt-4 border-t border-line pt-4">
+                <Field label="Observações do cadastro" value={contact.observations} />
+              </dl>
             ) : null}
-          </section>
+          </Panel>
 
-          {/* SITUAÇÃO COMERCIAL */}
+          {/* SITUAÇÃO */}
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-5 font-bold text-neutral-900">
-              Situação comercial
-            </h2>
+          <Panel className="p-5">
+            <h2 className="font-semibold">Situação</h2>
 
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              <Field
-                label="Status atual"
-                value={
-                  STATUS_LABELS[contact.status] ||
-                  contact.status
-                }
-              />
+            <dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Status" value={STATUS_LABELS[contact.status] || contact.status} />
 
-              <Field
-                label="Próximo retorno"
-                value={formatDate(contact.follow_up_date)}
-              />
+              {contact.follow_up_date ? (
+                <Field label="Próximo retorno" value={formatDate(contact.follow_up_date)} />
+              ) : null}
 
-              <Field
-                label="Data da matrícula"
-                value={formatDate(contact.enrolled_at)}
-              />
+              {contact.enrolled_at ? (
+                <Field label="Matrícula" value={formatDate(contact.enrolled_at)} />
+              ) : null}
 
               <Field
                 label="Última experimental"
-                value={formatDate(
-                  contact.experimental_date
-                )}
-              />
-
-              <Field
-                label="Horário"
-                value={formatTime(
-                  contact.experimental_time
-                )}
-              />
-
-              <Field
-                label={
-                  contact.status === "waiting_list"
-                    ? "Local de preferência"
-                    : "Local"
-                }
-                value={contact.location?.name || "—"}
-              />
-
-              <Field
-                label="Resultado comercial"
                 value={
-                  STATUS_LABELS[
-                    contact.experimental_result
-                  ] || contact.experimental_result
+                  contact.experimental_date
+                    ? `${formatDate(contact.experimental_date)}${contact.experimental_time ? `, ${formatTime(contact.experimental_time)}` : ""}`
+                    : null
                 }
               />
+
+              <Field
+                label={contact.status === "waiting_list" ? "Local de preferência" : "Local"}
+                value={contact.location?.name || sessionLocation}
+              />
+
+              {contact.experimental_result ? (
+                <Field
+                  label="Resultado da aula"
+                  value={STATUS_LABELS[contact.experimental_result] || contact.experimental_result}
+                />
+              ) : null}
 
               {contact.status === "waiting_list" ? (
                 <>
                   <Field
                     label="Motivo da lista"
-                    value={getReasonLabel(
-                      WAITING_LIST_REASONS,
-                      contact.waiting_list_reason
-                    )}
+                    value={getReasonLabel(WAITING_LIST_REASONS, contact.waiting_list_reason)}
                   />
-
-                  <Field
-                    label="Entrada na lista"
-                    value={formatDateTime(
-                      contact.waiting_list_at
-                    )}
-                  />
+                  <Field label="Entrou na lista" value={formatDateTime(contact.waiting_list_at)} />
                 </>
               ) : null}
 
               {contact.status === "lost" ? (
                 <Field
                   label="Motivo do encerramento"
-                  value={getReasonLabel(
-                    LOST_REASONS,
-                    contact.lost_reason
-                  )}
+                  value={getLostReasonLabel(contact.lost_reason) || "—"}
                 />
               ) : null}
-            </div>
+            </dl>
 
             {contact.waiting_list_notes ? (
-              <div className="mt-6 border-t border-neutral-100 pt-5">
-                <Field
-                  label="Detalhes da lista de interesse"
-                  value={contact.waiting_list_notes}
-                />
-              </div>
+              <dl className="mt-4 border-t border-line pt-4">
+                <Field label="Detalhes da lista de interesse" value={contact.waiting_list_notes} />
+              </dl>
             ) : null}
-          </section>
+          </Panel>
 
           {/* HISTÓRICO DE EXPERIMENTAIS */}
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <div className="mb-5 flex items-center gap-2">
-              <History
-                size={20}
-                className="text-neutral-500"
-              />
-
-              <div>
-                <h2 className="font-bold text-neutral-900">
-                  Histórico de experimentais
-                </h2>
-
-                <p className="mt-1 text-xs text-neutral-500">
-                  Cada agendamento permanece registrado.
-                  Correções não apagam o histórico.
-                </p>
-              </div>
+          <Panel>
+            <div className="flex items-baseline justify-between gap-3 px-5 pb-2 pt-5">
+              <h2 className="font-semibold">Experimentais</h2>
+              <p className="text-sm text-muted">Correções não apagam o histórico.</p>
             </div>
 
             {sessions.length === 0 ? (
-              <div className="rounded-xl bg-neutral-50 p-5 text-sm text-neutral-500">
-                Nenhuma aula experimental registrada para
-                este contato.
-              </div>
+              <p className="px-5 pb-5 text-sm text-muted">
+                Nenhuma aula experimental registrada para este contato.
+              </p>
             ) : (
-              <div className="space-y-3">
+              <ul>
                 {sessions.map((session) => (
-                  <div
+                  <li
                     key={session.id}
-                    className="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4 lg:flex-row lg:items-center lg:justify-between"
+                    className="grid gap-x-4 gap-y-1 border-t border-line px-5 py-3 sm:grid-cols-[8.5rem_minmax(0,1fr)_9rem_auto] sm:items-start"
                   >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-bold text-neutral-900">
-                          {formatDate(
-                            session.experimental_date
-                          )}
-                        </p>
+                    <p className="font-semibold tabular-nums">
+                      {formatDate(session.experimental_date)}
+                      <span className="block text-sm font-normal text-muted">
+                        {formatTime(session.experimental_time)}
+                      </span>
+                    </p>
 
-                        <span className="text-sm text-neutral-400">
-                          •
-                        </span>
-
-                        <p className="text-sm font-medium text-neutral-700">
-                          {formatTime(
-                            session.experimental_time
-                          )}
-                        </p>
-
-                        <span
-                          className={`rounded-full border px-2.5 py-1 text-xs font-bold ${getStatusClass(
-                            session.status
-                          )}`}
-                        >
-                          {SESSION_STATUS_LABELS[
-                            session.status
-                          ] || session.status}
-                        </span>
-                      </div>
-
-                      <p className="mt-1 text-sm text-neutral-500">
-                        {session.category?.name ||
-                          "Categoria não informada"}
-                        {session.schedule?.training_group
-                          ? ` · ${session.schedule.training_group.location?.name ?? ""} · ${session.schedule.training_group.name}`
-                          : ""}
+                    <div className="min-w-0 text-sm">
+                      <p>
+                        {session.category?.name || "Categoria não informada"}
+                        {session.schedule?.training_group && (
+                          <span className="text-muted">
+                            , {session.schedule.training_group.location?.name ?? ""}
+                          </span>
+                        )}
                       </p>
 
                       {session.notes ? (
-                        <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-neutral-500">
-                          {session.notes}
-                        </p>
+                        <p className="mt-1 whitespace-pre-wrap text-muted">{session.notes}</p>
                       ) : null}
 
                       {session.coach_feedback ? (
-                        <p className="mt-2 whitespace-pre-wrap rounded-lg bg-green-50 p-2 text-xs leading-relaxed text-green-900">
-                          <strong>Professor:</strong> {session.coach_feedback}
+                        <p className="mt-1 whitespace-pre-wrap">
+                          <span className="font-medium">Professor:</span> {session.coach_feedback}
                         </p>
                       ) : null}
                     </div>
 
-                    <div className="flex gap-2">
-  <button
-    type="button"
-    onClick={() => openCorrectionModal(session)}
-    className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-xs font-semibold hover:bg-neutral-50"
-  >
-    <RotateCcw size={15}/>
-    Corrigir registro
-  </button>
+                    <p className={`text-sm font-medium ${STATUS_TONE[session.status] ?? "text-ink"}`}>
+                      {SESSION_STATUS_LABELS[session.status] || session.status}
+                    </p>
 
-  <button
-    type="button"
-    onClick={() => openDeleteExperimentalModal(session)}
-    className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
-  >
-    <XCircle size={15}/>
-    Excluir
-  </button>
-</div>
-                  </div>
+                    <div className="flex gap-1 sm:justify-end">
+                      <Button size="sm" variant="quiet" onClick={() => openCorrectionModal(session)}>
+                        <RotateCcw size={15} aria-hidden="true" />
+                        Corrigir
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="quiet"
+                        onClick={() => openDeleteExperimentalModal(session)}
+                        className="hover:!bg-alert-soft hover:!text-alert-text"
+                      >
+                        <XCircle size={15} aria-hidden="true" />
+                        Excluir
+                      </Button>
+                    </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </section>
+          </Panel>
 
           {/* OBSERVAÇÕES INTERNAS */}
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 font-bold text-neutral-900">
-              Observações internas
-            </h2>
+          <Panel className="p-5">
+            <h2 className="font-semibold">Observações internas</h2>
 
-            <div className="min-h-[90px] whitespace-pre-wrap rounded-xl bg-neutral-50 p-4 text-sm leading-relaxed text-neutral-700">
-              {contact.internal_notes ||
-                "Nenhuma observação interna registrada."}
-            </div>
-          </section>
+            <p className={`mt-3 whitespace-pre-wrap text-sm leading-relaxed ${contact.internal_notes ? "" : "text-muted"}`}>
+              {contact.internal_notes || "Nenhuma observação interna registrada."}
+            </p>
+          </Panel>
+
+          <p className="text-sm text-muted">
+            Criado em {formatDateTime(contact.created_at)}. Última atualização em{" "}
+            {formatDateTime(contact.updated_at)}.
+          </p>
         </div>
 
-        {/* PAINEL DE AÇÕES */}
+        {/* PRÓXIMA AÇÃO */}
 
-       <aside className="flex h-[calc(100vh-170px)] flex-col gap-4">
+        {/* Antes do xl a próxima ação vem primeiro: no celular é o que
+            se usa na hora, sem rolar por quatro painéis */}
+        <aside className="order-first xl:order-none">
+          <Panel className="xl:sticky xl:top-6">
+            <h2 className="px-4 pb-2 pt-4 font-semibold">Próxima ação</h2>
 
-                  <div className="flex-1">
-    
-</div>
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm xl:sticky xl:top-6">
-            <div className="mb-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                Gestão do lead
-              </p>
-
-              <h2 className="mt-1 text-lg font-bold text-neutral-900">
-                Próxima ação
-              </h2>
-
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-                Use estas ações para movimentar o contato
-                pelo funil sem apagar o histórico.
-              </p>
-            </div>
-
-            <div className="space-y-3">
+            <ul>
               <ActionButton
                 icon={CalendarDays}
-                title="Agendar / reagendar experimental"
-                description="Cria uma nova experimental e mantém as anteriores no histórico."
+                title="Agendar experimental"
+                description="As anteriores ficam no histórico."
                 onClick={openExperimentalModal}
               />
 
               <ActionButton
                 icon={Clock3}
                 title="Programar retorno"
-                description="Define uma data para voltar a falar com a família."
+                description="Data para voltar a falar com a família."
                 onClick={openFollowUpModal}
               />
 
               <ActionButton
                 icon={ListPlus}
                 title="Lista de interesse"
-                description="Use quando existe interesse real, mas ainda não é possível avançar."
+                description="Tem interesse, mas ainda não dá para avançar."
                 onClick={openWaitingListModal}
               />
 
               <ActionButton
                 icon={UserRoundCheck}
-                title={
-                  contact.status === "enrolled"
-                    ? "Atualizar matrícula"
-                    : "Registrar matrícula"
-                }
-                description="Confirma a conversão do contato em aluno matriculado."
+                title={contact.status === "enrolled" ? "Atualizar matrícula" : "Registrar matrícula"}
+                description="Confirma que virou aluno."
                 onClick={openEnrollmentModal}
               />
+            </ul>
 
-              {contact.status !== "lost" ? (
-                <ActionButton
-                  icon={XCircle}
-                  title="Encerrar oportunidade"
-                  description="Use somente quando o lead não seguirá no processo."
+            {contact.status !== "lost" ? (
+              <div className="border-t border-line px-4 py-3">
+                <button
+                  type="button"
                   onClick={openCloseModal}
-                  danger
-                />
-              ) : null}
-            </div>
-
-            <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-              <div className="flex items-start gap-3">
-                <ShieldCheck
-                  size={18}
-                  className="mt-0.5 shrink-0 text-neutral-500"
-                />
-
-                <p className="text-xs leading-relaxed text-neutral-500">
-                  Corrigir uma experimental antiga não
-                  altera automaticamente um contato que já
-                  avançou para matrícula, retorno, lista de
-                  interesse ou encerramento.
-                </p>
+                  className="inline-flex items-center gap-2 text-sm font-medium text-alert-text hover:underline"
+                >
+                  <XCircle size={16} aria-hidden="true" />
+                  Encerrar
+                </button>
               </div>
-            </div>
-          </div>
-          
-        </aside>
+            ) : null}
 
+            <p className="flex items-start gap-2 border-t border-line px-4 py-3 text-sm text-muted">
+              <ShieldCheck size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+              Corrigir uma experimental antiga não muda um contato que já avançou para
+              matrícula, retorno, lista ou encerramento.
+            </p>
+          </Panel>
+        </aside>
       </div>
 
       {/* ===================================================
           MODAL: MATRÍCULA
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "enrollment"}
         title="Registrar matrícula"
         description={`Confirmar a entrada de ${contact.child_name} como aluno matriculado.`}
@@ -1360,7 +1118,7 @@ const [waitingForm, setWaitingForm] = useState({
           className="space-y-5"
         >
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Data da matrícula *
             </label>
 
@@ -1373,12 +1131,12 @@ const [waitingForm, setWaitingForm] = useState({
                   enrolledAt: event.target.value,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observação interna
             </label>
 
@@ -1392,12 +1150,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Matrícula confirmada após conversa com a mãe."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1406,7 +1164,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1414,7 +1172,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1429,13 +1187,13 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
       {/* ===================================================
           MODAL: RETORNO
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "follow_up"}
         title="Programar retorno"
         description="Defina quando a família deve voltar para a fila de atendimento."
@@ -1446,7 +1204,7 @@ const [waitingForm, setWaitingForm] = useState({
           className="space-y-5"
         >
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Data do próximo contato *
             </label>
 
@@ -1459,12 +1217,12 @@ const [waitingForm, setWaitingForm] = useState({
                   followUpDate: event.target.value,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observação interna
             </label>
 
@@ -1478,12 +1236,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Retornar após conversar com o pai sobre os horários."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1492,7 +1250,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1500,7 +1258,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1515,13 +1273,13 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
       {/* ===================================================
           MODAL: LISTA DE INTERESSE
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "waiting_list"}
         title="Adicionar à lista de interesse"
         description="Use quando existe interesse real, mas ainda há um impedimento para avançar."
@@ -1532,7 +1290,7 @@ const [waitingForm, setWaitingForm] = useState({
           className="space-y-5"
         >
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Motivo *
             </label>
 
@@ -1544,7 +1302,7 @@ const [waitingForm, setWaitingForm] = useState({
                   reason: event.target.value,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             >
               {WAITING_LIST_REASONS.map((reason) => (
                 <option
@@ -1558,7 +1316,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Detalhes
             </label>
 
@@ -1572,12 +1330,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Família precisa de turma às 19h. Avisar caso seja aberta."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1586,7 +1344,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1594,7 +1352,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1609,25 +1367,25 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
       {/* ===================================================
           MODAL: EXPERIMENTAL
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "experimental"}
         title="Agendar / reagendar experimental"
         description="Uma nova sessão será criada. Experimentais anteriores permanecerão no histórico."
         onClose={closeModal}
-        maxWidth="max-w-2xl"
+        size="lg"
       >
         <form
           onSubmit={handleExperimental}
           className="space-y-5"
         >
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Categoria *
             </label>
 
@@ -1640,7 +1398,7 @@ const [waitingForm, setWaitingForm] = useState({
                   slot: null,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             >
               <option value="">
                 Selecione a categoria
@@ -1658,7 +1416,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <p className="mb-2 block text-sm font-semibold text-neutral-700">
+            <p className="mb-1.5 block text-sm font-medium text-ink">
               Turma, horário e data *
             </p>
 
@@ -1674,10 +1432,10 @@ const [waitingForm, setWaitingForm] = useState({
             />
 
             {experimentalForm.slot && (
-              <p className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm text-neutral-700">
+              <p className="mt-3 rounded-lg bg-canvas p-3 text-sm text-neutral-700">
                 Selecionado:{" "}
                 <strong>
-                  {experimentalForm.slot.group.location?.name} ·{" "}
+                  {experimentalForm.slot.group.location?.name},{" "}
                   {WEEKDAY_LABELS[experimentalForm.slot.weekday]}{" "}
                   {formatDate(experimentalForm.slot.date)} às{" "}
                   {formatTime(experimentalForm.slot.start_time)}
@@ -1687,7 +1445,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observação
             </label>
 
@@ -1701,12 +1459,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Reagendada porque o aluno estava na casa do pai."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1715,7 +1473,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1723,7 +1481,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1738,29 +1496,29 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
       {/* ===================================================
           MODAL: ENCERRAR
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "close"}
-        title="Encerrar oportunidade"
-        description="O contato deixará de aparecer como oportunidade ativa. O histórico será preservado."
+        title="Encerrar"
+        description="A família sai do acompanhamento. O histórico continua salvo."
         onClose={closeModal}
       >
         <form
           onSubmit={handleCloseOpportunity}
           className="space-y-5"
         >
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="rounded-lg border border-alert/30 bg-alert-soft p-4 text-sm text-alert-text">
             Esta ação deve ser usada quando a família não
             seguirá no processo neste momento.
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Motivo *
             </label>
 
@@ -1772,9 +1530,9 @@ const [waitingForm, setWaitingForm] = useState({
                   lostReason: event.target.value,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             >
-              {LOST_REASONS.map((reason) => (
+              {LOST_REASON_OPTIONS.map((reason) => (
                 <option
                   key={reason.value}
                   value={reason.value}
@@ -1786,7 +1544,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observação interna
             </label>
 
@@ -1800,12 +1558,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Família informou que a distância até a Arena inviabilizou a continuidade."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1814,7 +1572,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1822,7 +1580,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1833,17 +1591,17 @@ const [waitingForm, setWaitingForm] = useState({
                 <XCircle size={16} />
               )}
 
-              Encerrar oportunidade
+              Encerrar
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
       {/* ===================================================
           MODAL: CORRIGIR EXPERIMENTAL
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "correction"}
         title="Corrigir registro da experimental"
         description="Use somente para corrigir um registro lançado incorretamente."
@@ -1853,15 +1611,15 @@ const [waitingForm, setWaitingForm] = useState({
           onSubmit={handleCorrection}
           className="space-y-5"
         >
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-800">
+          <div className="rounded-lg border border-attention/40 bg-attention-soft p-4 text-sm leading-relaxed text-attention-text">
             Esta função corrige o histórico da aula. Se o
             aluno já avançou para matrícula, retorno, lista
             de interesse ou encerramento, essa situação
-            comercial será preservada.
+            continua como está.
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Status correto *
             </label>
 
@@ -1873,7 +1631,7 @@ const [waitingForm, setWaitingForm] = useState({
                   status: event.target.value,
                 }))
               }
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={inputClass}
             >
               {Object.entries(
                 SESSION_STATUS_LABELS
@@ -1889,7 +1647,7 @@ const [waitingForm, setWaitingForm] = useState({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Motivo da correção
               {correctionForm.status !==
               correctionForm.currentStatus
@@ -1907,12 +1665,12 @@ const [waitingForm, setWaitingForm] = useState({
                 }))
               }
               placeholder="Ex.: Presença foi lançada como ausência por engano."
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -1921,7 +1679,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -1929,7 +1687,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -1944,9 +1702,9 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
 
-      <Modal
+      <Dialog
   open={modal === "delete_experimental"}
   title="Excluir experimental"
   description="Esta ação remove definitivamente esta aula experimental."
@@ -1954,14 +1712,14 @@ const [waitingForm, setWaitingForm] = useState({
 >
   <div className="space-y-5">
 
-    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    <div className="rounded-lg border border-alert/30 bg-alert-soft p-4 text-sm text-alert-text">
       Utilize esta função apenas quando a experimental foi criada por engano ou para testes.
 
       Esta ação não poderá ser desfeita.
     </div>
 
     {error ? (
-      <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+      <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
         {error}
       </p>
     ) : null}
@@ -1971,7 +1729,7 @@ const [waitingForm, setWaitingForm] = useState({
       <button
         type="button"
         onClick={closeModal}
-        className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+        className={buttonClass("secondary")}
       >
         Cancelar
       </button>
@@ -1980,7 +1738,7 @@ const [waitingForm, setWaitingForm] = useState({
         type="button"
         onClick={handleDeleteExperimental}
         disabled={actionLoading}
-        className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white"
+        className={buttonClass("primary")}
       >
         {actionLoading ? (
           <Loader2 size={16} className="animate-spin"/>
@@ -1994,23 +1752,23 @@ const [waitingForm, setWaitingForm] = useState({
     </div>
 
   </div>
-</Modal>
+</Dialog>
 
       {/* ===================================================
           MODAL: EDITAR CONTATO
       =================================================== */}
 
-      <Modal
+      <Dialog
         open={modal === "edit"}
         title="Editar contato"
-        description="Corrija informações cadastrais sem alterar manualmente a jornada comercial."
+        description="Corrija informações cadastrais sem alterar manualmente a etapa em que a família está."
         onClose={closeModal}
-        maxWidth="max-w-2xl"
+        size="lg"
       >
         <form onSubmit={handleEdit} className="space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Nome do aluno *
               </label>
 
@@ -2022,12 +1780,12 @@ const [waitingForm, setWaitingForm] = useState({
                     child_name: event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Data de nascimento
               </label>
 
@@ -2040,12 +1798,12 @@ const [waitingForm, setWaitingForm] = useState({
                     birth_date: event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Responsável
               </label>
 
@@ -2058,12 +1816,12 @@ const [waitingForm, setWaitingForm] = useState({
                       event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Telefone
               </label>
 
@@ -2075,12 +1833,12 @@ const [waitingForm, setWaitingForm] = useState({
                     phone: event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 E-mail
               </label>
 
@@ -2093,12 +1851,12 @@ const [waitingForm, setWaitingForm] = useState({
                     email: event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Bairro
               </label>
 
@@ -2111,12 +1869,12 @@ const [waitingForm, setWaitingForm] = useState({
                       event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Origem
               </label>
 
@@ -2129,12 +1887,12 @@ const [waitingForm, setWaitingForm] = useState({
                   }))
                 }
                 placeholder="Ex.: Instagram"
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Canal de entrada
               </label>
 
@@ -2148,12 +1906,12 @@ const [waitingForm, setWaitingForm] = useState({
                   }))
                 }
                 placeholder="Ex.: WhatsApp"
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Categoria
               </label>
 
@@ -2166,7 +1924,7 @@ const [waitingForm, setWaitingForm] = useState({
                       event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               >
                 <option value="">
                   Sem categoria
@@ -2184,7 +1942,7 @@ const [waitingForm, setWaitingForm] = useState({
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Primeiro contato
               </label>
 
@@ -2198,12 +1956,12 @@ const [waitingForm, setWaitingForm] = useState({
                       event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
           </div>
 
-          <label className="flex items-center gap-3 rounded-xl border border-neutral-200 p-4">
+          <label className="flex items-center gap-3 rounded-lg border border-line p-4">
             <input
               type="checkbox"
               checked={editForm.trained_elsewhere}
@@ -2224,7 +1982,7 @@ const [waitingForm, setWaitingForm] = useState({
 
           {editForm.trained_elsewhere ? (
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 Escola / clube anterior
               </label>
 
@@ -2237,13 +1995,13 @@ const [waitingForm, setWaitingForm] = useState({
                       event.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+                className={inputClass}
               />
             </div>
           ) : null}
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observações
             </label>
 
@@ -2256,12 +2014,12 @@ const [waitingForm, setWaitingForm] = useState({
                   observations: event.target.value,
                 }))
               }
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-neutral-700">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
               Observações internas
             </label>
 
@@ -2275,12 +2033,12 @@ const [waitingForm, setWaitingForm] = useState({
                     event.target.value,
                 }))
               }
-              className="w-full resize-none rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {error ? (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <p className="rounded-lg bg-alert-soft p-3 text-sm text-alert-text">
               {error}
             </p>
           ) : null}
@@ -2289,7 +2047,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold"
+              className={buttonClass("secondary")}
             >
               Cancelar
             </button>
@@ -2297,7 +2055,7 @@ const [waitingForm, setWaitingForm] = useState({
             <button
               type="submit"
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className={buttonClass("primary")}
             >
               {actionLoading ? (
                 <Loader2
@@ -2312,7 +2070,7 @@ const [waitingForm, setWaitingForm] = useState({
             </button>
           </div>
         </form>
-      </Modal>
+      </Dialog>
     </div>
   );
 }

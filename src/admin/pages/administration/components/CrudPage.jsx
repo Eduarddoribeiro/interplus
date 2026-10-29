@@ -1,47 +1,40 @@
 import { ArrowLeft, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import SectionTitle from "../../../components/common/SectionTitle";
+import { Button } from "../../../ui";
+
+// Volta para a lista de cadastros (link: abre em nova aba se quiser)
+export function BackLink({ to = "/admin/administration", label = "Administração" }) {
+  return (
+    <Link to={to} className="inline-flex items-center gap-1.5 rounded text-sm text-muted hover:text-ink">
+      <ArrowLeft size={16} aria-hidden="true" />
+      {label}
+    </Link>
+  );
+}
 
 export default function CrudPage({
   title,
-  subtitle,
   createLabel,
   onCreate,
   children,
 }) {
-  const navigate = useNavigate();
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
+      <BackLink />
 
-      <button
-        onClick={() => navigate("/admin/administration")}
-        className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900"
-      >
-        <ArrowLeft size={18} />
-        Voltar
-      </button>
-
-      <div className="flex items-center justify-between">
-
-        <SectionTitle
-          title={title}
-          subtitle={subtitle}
-        />
-
-        <button
-          onClick={onCreate}
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-medium text-white hover:bg-red-700"
-        >
-          <Plus size={18}/>
-          {createLabel}
-        </button>
-
-      </div>
+      <SectionTitle
+        title={title}
+        actions={
+          <Button variant="primary" onClick={onCreate}>
+            <Plus size={18} aria-hidden="true" />
+            {createLabel}
+          </Button>
+        }
+      />
 
       {children}
-
     </div>
   );
 }

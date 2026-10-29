@@ -4,6 +4,7 @@ import CrudTable from "../components/CrudTable";
 import StatusBadge from "../components/StatusBadge";
 
 import { birthYearsOf } from "../../../../helpers/categoryAge";
+import { Button } from "../../../ui";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -26,31 +27,31 @@ export default function CategoriesTable({
         "Categoria",
         "Faixa etária",
         "Quantidade de turmas",
-        "Status",
-        "Ações",
+        "Situação",
+        "",
       ]}
       emptyMessage={
         loading
-          ? "Carregando..."
+          ? "Carregando…"
           : "Nenhuma categoria cadastrada."
       }
     >
       {categories.map((category) => (
         <tr
           key={category.id}
-          className="border-b border-neutral-100 last:border-0"
+          className="border-t border-line"
         >
-          <td className="px-6 py-4 font-medium">
+          <td className="px-4 py-3 font-medium">
             {category.name}
           </td>
 
-          <td className="px-6 py-4">
+          <td className="px-4 py-3">
             {category.min_age != null ? (
               <>
                 {birthYearsOf(category).from === birthYearsOf(category).to
                   ? `Nascidos em ${birthYearsOf(category).from}`
                   : `Nascidos em ${birthYearsOf(category).from} a ${birthYearsOf(category).to}`}
-                <span className="block text-xs text-neutral-400">
+                <span className="block text-xs text-muted">
                   {category.min_age} a {category.max_age} anos no ano
                 </span>
               </>
@@ -62,42 +63,38 @@ export default function CategoriesTable({
             )}
           </td>
 
-          <td className="px-6 py-4">
+          <td className="px-4 py-3">
             {category.training_groups_count === 1
               ? "1 turma"
               : `${category.training_groups_count} turmas`}
           </td>
 
-          <td className="px-6 py-4">
+          <td className="px-4 py-3">
             <StatusBadge active={category.active} />
           </td>
 
-          <td className="px-6 py-4">
-            <div className="flex justify-end gap-2">
+          <td className="px-4 py-3">
+            <div className="flex justify-end gap-1">
 
-              <button
-                onClick={() => onEdit(category)}
-                className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
-              >
-                <Pencil size={16} />
+              <Button size="sm" variant="quiet" onClick={() => onEdit(category)}>
+                <Pencil size={15} aria-hidden="true" />
                 Editar
-              </button>
+              </Button>
 
-              <button
-                onClick={() => onToggle(category)}
-                className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm hover:bg-neutral-100"
-              >
-                <Power size={16} />
+              <Button size="sm" variant="quiet" onClick={() => onToggle(category)}>
+                <Power size={15} aria-hidden="true" />
                 {category.active ? "Desativar" : "Reativar"}
-              </button>
+              </Button>
 
-              <button
+              <Button
+                size="sm"
+                variant="quiet"
                 onClick={() => onDelete(category)}
-                className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                className="hover:!bg-alert-soft hover:!text-alert-text"
               >
-                <Trash2 size={16} />
+                <Trash2 size={15} aria-hidden="true" />
                 Excluir
-              </button>
+              </Button>
 
             </div>
           </td>

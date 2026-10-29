@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 
 import {
@@ -10,13 +10,15 @@ import {
   Loader2,
   MessageCircle,
   Plus,
-  RefreshCw,
   RotateCcw,
   Search,
   UserCheck,
 } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
+import { Button, Count, Dialog, DialogActions, Panel, Tabs, urgencyRail } from "../ui";
+import { toast } from "../components/common/Toaster";
+import { formatPhone } from "../../helpers/phoneHelpers";
 
 import {
   addToWaitingList,
@@ -42,21 +44,9 @@ import { LOST_REASON } from "../../constants/lostReasons";
 import { getSourceLabel as sourceLabel } from "../../constants/school";
 import { createWhatsAppUrl, normalizePhone } from "../../helpers/contactPresentation";
 
-const ITEMS_PER_PAGE = 30;
+// 20 por página: menos de duas telas de rolagem no notebook
+const ITEMS_PER_PAGE = 20;
 
-const STATUS_BADGE = {
-  new: "bg-neutral-100 text-neutral-500",
-  new_contact: "bg-neutral-100 text-neutral-700",
-  pending_confirmation: "bg-amber-50 text-amber-700",
-  confirmed: "bg-blue-50 text-blue-700",
-  attended: "bg-green-50 text-green-700",
-  no_show: "bg-red-50 text-red-700",
-  follow_up: "bg-orange-50 text-orange-700",
-  waiting_list: "bg-purple-50 text-purple-700",
-  enrolled: "bg-emerald-50 text-emerald-700",
-  lost: "bg-neutral-100 text-neutral-600",
-  cancelled: "bg-neutral-100 text-neutral-600",
-};
 
 /* =========================================================
  * REGRAS
@@ -99,30 +89,64 @@ export default function Contacts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [searchParams] = useSearchParams();
+  // Aba, busca, filtros e página ficam na URL: ao abrir um contato e
+  // voltar, a lista reabre no mesmo lugar
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState(() =>
     TABS.some((item) => item.value === searchParams.get("aba"))
       ? searchParams.get("aba")
       : "active",
   );
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [staleOnly, setStaleOnly] = useState(false);
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(() => searchParams.get("busca") ?? "");
+  const [categoryFilter, setCategoryFilter] = useState(() => searchParams.get("categoria") ?? "all");
+  const [sourceFilter, setSourceFilter] = useState(() => searchParams.get("origem") ?? "all");
+  const [staleOnly, setStaleOnly] = useState(() => searchParams.get("parados") === "1");
+  const [page, setPage] = useState(() => Math.max(Number(searchParams.get("pagina")) || 1, 1));
+  const filtersReady = useRef(false);
+  const listTopRef = useRef(null);
 
   const [selected, setSelected] = useState(() => new Set());
   const [bulk, setBulk] = useState(null); // { done, total, label }
-  const [notice, setNotice] = useState("");
+  const [confirming, setConfirming] = useState(null); // { title, description, confirmLabel, run }
 
   useEffect(() => {
     loadContacts();
   }, [contactsVersion]);
 
+  // Recarrega ao voltar para a aba do navegador (sem botão Atualizar)
   useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible") loadContacts();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  // Mudou filtro: volta para a página 1 (menos na primeira carga,
+  // que pode vir com a página da URL)
+  useEffect(() => {
+    if (!filtersReady.current) {
+      filtersReady.current = true;
+      return;
+    }
+
     setPage(1);
     setSelected(new Set());
   }, [tab, search, categoryFilter, sourceFilter, staleOnly]);
+
+  useEffect(() => {
+    const params = {};
+
+    if (tab !== "active") params.aba = tab;
+    if (search) params.busca = search;
+    if (categoryFilter !== "all") params.categoria = categoryFilter;
+    if (sourceFilter !== "all") params.origem = sourceFilter;
+    if (staleOnly) params.parados = "1";
+    if (page > 1) params.pagina = String(page);
+
+    setSearchParams(params, { replace: true });
+  }, [tab, search, categoryFilter, sourceFilter, staleOnly, page, setSearchParams]);
 
   async function loadContacts() {
     try {
@@ -138,9 +162,11 @@ export default function Contacts() {
     }
   }
 
-  function showNotice(message) {
-    setNotice(message);
-    window.setTimeout(() => setNotice(""), 6000);
+  const plural = (count) => `${count} contato${count === 1 ? "" : "s"}`;
+
+  // Ações em lote que mexem no funil pedem confirmação com a quantidade
+  function confirmBulk({ title, description, confirmLabel, run }) {
+    setConfirming({ title, description, confirmLabel, run });
   }
 
   /* =========================================================
@@ -159,9 +185,13 @@ export default function Contacts() {
     return counts;
   }, [contacts]);
 
-  // Telefones repetidos entre contatos não arquivados
-  const duplicatePhones = useMemo(() => {
-    const counts = new Map();
+  /*
+   * Possíveis duplicados: mesmo telefone E mesma criança (primeiro
+   * nome igual, ou um dos dois sem nome, como os que entram pelo
+   * WhatsApp). Irmãos com o mesmo responsável não são marcados.
+   */
+  const duplicateIds = useMemo(() => {
+    const byPhone = new Map();
 
     contacts.forEach((contact) => {
       if (contact.archived_at) return;
@@ -169,10 +199,28 @@ export default function Contacts() {
       const phone = normalizePhone(contact.phone).slice(-11);
       if (phone.length < 10) return;
 
-      counts.set(phone, (counts.get(phone) ?? 0) + 1);
+      if (!byPhone.has(phone)) byPhone.set(phone, []);
+      byPhone.get(phone).push(contact);
     });
 
-    return new Set([...counts].filter(([, count]) => count > 1).map(([phone]) => phone));
+    const firstName = (contact) => normalizeText(contact.child_name).trim().split(/\s+/)[0] || "";
+    const ids = new Set();
+
+    byPhone.forEach((group) => {
+      group.forEach((contact, index) => {
+        group.slice(index + 1).forEach((other) => {
+          const a = firstName(contact);
+          const b = firstName(other);
+
+          if (!a || !b || a === b) {
+            ids.add(contact.id);
+            ids.add(other.id);
+          }
+        });
+      });
+    });
+
+    return ids;
   }, [contacts]);
 
   const categories = useMemo(
@@ -220,7 +268,23 @@ export default function Contacts() {
   }, [contacts, tab, staleOnly, categoryFilter, sourceFilter, search]);
 
   const totalPages = Math.max(Math.ceil(filtered.length / ITEMS_PER_PAGE), 1);
+
+  // Página da URL maior que o total (a lista mudou): vai para a última
+  useEffect(() => {
+    if (!loading && page > totalPages) setPage(totalPages);
+  }, [loading, page, totalPages]);
   const pageItems = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const firstItem = filtered.length ? (page - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const lastItem = Math.min(page * ITEMS_PER_PAGE, filtered.length);
+
+  // Troca de página e leva a tela para o começo da lista
+  function goToPage(next) {
+    setPage(next);
+
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    listTopRef.current?.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+  }
 
   const allFilteredSelected =
     filtered.length > 0 && filtered.every((contact) => selected.has(contact.id));
@@ -245,7 +309,7 @@ export default function Contacts() {
    * AÇÕES EM LOTE
    * =======================================================*/
 
-  async function runBulk(label, action) {
+  async function runBulk(label, action, { undo } = {}) {
     const ids = [...selected];
     if (!ids.length) return;
 
@@ -253,10 +317,28 @@ export default function Contacts() {
 
     try {
       await action(ids, (done) => setBulk({ done, total: ids.length, label }));
-      showNotice(`${label}: ${ids.length} contato${ids.length === 1 ? "" : "s"}.`);
+      toast(`${label}: ${plural(ids.length)}.`, {
+        type: "success",
+        action: undo
+          ? {
+              label: "Desfazer",
+              onClick: async () => {
+                try {
+                  await undo(ids);
+                  toast("Desfeito.", { type: "success" });
+                } catch (err) {
+                  console.error("Erro ao desfazer:", err);
+                  toast("Não foi possível desfazer. Os contatos estão na aba Arquivados.");
+                } finally {
+                  await loadContacts();
+                }
+              },
+            }
+          : undefined,
+      });
     } catch (err) {
       console.error(`Erro em "${label}":`, err);
-      showNotice(err?.message || `Não foi possível concluir: ${label}.`);
+      toast(`Não foi possível concluir: ${label}. Confira a lista e tente de novo.`);
     } finally {
       setBulk(null);
       setSelected(new Set());
@@ -272,9 +354,12 @@ export default function Contacts() {
     }
   }
 
+  // Arquivar é reversível: vira "Desfazer" no aviso, sem confirmação
   function archiveSelected(reason) {
-    return runBulk(`Arquivado como "${ARCHIVE_REASON_LABEL[reason]}"`, (ids) =>
-      archiveContacts(ids, reason),
+    return runBulk(
+      `Arquivado como "${ARCHIVE_REASON_LABEL[reason]}"`,
+      (ids) => archiveContacts(ids, reason),
+      { undo: (ids) => restoreContacts(ids) },
     );
   }
 
@@ -283,6 +368,16 @@ export default function Contacts() {
   }
 
   function closeSelectedNoResponse() {
+    confirmBulk({
+      title: `Encerrar ${plural(selected.size)}?`,
+      description:
+        "Cada um fica como Encerrado, com o motivo \"família não respondeu\". Para voltar atrás depois, é preciso abrir contato por contato.",
+      confirmLabel: `Encerrar ${plural(selected.size)}`,
+      run: runCloseNoResponse,
+    });
+  }
+
+  function runCloseNoResponse() {
     return runBulk('Encerrado como "família não respondeu"', (ids, onProgress) =>
       oneByOne(ids, onProgress, (id) =>
         closeOpportunity(id, {
@@ -294,11 +389,21 @@ export default function Contacts() {
   }
 
   function moveSelectedToWaitingList() {
+    confirmBulk({
+      title: `Mover ${plural(selected.size)} para a lista de interesse?`,
+      description:
+        "Saem do acompanhamento e ficam na lista para avisar quando abrir vaga.",
+      confirmLabel: `Mover ${plural(selected.size)}`,
+      run: runMoveToWaitingList,
+    });
+  }
+
+  function runMoveToWaitingList() {
     return runBulk("Movido para a lista de interesse", (ids, onProgress) =>
       oneByOne(ids, onProgress, (id) =>
         addToWaitingList(id, {
           reason: "future_interest",
-          notes: "Movido em lote: lead parado, manter para avisar quando abrir vaga.",
+          notes: "Movido em lote: contato parado, manter para avisar quando abrir vaga.",
         }),
       ),
     );
@@ -310,7 +415,7 @@ export default function Contacts() {
       navigate(`/admin/contacts/${contact.id}`);
     } catch (err) {
       console.error("Erro ao marcar como lead:", err);
-      showNotice("Não foi possível marcar como lead.");
+      toast("Não foi possível marcar como interessado.");
     }
   }
 
@@ -324,9 +429,25 @@ export default function Contacts() {
             : item,
         ),
       );
+      toast(`Arquivado como "${ARCHIVE_REASON_LABEL[reason]}".`, {
+        type: "success",
+        action: {
+          label: "Desfazer",
+          onClick: async () => {
+            try {
+              await restoreContacts([contact.id]);
+            } catch (err) {
+              console.error("Erro ao desfazer:", err);
+              toast("Não foi possível desfazer. O contato está na aba Arquivados.");
+            } finally {
+              await loadContacts();
+            }
+          },
+        },
+      });
     } catch (err) {
       console.error("Erro ao arquivar:", err);
-      showNotice("Não foi possível arquivar.");
+      toast("Não foi possível arquivar.");
     }
   }
 
@@ -334,109 +455,94 @@ export default function Contacts() {
    * RENDER
    * =======================================================*/
 
+  const fieldClass =
+    "h-10 rounded-lg border border-line bg-white px-3 text-sm outline-none placeholder:text-neutral-500 focus:border-ink";
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <SectionTitle
-          title="Contatos"
-          description="Oportunidades da escola. Pais de alunos e contatos que não são leads ficam arquivados."
-        />
-
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={loadContacts}
-            disabled={loading}
-            className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
-          >
-            <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
-            Atualizar
-          </button>
-
-          {openNewContact && (
-            <button
-              type="button"
-              onClick={openNewContact}
-              className="flex items-center gap-2 rounded-xl bg-inter-red px-5 py-3 text-sm font-semibold text-white hover:bg-[#a80e24]"
-            >
-              <Plus size={18} />
+    <div className="space-y-5">
+      <SectionTitle
+        title="Contatos"
+        summary={`${tabCounts.active ?? 0} em andamento, ${tabCounts.enrolled ?? 0} matriculados.`}
+        actions={
+          openNewContact && (
+            <Button variant="primary" onClick={openNewContact}>
+              <Plus size={18} aria-hidden="true" />
               Novo contato
-            </button>
-          )}
-        </div>
-      </div>
+            </Button>
+          )
+        }
+      />
 
-      {notice && (
-        <div className="rounded-2xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white">
-          {notice}
-        </div>
-      )}
+      <Dialog
+        open={!!confirming}
+        onClose={() => setConfirming(null)}
+        title={confirming?.title}
+        size="sm"
+        footer={
+          <DialogActions>
+            <Button onClick={() => setConfirming(null)}>Cancelar</Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                const run = confirming.run;
+                setConfirming(null);
+                run();
+              }}
+            >
+              {confirming?.confirmLabel}
+            </Button>
+          </DialogActions>
+        }
+      >
+        <p className="text-sm">{confirming?.description}</p>
+      </Dialog>
 
       {/* ABAS */}
-      <div className="flex flex-wrap gap-2 rounded-2xl border border-neutral-200 bg-white p-2">
-        {TABS.map((item) => {
-          const count = tabCounts[item.value] ?? 0;
-          const active = tab === item.value;
-
-          if (item.value === "triage" && !count && !active) return null;
-
-          return (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() => setTab(item.value)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-                active
-                  ? item.value === "triage"
-                    ? "bg-amber-500 text-white"
-                    : "bg-neutral-900 text-white"
-                  : item.value === "triage"
-                    ? "text-amber-700 hover:bg-amber-50"
-                    : "text-neutral-600 hover:bg-neutral-100"
-              }`}
-            >
-              {item.label}
-              <span
-                className={`rounded-md px-1.5 text-xs ${
-                  active ? "bg-white/20" : "bg-neutral-100 text-neutral-500"
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <Tabs
+        label="Grupos de contatos"
+        value={tab}
+        onChange={setTab}
+        items={TABS.filter(
+          (item) => item.value !== "triage" || tabCounts.triage || tab === "triage",
+        ).map((item) => ({
+          ...item,
+          count: tabCounts[item.value] ?? 0,
+          urgency: item.value === "triage" && tabCounts.triage ? "attention" : undefined,
+        }))}
+      />
 
       {tab === "triage" && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Contatos que entraram sozinhos pelo WhatsApp ou foram cadastrados sem o nome do
-          atleta. Decida se cada um é lead; pais de alunos atuais vão para{" "}
-          <strong>Já é aluno</strong> (não contam como matrícula). Dá para marcar vários e
-          arquivar de uma vez.
-        </div>
+        <p className="max-w-3xl text-sm text-muted">
+          Entraram sozinhos pelo WhatsApp ou foram cadastrados sem o nome do atleta.
+          Decida se cada um é interessado. Pais de alunos atuais vão para <strong className="text-ink">Já é aluno</strong> e
+          não contam como matrícula. Dá para marcar vários e arquivar de uma vez.
+        </p>
       )}
 
       {/* BUSCA + FILTROS */}
-      <div className="flex flex-col gap-3 lg:flex-row">
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
         <label className="relative flex-1">
+          <span className="sr-only">Buscar contato</span>
           <Search
             size={17}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"
+            aria-hidden="true"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
           />
 
           <input
+            type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Buscar atleta, responsável, nome no WhatsApp ou telefone"
-            className="w-full rounded-xl border border-neutral-200 bg-white py-3 pl-11 pr-4 text-sm outline-none focus:border-inter-red"
+            className={`${fieldClass} w-full pl-10`}
           />
         </label>
 
         <select
+          aria-label="Categoria"
           value={categoryFilter}
           onChange={(event) => setCategoryFilter(event.target.value)}
-          className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm"
+          className={fieldClass}
         >
           <option value="all">Todas as categorias</option>
           {categories.map((name) => (
@@ -447,9 +553,10 @@ export default function Contacts() {
         </select>
 
         <select
+          aria-label="Origem"
           value={sourceFilter}
           onChange={(event) => setSourceFilter(event.target.value)}
-          className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm"
+          className={fieldClass}
         >
           <option value="all">Todas as origens</option>
           {sources.map((source) => (
@@ -458,35 +565,32 @@ export default function Contacts() {
             </option>
           ))}
         </select>
-      </div>
 
-      {tab === "active" && staleCount > 0 && (
-        <button
-          type="button"
-          onClick={() => setStaleOnly((current) => !current)}
-          className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold ${
-            staleOnly
-              ? "border-orange-500 bg-orange-500 text-white"
-              : "border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100"
-          }`}
-        >
-          <Clock3 size={16} />
-          Parados há {STALE_DAYS}+ dias ({staleCount})
-        </button>
-      )}
+        {tab === "active" && staleCount > 0 && (
+          <Button
+            aria-pressed={staleOnly}
+            onClick={() => setStaleOnly((current) => !current)}
+            className={staleOnly ? "!border-ink !bg-ink !text-white" : ""}
+          >
+            <Clock3 size={16} aria-hidden="true" />
+            Parados há {STALE_DAYS}+ dias
+            <Count value={staleCount} inverted={staleOnly} />
+          </Button>
+        )}
+      </div>
 
       {/* BARRA DE LOTE */}
       {selected.size > 0 && (
-        <div className="sticky top-2 z-10 flex flex-col gap-3 rounded-2xl border border-neutral-900 bg-neutral-900 p-3 text-white sm:flex-row sm:items-center">
-          <p className="px-2 text-sm font-semibold">
+        <div className="sticky top-2 z-10 flex flex-col gap-3 rounded-xl bg-ink p-3 text-white sm:flex-row sm:items-center">
+          <p className="px-2 text-sm font-semibold" role="status">
             {bulk
-              ? `${bulk.label}… ${bulk.done}/${bulk.total}`
+              ? `${bulk.label}… ${bulk.done} de ${bulk.total}`
               : `${selected.size} selecionado${selected.size === 1 ? "" : "s"}`}
           </p>
 
           <div className="flex flex-wrap gap-2 sm:ml-auto">
             {bulk ? (
-              <Loader2 size={18} className="animate-spin" />
+              <Loader2 size={18} aria-hidden="true" className="animate-spin" />
             ) : tab === "archived" ? (
               <BulkButton onClick={restoreSelected} icon={RotateCcw}>
                 Restaurar
@@ -516,7 +620,7 @@ export default function Contacts() {
                   onClick={() => archiveSelected(ARCHIVE_REASON.NOT_LEAD)}
                   icon={Archive}
                 >
-                  Não é lead
+                  Não é interessado
                 </BulkButton>
 
                 <BulkButton
@@ -532,40 +636,91 @@ export default function Contacts() {
       )}
 
       {/* LISTA */}
-      {loading ? (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-12 text-center text-neutral-500">
-          Carregando contatos...
-        </div>
+      {loading && contacts.length === 0 ? (
+        <p role="status" className="py-12 text-center text-muted">
+          Carregando contatos…
+        </p>
       ) : error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-          <p className="font-semibold text-red-700">{error}</p>
-          <button
-            type="button"
-            onClick={loadContacts}
-            className="mt-2 text-sm font-semibold text-red-700 underline"
-          >
-            Tentar novamente
-          </button>
-        </div>
+        <Panel className="p-5">
+          <p role="alert" className="font-medium text-alert-text">
+            {error} Confira sua internet e tente de novo.
+          </p>
+
+          <Button className="mt-3" onClick={loadContacts}>
+            Tentar de novo
+          </Button>
+        </Panel>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-12 text-center text-neutral-500">
-          {tab === "triage" ? "Triagem concluída 🎉" : "Nenhum contato encontrado."}
-        </div>
+        <Panel className="px-6 py-10 text-center">
+          <p className="font-semibold">
+            {tab === "triage" ? "Triagem concluída." : "Nenhum contato encontrado."}
+          </p>
+          {tab !== "triage" && (search || categoryFilter !== "all" || sourceFilter !== "all") && (
+            <p className="mt-1 text-sm text-muted">Tente limpar a busca ou os filtros.</p>
+          )}
+        </Panel>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-          <div className="flex items-center gap-3 border-b border-neutral-100 bg-neutral-50 px-4 py-2.5 text-xs font-semibold text-neutral-500">
+        <>
+        <div ref={listTopRef} className="flex scroll-mt-4 items-center justify-between gap-3">
+          <p className="text-sm text-muted tabular-nums">
+            {firstItem}–{lastItem} de {filtered.length} contato{filtered.length === 1 ? "" : "s"}
+          </p>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="quiet"
+                disabled={page === 1}
+                onClick={() => goToPage(page - 1)}
+                aria-label="Página anterior"
+              >
+                <ChevronLeft size={16} aria-hidden="true" />
+              </Button>
+
+              <span className="px-1 text-sm tabular-nums text-muted">
+                {page} de {totalPages}
+              </span>
+
+              <Button
+                size="sm"
+                variant="quiet"
+                disabled={page === totalPages}
+                onClick={() => goToPage(page + 1)}
+                aria-label="Próxima página"
+              >
+                <ChevronRight size={16} aria-hidden="true" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <Panel className="overflow-hidden">
+          <div className="hidden grid-cols-[1.5rem_minmax(0,2.2fr)_minmax(0,1.3fr)_5rem_minmax(0,1fr)_8rem_auto] items-center gap-x-4 border-b border-line bg-canvas px-4 py-2 text-sm text-muted lg:grid">
             <input
               type="checkbox"
               checked={allFilteredSelected}
               onChange={toggleAllFiltered}
-              className="h-4 w-4 accent-red-600"
-              aria-label="Selecionar todos"
+              className="h-4 w-4 accent-ink"
+              aria-label={`Selecionar todos os ${filtered.length} contatos`}
             />
-            <span>
-              {allFilteredSelected
-                ? `Todos os ${filtered.length} selecionados`
-                : `${filtered.length} contato${filtered.length === 1 ? "" : "s"} · selecionar todos`}
-            </span>
+            <span>Atleta e responsável</span>
+            <span>Situação</span>
+            <span>Categoria</span>
+            <span>Local</span>
+            <span>Último contato</span>
+            <span className="sr-only">Ações</span>
+          </div>
+
+          <div className="flex items-center gap-3 border-b border-line bg-canvas px-4 py-2 text-sm text-muted lg:hidden">
+            <input
+              type="checkbox"
+              checked={allFilteredSelected}
+              onChange={toggleAllFiltered}
+              className="h-4 w-4 accent-ink"
+              aria-label={`Selecionar todos os ${filtered.length} contatos`}
+            />
+            Selecionar todos
           </div>
 
           {pageItems.map((contact) => (
@@ -574,43 +729,37 @@ export default function Contacts() {
               contact={contact}
               tab={tab}
               checked={selected.has(contact.id)}
-              duplicate={duplicatePhones.has(normalizePhone(contact.phone).slice(-11))}
+              duplicate={duplicateIds.has(contact.id)}
               onToggle={() => toggle(contact.id)}
               onOpen={() => navigate(`/admin/contacts/${contact.id}`)}
               onPromote={() => handlePromote(contact)}
               onArchive={(reason) => handleArchiveOne(contact, reason)}
             />
           ))}
-        </div>
+        </Panel>
+        </>
       )}
 
       {/* PAGINAÇÃO */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            disabled={page === 1}
-            onClick={() => setPage((current) => current - 1)}
-            className="flex items-center gap-1 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
-          >
-            <ChevronLeft size={16} />
+        <nav aria-label="Páginas" className="flex items-center justify-between">
+          <Button disabled={page === 1} onClick={() => goToPage(page - 1)}>
+            <ChevronLeft size={16} aria-hidden="true" />
             Anterior
-          </button>
+          </Button>
 
-          <span className="text-sm text-neutral-500">
+          <span className="text-sm text-muted">
             Página {page} de {totalPages}
           </span>
 
-          <button
-            type="button"
+          <Button
             disabled={page === totalPages}
-            onClick={() => setPage((current) => current + 1)}
-            className="flex items-center gap-1 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+            onClick={() => goToPage(page + 1)}
           >
             Próxima
-            <ChevronRight size={16} />
-          </button>
-        </div>
+            <ChevronRight size={16} aria-hidden="true" />
+          </Button>
+        </nav>
       )}
     </div>
   );
@@ -625,13 +774,21 @@ function BulkButton({ onClick, icon: Icon, children }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20"
+      className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white/10 px-3 text-sm font-medium hover:bg-white/20"
     >
-      {Icon && <Icon size={14} />}
+      {Icon && <Icon size={15} aria-hidden="true" />}
       {children}
     </button>
   );
 }
+
+// Cor só onde a situação pede algo (ou é um bom resultado)
+const STATUS_TONE = {
+  pending_confirmation: "text-attention-text",
+  follow_up: "text-attention-text",
+  no_show: "text-alert-text",
+  enrolled: "text-ok",
+};
 
 function ContactRow({
   contact,
@@ -652,107 +809,90 @@ function ContactRow({
     ? contact.whatsapp_push_name || contact.responsible_name || "Sem nome"
     : contact.child_name;
 
+  const subtitle = isBlank(contact.child_name)
+    ? isAuto
+      ? "Nome no WhatsApp"
+      : "Atleta sem nome"
+    : contact.responsible_name || "Responsável não informado";
+
   return (
     <div
-      className={`flex flex-col gap-3 border-b border-neutral-100 px-4 py-3 last:border-b-0 lg:flex-row lg:items-center ${
-        checked ? "bg-red-50/40" : ""
-      }`}
+      className={`grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-line px-4 py-3 last:border-b-0 lg:grid-cols-[1.5rem_minmax(0,2.2fr)_minmax(0,1.3fr)_5rem_minmax(0,1fr)_8rem_auto] ${
+        duplicate ? urgencyRail("attention") : urgencyRail()
+      } ${checked ? "bg-canvas" : ""}`}
     >
-      <div className="flex min-w-0 items-start gap-3 lg:w-72">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={onToggle}
-          className="mt-1 h-4 w-4 shrink-0 accent-red-600"
-          aria-label={`Selecionar ${title}`}
-        />
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onToggle}
+        className="h-4 w-4 accent-ink"
+        aria-label={`Selecionar ${title}`}
+      />
 
-        <button type="button" onClick={onOpen} className="min-w-0 text-left">
-          <p className="truncate font-semibold text-neutral-900 hover:underline">
-            {title}
-          </p>
+      <button type="button" onClick={onOpen} className="min-w-0 text-left">
+        <span className="block truncate font-semibold hover:underline">{title}</span>
+        <span className="block truncate text-sm text-muted">
+          {subtitle}, <span className="tabular-nums">{contact.phone ? formatPhone(contact.phone) : "sem telefone"}</span>
+        </span>
+        {duplicate && (
+          <span className="block text-sm text-attention-text">Possível cadastro duplicado (mesmo telefone e nome)</span>
+        )}
+      </button>
 
-          <p className="truncate text-xs text-neutral-500">
-            {isBlank(contact.child_name)
-              ? `${isAuto ? "Nome no WhatsApp" : "Atleta sem nome"} · ${contact.phone || "sem telefone"}`
-              : `${contact.responsible_name || "Responsável não informado"} · ${contact.phone || "sem telefone"}`}
-          </p>
-        </button>
-      </div>
-
-      <div className="flex flex-1 flex-wrap items-center gap-1.5 text-xs">
-        <span
-          className={`rounded-md px-2 py-1 font-semibold ${
-            STATUS_BADGE[contact.status] ?? "bg-neutral-100 text-neutral-600"
-          }`}
-        >
+      {/* Situação, turma e local: no celular viram uma linha abaixo do nome */}
+      <div className="col-start-2 row-start-2 text-sm lg:col-start-auto lg:row-start-auto">
+        <span className={`font-medium ${STATUS_TONE[contact.status] ?? "text-ink"}`}>
           {isAuto ? "WhatsApp (triagem)" : CONTACT_STATUS_LABEL[contact.status] ?? contact.status}
         </span>
 
-        {contact.category?.name && (
-          <span className="rounded-md bg-red-50 px-2 py-1 font-semibold text-red-700">
-            {contact.category.name}
-          </span>
-        )}
-
-        {contact.location?.name && (
-          <span className="rounded-md bg-neutral-100 px-2 py-1 font-medium text-neutral-700">
-            {contact.location.name}
-          </span>
-        )}
-
-        {contact.source && !isAuto && (
-          <span className="px-1 text-neutral-500">{sourceLabel(contact.source)}</span>
-        )}
-
-        {duplicate && (
-          <span className="rounded-md bg-amber-100 px-2 py-1 font-semibold text-amber-800">
-            Telefone repetido
-          </span>
-        )}
-
         {contact.archived_at && (
-          <span className="rounded-md bg-neutral-200 px-2 py-1 font-semibold text-neutral-700">
-            Arquivado: {ARCHIVE_REASON_LABEL[contact.archive_reason] ?? "—"}
+          <span className="block text-muted">
+            Arquivado: {ARCHIVE_REASON_LABEL[contact.archive_reason] ?? "sem motivo"}
           </span>
         )}
+
+        <span className="text-muted lg:hidden">
+          {contact.category?.name && `, ${contact.category.name}`}
+          {contact.location?.name && `, ${contact.location.name}`}
+        </span>
       </div>
 
-      <p
-        className={`text-xs lg:w-32 lg:text-right ${
-          stale ? "font-semibold text-orange-700" : "text-neutral-500"
-        }`}
+      <span className="hidden text-sm lg:block">{contact.category?.name}</span>
+
+      <span className="hidden truncate text-sm text-muted lg:block">
+        {contact.location?.name}
+      </span>
+
+      <span
+        className="hidden text-sm text-muted lg:block"
       >
         {formatDaysAgo(days)}
-      </p>
+        {stale && <span className="block">parado</span>}
+      </span>
 
-      <div className="flex flex-wrap gap-2 lg:justify-end">
+      {/* Triagem no celular: as ações ganham uma linha só delas, embaixo */}
+      <div
+        className={`flex flex-wrap gap-2 lg:col-span-1 lg:col-start-auto lg:row-span-1 lg:row-start-auto lg:justify-end ${
+          tab === "triage"
+            ? "col-span-2 col-start-2 row-start-3 mt-2 lg:mt-0"
+            : "col-start-3 row-span-2 row-start-1 justify-end"
+        }`}
+      >
         {tab === "triage" && (
           <>
-            <button
-              type="button"
-              onClick={onPromote}
-              className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
-            >
-              <UserCheck size={14} />
-              É lead
-            </button>
+            {/* Secundário: vermelho só na ação principal da tela */}
+            <Button size="sm" onClick={onPromote}>
+              <UserCheck size={15} aria-hidden="true" />
+              É interessado
+            </Button>
 
-            <button
-              type="button"
-              onClick={() => onArchive(ARCHIVE_REASON.CURRENT_STUDENT)}
-              className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-            >
+            <Button size="sm" onClick={() => onArchive(ARCHIVE_REASON.CURRENT_STUDENT)}>
               Já é aluno
-            </button>
+            </Button>
 
-            <button
-              type="button"
-              onClick={() => onArchive(ARCHIVE_REASON.NOT_LEAD)}
-              className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-            >
-              Não é lead
-            </button>
+            <Button size="sm" onClick={() => onArchive(ARCHIVE_REASON.NOT_LEAD)}>
+              Não é interessado
+            </Button>
           </>
         )}
 
@@ -761,10 +901,10 @@ function ContactRow({
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            title="Abrir WhatsApp"
-            className="flex items-center rounded-lg border border-green-200 bg-green-50 px-2.5 py-2 text-green-800 hover:bg-green-100"
+            aria-label={`WhatsApp de ${title}`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line text-whatsapp touch:h-11 touch:w-11 hover:border-whatsapp"
           >
-            <MessageCircle size={15} />
+            <MessageCircle size={17} aria-hidden="true" />
           </a>
         )}
       </div>

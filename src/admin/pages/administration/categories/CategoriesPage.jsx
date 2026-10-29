@@ -141,8 +141,7 @@ export default function CategoriesPage() {
     <>
       <CrudPage
         title="Categorias"
-        subtitle="Gerencie as categorias (faixas etárias) da escola."
-        createLabel="Nova Categoria"
+        createLabel="Nova categoria"
         onCreate={handleCreate}
       >
         <CategoriesTable
