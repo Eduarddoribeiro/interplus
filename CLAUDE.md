@@ -20,6 +20,7 @@ O painel é usado pela equipe cadastrada em `staff_users`.
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # verificação obrigatória antes de commitar (não há ESLint configurado)
+npm test         # testes (Vitest), ex.: leitura da planilha de matrículas
 VITE_DEMO=1 npx vite --port 5174   # demonstração com dados fictícios, sem Supabase
 ```
 
@@ -39,6 +40,9 @@ Mudanças no `tailwind.config.js` exigem reiniciar o servidor de desenvolvimento
 | `/admin/experimentals` | Aulas experimentais (semana, confirmar, veio/faltou) |
 | `/admin/follow-ups` | Retornos (atrasados, hoje, próximos) |
 | `/admin/waiting-list` | Lista de interesse e quadro de demanda |
+| `/admin/students`, `/admin/students/:id` | Alunos e ficha do aluno (pós-matrícula) |
+| `/admin/students/import` | Importar a planilha de matrículas (CSV) |
+| `/admin/events`, `/admin/events/:id` | Eventos (Taça Gaúcha e rodadas, passeios, copas) |
 | `/admin/reports` | Relatórios |
 | `/admin/administration/*` | Unidades, locais, modalidades, categorias, turmas e horários |
 
@@ -52,8 +56,8 @@ src/
     layout/              # Layout, Sidebar (com contadores), Topbar (só mobile), usePendingCounts
     ui/index.jsx         # componentes do painel: Button, Tabs, Count, Panel, urgencyRail
     pages/               # telas do painel; administration/ = cadastros (CrudPage)
-    components/          # contacts, experimentals, followUps, waitingList, common
-  services/              # todo acesso ao Supabase (contacts, dashboard, reports, schedules...)
+    components/          # contacts, experimentals, followUps, waitingList, students, common
+  services/              # todo acesso ao Supabase (contacts, students, events, dashboard, reports...)
   constants/             # status, rótulos e regras (contactStatus, followUpRules...)
 supabase/migrations/     # histórico parcial; o banco remoto NÃO está alinhado com ele
 src/demo/                # modo demonstração: cliente falso do Supabase + dados fictícios
@@ -72,7 +76,7 @@ src/demo/                # modo demonstração: cliente falso do Supabase + dado
 
 ## Dados (Supabase)
 
-Tabelas principais: `contacts`, `experimental_sessions`, `training_groups`, `training_group_schedules`, `training_group_categories`, `training_group_schedule_coaches`, `categories`, `locations`, `units`, `modalities`, `coaches`, `coach_links`, `staff_users`.
+Tabelas principais: `students`, `guardians`, `student_guardians`, `enrollments`, `enrollment_tasks`, `student_health`, `events`, `event_participants` (pós-matrícula, ver abaixo), `contacts`, `experimental_sessions`, `training_groups`, `training_group_schedules`, `training_group_categories`, `training_group_schedule_coaches`, `categories`, `locations`, `units`, `modalities`, `coaches`, `coach_links`, `staff_users`.
 
 RPCs públicas (`SECURITY DEFINER`): `public_trial_options`, `public_category_locations`, `public_register`, `coach_session_list`, `coach_mark_attendance`.
 
@@ -86,6 +90,19 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Nomes dos status: sempre `CONTACT_STATUS_LABEL` (ex.: `follow_up` = "Em retorno", `lost` = "Encerrado"), nunca uma lista própria na tela.
 - Motivos de encerramento: sempre `LOST_REASON_OPTIONS` e `getLostReasonLabel()` de `constants/lostReasons.js`. Os códigos antigos que já estão no banco (`financial`, `location`, `no_interest`, `chose_competitor`) só são traduzidos na exibição.
 - Irmãos ficam como contatos separados. O aviso de duplicado só aparece quando o telefone e o primeiro nome da criança são iguais.
+
+### Pós-matrícula (alunos)
+
+- SQL: `supabase/migrations/20261030120000_pos_matricula.sql`. Só cria tabelas e a função `create_student_enrollment`; não altera nada que já existe. Acesso só da equipe (`is_staff()`), nada para o público.
+- Matricular um contato (ficha do contato, resultado da experimental ou Retornos) cria a ficha do aluno pela função `create_student_enrollment`, numa transação: aluno, responsáveis, matrícula da temporada e 6 pendências. Se falhar, a matrícula do contato vale e a página do contato mostra "Criar ficha do aluno".
+- Pendências e prazos (dias depois do início): `constants/studentTasks.js`, iguais aos da função no banco. Mudar um exige mudar o outro.
+- Responsável é tabela própria, ligada ao aluno por `student_guardians` (irmãos dividem o responsável; o parentesco fica na ligação).
+- Uma matrícula por aluno e temporada (`enrollments`); rematrícula = linha nova.
+- Saúde em `student_health`, separada para, quando houver outros perfis, liberar só para a coordenação. Na ficha só carrega ao clicar em "Mostrar".
+- Eventos: rodada = evento filho (`parent_id`) do campeonato. A situação de cada aluno (`event_participants.status`): interessado, confirmado, pagamento pendente, pago, isento, não participou, devolver.
+- Dono de cada dado: o Sogni é a base oficial de cadastro e mensalidade. O CRM guarda o que o Sogni não controla: contrato, taxas, rodadas, uniforme, comunidade. O CPF e os documentos ficam nos dois, porque são passados ao Sogni.
+- Importação da planilha (`helpers/studentImport.js`, com testes): lê o CSV no navegador, reconhece as colunas pelo cabeçalho e avisa quem já existe como contato (mesmo telefone e primeiro nome, ou mesmo nome e nascimento) ou já foi importado. Pagamento com "—" vira "Não se aplica"; "Ativo: Não" entra como aluno que saiu.
+- Visão geral e menu: "Matrículas atrasadas" = alunos ativos com alguma pendência vencida (aba "Atrasadas" em Alunos).
 
 ### Migração planejada do funil (não aplicada)
 
@@ -147,6 +164,8 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 
 ## Pendências
 
+- Pós-matrícula: aplicar `20261030120000_pos_matricula.sql` no SQL Editor (verificação e reversão no scratchpad), publicar e importar a planilha.
+- Pós-matrícula, próximas fases: formulário de matrícula por link individual no WhatsApp (com aviso de finalidade e consentimento para a saúde), envio ao Sogni (depende das respostas do fornecedor) e perfis de acesso.
 - Migração do funil (ver acima).
 - Filtro de local nos Relatórios: poucos contatos têm `location_id`. O local precisa ser derivado da experimental (horário → turma → local).
 - Limpeza técnica:
@@ -169,3 +188,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-10-27: vocabulário da escola em todo o painel ("É interessado" no lugar de "É lead", "Encerrar" no menu, título e botão, Relatórios sem "funil comercial"); "É interessado" da triagem passa a ser botão secundário.
 - 2026-10-28: lista do professor (`/aula/:token`) refeita no padrão do painel: logo recortado, data e local no topo com progresso ("1 de 3 marcadas"), crianças agrupadas por horário, Veio/Faltou de 48px (Veio verde, Faltou tinta), recado da coordenação sem emoji, avaliação com "Avaliação salva" e erros em português. A demo passou a devolver os mesmos campos de `coach_session_list`.
 - 2026-10-29: favicon com o escudo da escola (SVG, PNG 32px e ícone da tela inicial do iPhone).
+- 2026-10-30: pós-matrícula no painel: telas Alunos (pendências da matrícula, responsáveis, dados, saúde só ao abrir, saída) e Eventos (Taça Gaúcha com tabela aluno x rodada), importação da planilha de matrículas com aviso de quem já passou pelo CRM, card "Matrículas atrasadas" na Visão geral. Matricular um contato cria a ficha do aluno. SQL novo, ainda não aplicado.
