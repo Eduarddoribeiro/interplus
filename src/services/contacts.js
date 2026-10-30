@@ -5,6 +5,7 @@ import { LOST_REASON } from "../constants/lostReasons";
 import { ENROLLMENT_STATUS } from "../constants/enrollmentStatus";
 import { EXPERIMENTAL_STATUS } from "../constants/experimentalStatus";
 import { ARCHIVE_REASON } from "../constants/archiveReasons";
+import { ensureStudentForContact } from "./students";
 
 import {
   appendInternalNote,
@@ -1044,12 +1045,29 @@ export async function saveExperimentalResult(
     throw error;
   }
 
-  return ensureUpdated(data);
+  const updated = ensureUpdated(data);
+
+  if (result === CONTACT_STATUS.ENROLLED) await createStudentRecord(updated);
+
+  return updated;
 }
 
 /* =========================================================
  * MATRÍCULA
  * =======================================================*/
+
+/*
+ * Matriculou: cria a ficha do aluno com as pendências. Se falhar,
+ * a matrícula do contato continua valendo e a página do contato
+ * mostra "Criar ficha do aluno" para tentar de novo.
+ */
+async function createStudentRecord(contact) {
+  try {
+    await ensureStudentForContact(contact);
+  } catch (err) {
+    console.error("Erro ao criar a ficha do aluno:", err);
+  }
+}
 
 export async function enrollContact(
   contactId,
@@ -1084,7 +1102,11 @@ export async function enrollContact(
     throw error;
   }
 
-  return ensureUpdated(data);
+  const updated = ensureUpdated(data);
+
+  await createStudentRecord(updated);
+
+  return updated;
 }
 
 export async function enrollFromFollowUp(contactId, notes = "") {
