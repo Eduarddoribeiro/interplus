@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 
 import { toLocalISO } from "../helpers/dashboardSummary";
+import { STUDENT_TASK_LABEL } from "../constants/studentTasks";
 
 /**
  * Alunos matriculados e o pós-matrícula: responsáveis, matrícula
@@ -208,7 +209,9 @@ export async function saveStudentHealth(studentId, values) {
  */
 export function studentTaskSummary(student, today = toLocalISO()) {
   const enrollment = currentEnrollment(student);
-  const open = (enrollment?.enrollment_tasks ?? []).filter((task) => task.status === "pending");
+  const open = (enrollment?.enrollment_tasks ?? []).filter(
+    (task) => task.status === "pending" && STUDENT_TASK_LABEL[task.kind],
+  );
   const overdue = open.filter((task) => task.due_date && task.due_date < today);
 
   return { open, overdue };
@@ -222,7 +225,7 @@ export function studentTaskSummary(student, today = toLocalISO()) {
 export async function getStudentPendingCounts() {
   const { data, error } = await supabase
     .from("students")
-    .select("id, status, enrollments(season, enrollment_tasks(status, due_date))")
+    .select("id, status, enrollments(season, enrollment_tasks(kind, status, due_date))")
     .eq("status", "active");
 
   if (error) {
