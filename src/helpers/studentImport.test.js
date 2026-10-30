@@ -127,7 +127,6 @@ describe("readSpreadsheet", () => {
       community: "done",
       contract_signed: "done",
       enrollment_fee: "exempt",
-      first_payment: "done",
       uniform: "pending",
     });
   });
@@ -139,7 +138,7 @@ describe("readSpreadsheet", () => {
   });
 
   it("lista as colunas que não entram", () => {
-    expect(ignored).toEqual(["Numeração", "Contrato gerado?", "Contrato Digitalizado?", "Contrato enviado?"]);
+    expect(ignored).toEqual(["Numeração", "Contrato gerado?", "Contrato Digitalizado?", "Contrato enviado?", "Primeira mensalidade"]);
   });
 
   it("aluno inativo entra como 'saiu' e categoria desconhecida vira aviso", () => {

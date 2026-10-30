@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Search, Trash2 } from "lucide-react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Copy, Plus, Search, Trash2 } from "lucide-react";
 
 import { Button, Dialog, DialogActions, Panel, inputClass } from "../ui";
 import { toast } from "../components/common/Toaster";
@@ -15,12 +15,33 @@ import {
   updateEvent,
 } from "../../services/events";
 import { currentEnrollment, getStudents } from "../../services/students";
-import { EVENT_STATUS_LABEL, EVENT_STATUS_OPEN, EVENT_STATUS_OPTIONS, EVENT_STATUS_TONE } from "../../constants/eventStatus";
+import {
+  EVENT_STATUS_LABEL,
+  EVENT_STATUS_OPEN,
+  EVENT_STATUS_OPTIONS,
+  EVENT_STATUS_ORDER,
+  EVENT_STATUS_PLAYING,
+  EVENT_STATUS_TONE,
+} from "../../constants/eventStatus";
 import { errorMessage } from "../../helpers/errorMessage";
 
 const formatDate = (iso) => (iso ? new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR") : "");
 const formatMoney = (value) =>
   value == null ? "" : Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const SORTS = [
+  { value: "categoria", label: "categoria" },
+  { value: "nome", label: "nome" },
+  { value: "situacao", label: "situação" },
+];
+
+const statusRank = (status) => {
+  const index = EVENT_STATUS_ORDER.indexOf(status);
+  return index === -1 ? EVENT_STATUS_ORDER.length : index;
+};
+
+const byName = (a, b) => a.student.name.localeCompare(b.student.name, "pt-BR");
+const byCategory = (a, b) => a.category.localeCompare(b.category, "pt-BR", { numeric: true });
 
 const EVENT_FIELDS = [
   { name: "name", label: "Nome *", required: true, wide: true },
@@ -31,7 +52,9 @@ const EVENT_FIELDS = [
 
 /*
  * Um evento e as rodadas: uma linha por aluno, uma coluna para a
- * inscrição e uma para cada rodada (como na planilha).
+ * inscrição e uma para cada rodada (como na planilha). Abre só na
+ * rodada atual (a última com alguém marcado); "Todas as rodadas"
+ * mostra o histórico. Filtros e ordem ficam na URL.
  */
 export default function EventDetails() {
   const { id } = useParams();
@@ -41,8 +64,34 @@ export default function EventDetails() {
   const [error, setError] = useState("");
   const [dialog, setDialog] = useState(null);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [round, setRound] = useState(searchParams.get("rodada") ?? "");
+  const [search, setSearch] = useState(searchParams.get("busca") ?? "");
+  const [category, setCategory] = useState(searchParams.get("categoria") ?? "all");
+  const [situation, setSituation] = useState(searchParams.get("situacao") ?? "all");
+  const [sort, setSort] = useState(
+    SORTS.some((item) => item.value === searchParams.get("ordem")) ? searchParams.get("ordem") : "categoria",
+  );
+
+  useEffect(() => {
+    const params = {};
+    if (round) params.rodada = round;
+    if (search) params.busca = search;
+    if (category !== "all") params.categoria = category;
+    if (situation !== "all") params.situacao = situation;
+    if (sort !== "categoria") params.ordem = sort;
+    setSearchParams(params, { replace: true });
+  }, [round, search, category, situation, sort, setSearchParams]);
+
   useEffect(() => {
     load();
+
+    function handleVisibility() {
+      if (document.visibilityState === "visible") load();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [id]);
 
   async function load() {
@@ -57,9 +106,30 @@ export default function EventDetails() {
     }
   }
 
-  const columns = useMemo(() => (data ? [data.event, ...data.rounds] : []), [data]);
+  // Rodada atual: a última em que alguém já tem situação
+  const currentRound = useMemo(() => {
+    if (!data?.rounds.length) return null;
+    const marked = new Set(data.participants.map((participant) => participant.event_id));
+    return [...data.rounds].reverse().find((item) => marked.has(item.id)) ?? data.rounds[0];
+  }, [data]);
 
-  const rows = useMemo(() => {
+  const showAll = round === "todas";
+
+  // Coluna que os filtros de situação, a ordem e a lista copiada usam
+  const focus = useMemo(() => {
+    if (!data) return null;
+    if (!currentRound) return data.event;
+    if (showAll) return currentRound;
+    return data.rounds.find((item) => String(item.id) === round) ?? currentRound;
+  }, [data, round, showAll, currentRound]);
+
+  const columns = useMemo(() => {
+    if (!data) return [];
+    if (showAll || focus.id === data.event.id) return [data.event, ...data.rounds];
+    return [data.event, focus];
+  }, [data, showAll, focus]);
+
+  const allRows = useMemo(() => {
     if (!data) return [];
 
     const byStudent = new Map();
@@ -71,14 +141,42 @@ export default function EventDetails() {
       byStudent.set(participant.student_id, row);
     });
 
-    return [...byStudent.values()]
-      .map((row) => ({ ...row, category: currentEnrollment(row.student)?.categories?.name ?? "" }))
-      .sort(
-        (a, b) =>
-          a.category.localeCompare(b.category, "pt-BR", { numeric: true }) ||
-          a.student.name.localeCompare(b.student.name, "pt-BR"),
-      );
+    return [...byStudent.values()].map((row) => ({
+      ...row,
+      category: currentEnrollment(row.student)?.categories?.name ?? "",
+    }));
   }, [data]);
+
+  const categories = useMemo(
+    () =>
+      [...new Set(allRows.map((row) => row.category).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "pt-BR", { numeric: true }),
+      ),
+    [allRows],
+  );
+
+  const rows = useMemo(() => {
+    if (!focus) return [];
+    const term = search.trim().toLowerCase();
+    const statusOf = (row) => row.statuses[focus.id] ?? "";
+
+    const filtered = allRows.filter((row) => {
+      if (term && !row.student.name.toLowerCase().includes(term)) return false;
+      if (category !== "all" && row.category !== category) return false;
+      const status = statusOf(row);
+      if (situation === "playing") return EVENT_STATUS_PLAYING.has(status);
+      if (situation === "none") return !status;
+      return situation === "all" || status === situation;
+    });
+
+    const compare = {
+      categoria: (a, b) => byCategory(a, b) || byName(a, b),
+      nome: byName,
+      situacao: (a, b) => statusRank(statusOf(a)) - statusRank(statusOf(b)) || byCategory(a, b) || byName(a, b),
+    }[sort];
+
+    return filtered.sort(compare);
+  }, [allRows, focus, search, category, situation, sort]);
 
   if (loading) {
     return (
@@ -103,6 +201,34 @@ export default function EventDetails() {
 
   const { event, rounds } = data;
   const open = data.participants.filter((participant) => EVENT_STATUS_OPEN.has(participant.status)).length;
+  const focusName = focus.id === event.id ? "Inscrição" : focus.name;
+  const playing = allRows.filter((row) => EVENT_STATUS_PLAYING.has(row.statuses[focus.id]));
+  const filtering = search || category !== "all" || situation !== "all";
+
+  // Quem joga, por categoria, em texto pronto para colar no WhatsApp
+  async function copyList() {
+    const groups = new Map();
+    [...playing]
+      .sort((a, b) => byCategory(a, b) || byName(a, b))
+      .forEach((row) => {
+        const key = row.category || "Sem categoria";
+        groups.set(key, [...(groups.get(key) ?? []), row.student.name]);
+      });
+
+    const lines = [`${event.name}, ${focusName}: ${playing.length} aluno${playing.length === 1 ? "" : "s"}`];
+    groups.forEach((names, name) => {
+      lines.push("", `${name} (${names.length})`, ...names.map((item) => `- ${item}`));
+    });
+
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      toast(`Lista copiada com ${playing.length} aluno${playing.length === 1 ? "" : "s"}. É só colar no WhatsApp.`, {
+        type: "success",
+      });
+    } catch {
+      toast("Não foi possível copiar a lista.");
+    }
+  }
 
   async function change(eventId, studentId, status, studentName) {
     try {
@@ -137,7 +263,7 @@ export default function EventDetails() {
               `Temporada ${event.season}`,
               event.event_date ? formatDate(event.event_date) : null,
               event.fee != null ? `taxa ${formatMoney(event.fee)}` : null,
-              `${rows.length} aluno${rows.length === 1 ? "" : "s"}`,
+              `${allRows.length} aluno${allRows.length === 1 ? "" : "s"}`,
             ]
               .filter(Boolean)
               .join(", ")}
@@ -161,10 +287,119 @@ export default function EventDetails() {
         </div>
       </header>
 
-      {rows.length === 0 ? (
+      {allRows.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex flex-col gap-2 lg:flex-row">
+            <label className="relative lg:w-64">
+              <span className="sr-only">Buscar aluno</span>
+              <Search size={16} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <input
+                type="search"
+                value={search}
+                onChange={(changeEvent) => setSearch(changeEvent.target.value)}
+                placeholder="Buscar aluno"
+                className={`${inputClass} pl-9`}
+              />
+            </label>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex">
+              {rounds.length > 0 && (
+                <select
+                  aria-label="Rodada"
+                  value={showAll ? "todas" : String(focus.id)}
+                  onChange={(changeEvent) =>
+                    setRound(changeEvent.target.value === String(currentRound.id) ? "" : changeEvent.target.value)
+                  }
+                  className={`${inputClass} lg:w-48`}
+                >
+                  {rounds.map((item) => (
+                    <option key={item.id} value={String(item.id)}>
+                      {item.id === currentRound.id ? `${item.name} (atual)` : item.name}
+                    </option>
+                  ))}
+                  <option value="todas">Todas as rodadas</option>
+                </select>
+              )}
+
+              <select
+                aria-label="Categoria"
+                value={category}
+                onChange={(changeEvent) => setCategory(changeEvent.target.value)}
+                className={`${inputClass} lg:w-48`}
+              >
+                <option value="all">Todas as categorias</option>
+                {categories.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                aria-label={`Situação na ${focusName}`}
+                value={situation}
+                onChange={(changeEvent) => setSituation(changeEvent.target.value)}
+                className={`${inputClass} lg:w-48`}
+              >
+                <option value="all">Qualquer situação</option>
+                <option value="playing">Vão jogar</option>
+                {EVENT_STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+                <option value="none">Sem situação</option>
+              </select>
+
+              <select
+                aria-label="Ordenar por"
+                value={sort}
+                onChange={(changeEvent) => setSort(changeEvent.target.value)}
+                className={`${inputClass} lg:w-48`}
+              >
+                {SORTS.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    Ordem por {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm tabular-nums text-muted">
+              {focusName}: {playing.length} vão jogar.
+              {filtering ? ` Mostrando ${rows.length} de ${allRows.length}.` : ""}
+              {situation !== "all" ? ` A situação filtrada é a da ${focusName}.` : ""}
+            </p>
+            <Button size="sm" onClick={copyList} disabled={playing.length === 0}>
+              <Copy size={15} aria-hidden="true" />
+              Copiar lista da {focusName}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {allRows.length === 0 ? (
         <Panel className="px-6 py-10 text-center">
           <p className="font-semibold">Ninguém neste evento ainda.</p>
           <p className="mt-1 text-sm text-muted">Use “Adicionar alunos” para escolher por categoria.</p>
+        </Panel>
+      ) : rows.length === 0 ? (
+        <Panel className="px-6 py-10 text-center">
+          <p className="font-semibold">Nenhum aluno com esses filtros.</p>
+          <Button
+            size="sm"
+            variant="quiet"
+            className="mt-3"
+            onClick={() => {
+              setSearch("");
+              setCategory("all");
+              setSituation("all");
+            }}
+          >
+            Limpar filtros
+          </Button>
         </Panel>
       ) : (
         <Panel className="overflow-x-auto">
@@ -247,7 +482,7 @@ export default function EventDetails() {
         open={dialog === "add"}
         onClose={() => setDialog(null)}
         event={event}
-        existing={new Set(rows.map((row) => row.student.id))}
+        existing={new Set(allRows.map((row) => row.student.id))}
         onSaved={load}
       />
 
@@ -278,8 +513,8 @@ export default function EventDetails() {
         }
       >
         <p className="text-sm">
-          Apaga o evento{rounds.length ? `, as ${rounds.length} rodadas` : ""} e a situação de {rows.length} aluno
-          {rows.length === 1 ? "" : "s"}. Não dá para desfazer.
+          Apaga o evento{rounds.length ? `, as ${rounds.length} rodadas` : ""} e a situação de {allRows.length} aluno
+          {allRows.length === 1 ? "" : "s"}. Não dá para desfazer.
         </p>
       </Dialog>
     </div>

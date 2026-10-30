@@ -117,7 +117,6 @@ const EXACT = {
   "contrato assinado": "task.contract_signed",
   "nome do responsavel": "g1.name",
   matricula: "fee.enrollment_fee",
-  "primeira mensalidade": "fee.first_payment",
   "tel celular": "g1.phone",
   "tel celular#2": "g2.phone",
   uniforme: "fee.uniform",

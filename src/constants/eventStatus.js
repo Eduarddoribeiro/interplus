@@ -25,3 +25,9 @@ export const EVENT_STATUS_TONE = {
 
 // Pede ação da escola (cobrar ou devolver)
 export const EVENT_STATUS_OPEN = new Set(["pending", "refund"]);
+
+// Vai jogar a rodada (entra na lista para a comissão)
+export const EVENT_STATUS_PLAYING = new Set(["confirmed", "pending", "paid", "exempt"]);
+
+// Ordem de "Situação": primeiro o que pede ação
+export const EVENT_STATUS_ORDER = ["pending", "refund", "confirmed", "interested", "paid", "exempt", "absent"];
