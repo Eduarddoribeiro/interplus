@@ -52,10 +52,12 @@ export default function Events() {
 
     const rows = main.map((event) => {
       const rounds = events.filter((child) => child.parent_id === event.id);
-      const participants = event.event_participants ?? [];
+      // Quem saiu da escola não conta (fica escondido na tela do evento)
+      const stillActive = (participant) => participant.students?.status !== "left";
+      const participants = (event.event_participants ?? []).filter(stillActive);
       const open = [event, ...rounds]
         .flatMap((item) => item.event_participants ?? [])
-        .filter((participant) => EVENT_STATUS_OPEN.has(participant.status)).length;
+        .filter((participant) => stillActive(participant) && EVENT_STATUS_OPEN.has(participant.status)).length;
 
       return { event, rounds, total: participants.length, open };
     });
