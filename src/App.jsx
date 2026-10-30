@@ -27,6 +27,11 @@ const FollowUps = lazyPage(() => import("./admin/pages/FollowUps"));
 const Reports = lazyPage(() => import("./admin/pages/Reports"));
 const ContactDetails = lazyPage(() => import("./admin/pages/ContactDetails"));
 const WaitingList = lazyPage(() => import("./admin/pages/WaitingList"));
+const Students = lazyPage(() => import("./admin/pages/Students"));
+const StudentDetails = lazyPage(() => import("./admin/pages/StudentDetails"));
+const StudentImport = lazyPage(() => import("./admin/pages/StudentImport"));
+const Events = lazyPage(() => import("./admin/pages/Events"));
+const EventDetails = lazyPage(() => import("./admin/pages/EventDetails"));
 
 const Administration = lazyPage(() => import("./admin/pages/Administration"));
 
@@ -108,6 +113,31 @@ export default function App() {
             <Route
               path="waiting-list"
               element={<WaitingList />}
+            />
+
+            <Route
+              path="students"
+              element={<Students />}
+            />
+
+            <Route
+              path="students/import"
+              element={<StudentImport />}
+            />
+
+            <Route
+              path="students/:id"
+              element={<StudentDetails />}
+            />
+
+            <Route
+              path="events"
+              element={<Events />}
+            />
+
+            <Route
+              path="events/:id"
+              element={<EventDetails />}
             />
 
             <Route

@@ -16,6 +16,7 @@ const PENDING_COLUMNS = {
   2: "xl:grid-cols-2",
   3: "xl:grid-cols-3",
   4: "xl:grid-cols-4",
+  5: "xl:grid-cols-3",
 };
 
 // Texto da linha informativa (depois do número)
@@ -213,6 +214,14 @@ export default function Dashboard() {
       title: "Resultado da aula",
       text: "Vieram e a família ainda não decidiu",
       to: "/admin/experimentals?filtro=no_result",
+    },
+    {
+      key: "studentsOverdue",
+      urgency: "alert",
+      value: pending.studentsOverdue,
+      title: "Matrículas atrasadas",
+      text: "Contrato, pagamento, uniforme ou Sogni atrasados",
+      to: "/admin/students?aba=atrasadas",
     },
     {
       key: "waitingNow",

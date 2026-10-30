@@ -42,6 +42,7 @@ import { getSourceLabel } from "../../constants/school";
 import { errorMessage } from "../../helpers/errorMessage";
 import { LOST_REASON_LABEL, LOST_REASON_OPTIONS, getLostReasonLabel } from "../../constants/lostReasons";
 import { CONTACT_STATUS_LABEL } from "../../constants/contactStatus";
+import { ensureStudentForContact, getStudentByContact } from "../../services/students";
 
 /* =========================================================
  * CONSTANTES
@@ -247,6 +248,8 @@ export default function ContactDetails() {
   const navigate = useNavigate();
 
   const [contact, setContact] = useState(null);
+  // Ficha de aluno do contato matriculado (undefined = não buscou)
+  const [studentId, setStudentId] = useState(undefined);
   const [sessions, setSessions] = useState([]);
   const [categories, setCategories] = useState([]);
 
@@ -356,6 +359,17 @@ const [waitingForm, setWaitingForm] = useState({
 
       setContact(contactData);
       setSessions(sessionsData || []);
+
+      if (contactData?.status === "enrolled") {
+        getStudentByContact(id)
+          .then((student) => setStudentId(student?.id ?? null))
+          .catch((err) => {
+            console.error("Erro ao buscar a ficha do aluno:", err);
+            setStudentId(undefined);
+          });
+      } else {
+        setStudentId(undefined);
+      }
       setCategories(categoriesResult.data || []);
     } catch (err) {
       console.error(err);
@@ -1050,6 +1064,39 @@ const [waitingForm, setWaitingForm] = useState({
         <aside className="order-first xl:order-none">
           <Panel className="xl:sticky xl:top-6">
             <h2 className="px-4 pb-2 pt-4 font-semibold">Próxima ação</h2>
+
+            {contact.status === "enrolled" && studentId !== undefined && (
+              <div className="mx-4 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-ok-soft px-3 py-2.5 text-sm">
+                <span className="font-medium text-ok">
+                  {studentId ? "Já é aluno." : "Matriculado, sem ficha de aluno."}
+                </span>
+
+                {studentId ? (
+                  <Button size="sm" to={`/admin/students/${studentId}`}>
+                    Abrir ficha do aluno
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    disabled={actionLoading}
+                    onClick={async () => {
+                      try {
+                        setActionLoading(true);
+                        const created = await ensureStudentForContact(contact);
+                        navigate(`/admin/students/${created}`);
+                      } catch (err) {
+                        console.error(err);
+                        setError(errorMessage(err, "Não foi possível criar a ficha do aluno."));
+                      } finally {
+                        setActionLoading(false);
+                      }
+                    }}
+                  >
+                    Criar ficha do aluno
+                  </Button>
+                )}
+              </div>
+            )}
 
             <ul>
               <ActionButton

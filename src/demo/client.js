@@ -8,8 +8,10 @@
  */
 
 import { buildSeed } from "./seed";
+import { STUDENT_TASKS } from "../constants/studentTasks";
 
-const STORAGE_KEY = "demo-db-v1";
+// v2: alunos, responsáveis, matrículas e eventos
+const STORAGE_KEY = "demo-db-v3";
 const AUTH_KEY = "demo-signed-out";
 
 /* =========================================================
@@ -57,7 +59,15 @@ function columnsOf(name) {
   return columns;
 }
 
-const UUID_TABLES = new Set(["contacts", "experimental_sessions"]);
+const UUID_TABLES = new Set([
+  "contacts",
+  "experimental_sessions",
+  "students",
+  "guardians",
+  "enrollments",
+  "enrollment_tasks",
+  "events",
+]);
 
 function nextId(name) {
   if (UUID_TABLES.has(name)) return crypto.randomUUID();
@@ -612,7 +622,82 @@ function coachMarkAttendance({ p_session_id: sessionId, p_attended: attended, p_
   return { status: session.status };
 }
 
+// Mesmas regras de create_student_enrollment no banco real
+function createStudentEnrollment({ p }) {
+  const name = p?.student?.name?.trim();
+  if (!name) throw new Error("Informe o nome do aluno.");
+
+  if (p.contact_id && table("students").some((row) => sameValue(row.contact_id, p.contact_id))) {
+    throw new Error("Este contato já tem ficha de aluno.");
+  }
+
+  const start = p.enrollment?.start_date || todayISO();
+  const studentId = nextId("students");
+
+  table("students").push({
+    status: "active",
+    left_at: null,
+    left_reason: null,
+    ...p.student,
+    id: studentId,
+    name,
+    contact_id: p.contact_id ?? null,
+    created_at: now(),
+    updated_at: now(),
+  });
+
+  (p.guardians ?? [])
+    .filter((guardian) => guardian.name?.trim())
+    .forEach(({ relationship = null, ...guardian }, index) => {
+      const guardianId = nextId("guardians");
+      table("guardians").push({ ...guardian, id: guardianId, created_at: now(), updated_at: now() });
+      table("student_guardians").push({ student_id: studentId, guardian_id: guardianId, position: index + 1, relationship });
+    });
+
+  const enrollmentId = nextId("enrollments");
+  table("enrollments").push({
+    ...p.enrollment,
+    id: enrollmentId,
+    student_id: studentId,
+    season: p.enrollment?.season ?? Number(start.slice(0, 4)),
+    start_date: start,
+    created_at: now(),
+    updated_at: now(),
+  });
+
+  STUDENT_TASKS.forEach(({ kind, days }) => {
+    const status = p.tasks?.[kind] ?? "pending";
+    table("enrollment_tasks").push({
+      id: nextId("enrollment_tasks"),
+      enrollment_id: enrollmentId,
+      kind,
+      status,
+      due_date: addDays(start, days),
+      done_at: status === "done" ? now() : null,
+      updated_at: now(),
+    });
+  });
+
+  if (p.health && Object.keys(p.health).length) {
+    table("student_health").push({ ...p.health, student_id: studentId, updated_at: now() });
+  }
+
+  (p.events ?? []).forEach((item) => {
+    table("event_participants").push({
+      event_id: item.event_id,
+      student_id: studentId,
+      status: item.status ?? "confirmed",
+      notes: null,
+      updated_at: now(),
+    });
+  });
+
+  persist();
+  return studentId;
+}
+
 const RPC = {
+  create_student_enrollment: createStudentEnrollment,
   public_trial_options: trialOptions,
   public_category_locations: categoryLocations,
   public_register: publicRegister,

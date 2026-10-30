@@ -9,6 +9,10 @@
  * O gerador é determinístico: todo visitante vê os mesmos dados.
  */
 
+import { STUDENT_TASKS } from "../constants/studentTasks";
+
+const STUDENT_TASK_DAYS = STUDENT_TASKS.map((task) => [task.kind, task.days]);
+
 function random(seed) {
   let state = seed;
   return () => {
@@ -442,6 +446,210 @@ export function buildSeed() {
 
   const coach_links = [];
 
+  /* -------------------- alunos (pós-matrícula) -------------------- */
+
+  const students = [];
+  const guardians = [];
+  const student_guardians = [];
+  const enrollments = [];
+  const enrollment_tasks = [];
+  const student_health = [];
+  const season = today.getFullYear();
+
+  const HEALTH = {
+    blood_type: ["O+", "A+", "O+", "B+", "A-", null],
+    health_plan: ["Não", "Não", "Sim, plano da empresa", "Sim, convênio municipal"],
+    drug_allergies: ["Não", "Não", "Não", "Dipirona", "Penicilina"],
+    medications: ["Não", "Não", "Não", "Bombinha para asma quando precisa"],
+    injuries: ["Não", "Não", "Torceu o tornozelo no ano passado"],
+  };
+
+  function addStudent({ contactRow = null, startDays, left = false }) {
+    const base = contactRow ?? person(pick([2, 3, 3, 4, 4, 5, 6]));
+    const categoryId = contactRow?.category_id ?? pick([2, 3, 3, 4, 4, 5, 6]);
+    const id = crypto.randomUUID();
+    const start = iso(daysFromToday(startDays));
+    const surname = base.child_name.split(" ").pop();
+
+    students.push({
+      id,
+      contact_id: contactRow?.id ?? null,
+      name: base.child_name,
+      birth_date: base.birth_date,
+      gender: pick(["Masculino", "Masculino", "Masculino", "Feminino"]),
+      cpf: null,
+      rg: null,
+      phone: null,
+      school: pick(["Escola Estadual Centro", "Colégio Bela Vista", "Escola Municipal Parque Alegre"]),
+      school_type: pick(["Pública", "Privada"]),
+      field_position: pick(["Atacante", "Meio-campo", "Zagueiro", "Goleiro", "Lateral"]),
+      club_team: "Internacional",
+      favorite_player: null,
+      idol: null,
+      how_found: pick(["Instagram", "Indicação de amigo", "Passou em frente"]),
+      photo_url: null,
+      sogni_id: null,
+      status: left ? "left" : "active",
+      left_at: left ? iso(daysFromToday(-between(5, 60))) : null,
+      left_reason: left ? pick(["Mudou de cidade", "Horário da escola mudou", "Foi para outro esporte"]) : null,
+      notes: null,
+      created_at: stamp(startDays),
+      updated_at: stamp(startDays),
+    });
+
+    const guardianId = crypto.randomUUID();
+    guardians.push({
+      id: guardianId,
+      name: base.responsible_name ?? `${pick(ADULT_NAMES)} ${surname}`,
+      phone: base.phone,
+      email: null,
+      gender: null,
+      cpf: null,
+      rg: null,
+      profession: pick(["Professora", "Motorista", "Enfermeira", "Comerciante", "Autônomo"]),
+      zip_code: null,
+      address: null,
+      complement: null,
+      neighborhood: pick(NEIGHBORHOODS),
+      city: "Viamão",
+      state: "RS",
+      created_at: stamp(startDays),
+      updated_at: stamp(startDays),
+    });
+    student_guardians.push({
+      student_id: id,
+      guardian_id: guardianId,
+      position: 1,
+      relationship: pick(["Mãe", "Mãe", "Pai", "Avó"]),
+    });
+
+    const enrollmentId = crypto.randomUUID();
+    enrollments.push({
+      id: enrollmentId,
+      student_id: id,
+      season,
+      category_id: categoryId,
+      training_group_id: contactRow?.training_group_id ?? null,
+      start_date: start,
+      uniform_size: pick(["Tamanho 10", "Tamanho 12", "Tamanho 14", "P", "M"]),
+      payment_method: pick(["pix", "pix", "card", "boleto"]),
+      due_day: pick([5, 7, 7, 7, 10]),
+      next_action: null,
+      notes: null,
+      created_at: stamp(startDays),
+      updated_at: stamp(startDays),
+    });
+
+    // Matrícula antiga: quase tudo feito. Recente: metade ainda aberta
+    const old = startDays < -40;
+    STUDENT_TASK_DAYS.forEach(([kind, days]) => {
+      const fee = ["enrollment_fee", "first_payment", "uniform"].includes(kind);
+      const roll = rand();
+      let status = roll < 0.5 ? "done" : "pending";
+      if (old) status = roll < 0.96 ? "done" : fee && roll < 0.98 ? "exempt" : "pending";
+
+      enrollment_tasks.push({
+        id: crypto.randomUUID(),
+        enrollment_id: enrollmentId,
+        kind,
+        status,
+        due_date: iso(daysFromToday(startDays + days)),
+        done_at: status === "done" ? stamp(Math.min(startDays + days, 0)) : null,
+        updated_at: stamp(startDays),
+      });
+    });
+
+    if (rand() < 0.8) {
+      student_health.push({
+        student_id: id,
+        ...Object.fromEntries(Object.entries(HEALTH).map(([field, options]) => [field, pick(options)])),
+        surgeries: "Não",
+        diseases: "Não",
+        first_aid_medication: pick(["Sim, dipirona", "Não"]),
+        physical_activity: pick(["Não", "Natação"]),
+        medical_notes: null,
+        updated_at: stamp(startDays),
+      });
+    }
+  }
+
+  contacts
+    .filter((row) => row.status === "enrolled")
+    .forEach((row) => {
+      const enrolledDays = Math.round((new Date(`${row.enrolled_at}T12:00:00`) - today) / 86400000);
+      addStudent({ contactRow: row, startDays: enrolledDays });
+    });
+
+  // Matriculados antes do CRM (vieram da planilha)
+  for (let index = 0; index < 30; index += 1) {
+    addStudent({ startDays: -between(90, 280), left: index < 5 });
+  }
+
+  // Taça Gaúcha com rodadas e um passeio
+  const events = [];
+  const event_participants = [];
+  const tacaId = crypto.randomUUID();
+  events.push({ id: tacaId, parent_id: null, name: "Taça Gaúcha", season, event_date: null, fee: 80, position: 0, created_at: stamp(-120) });
+
+  const rounds = [1, 2, 3, 4].map((round) => {
+    const id = crypto.randomUUID();
+    const days = -100 + round * 21;
+    events.push({
+      id,
+      parent_id: tacaId,
+      name: `Rodada ${round}`,
+      season,
+      event_date: iso(daysFromToday(days)),
+      fee: 25,
+      position: round,
+      created_at: stamp(-120),
+    });
+    return { id, played: days < 0 };
+  });
+
+  const tripId = crypto.randomUUID();
+  events.push({
+    id: tripId,
+    parent_id: null,
+    name: "Experiência Colorada",
+    season,
+    event_date: iso(daysFromToday(18)),
+    fee: 60,
+    position: 0,
+    created_at: stamp(-20),
+  });
+
+  const activeStudents = students.filter((student) => student.status === "active");
+
+  activeStudents.slice(0, 22).forEach((student) => {
+    event_participants.push({
+      event_id: tacaId,
+      student_id: student.id,
+      status: pick(["paid", "paid", "paid", "paid", "pending", "exempt"]),
+      notes: null,
+      updated_at: stamp(-90),
+    });
+    rounds.forEach(({ id, played }) => {
+      event_participants.push({
+        event_id: id,
+        student_id: student.id,
+        status: played ? pick(["paid", "paid", "paid", "paid", "paid", "absent", "exempt", "refund"]) : pick(["confirmed", "pending", "paid"]),
+        notes: null,
+        updated_at: stamp(-30),
+      });
+    });
+  });
+
+  activeStudents.slice(10, 24).forEach((student) => {
+    event_participants.push({
+      event_id: tripId,
+      student_id: student.id,
+      status: pick(["interested", "paid", "paid", "pending"]),
+      notes: null,
+      updated_at: stamp(-5),
+    });
+  });
+
   return {
     units,
     locations,
@@ -455,5 +663,13 @@ export function buildSeed() {
     contacts,
     experimental_sessions,
     coach_links,
+    students,
+    guardians,
+    student_guardians,
+    enrollments,
+    enrollment_tasks,
+    student_health,
+    events,
+    event_participants,
   };
 }

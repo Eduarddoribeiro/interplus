@@ -1,5 +1,6 @@
 import { getContacts, getExperimentals } from "./contacts";
 import { getOpenTrialOptionsByCategory } from "./administration/trialSlots";
+import { getStudentPendingCounts } from "./students";
 
 import { CONTACT_STATUS } from "../constants/contactStatus";
 import { getInterestCategory } from "../helpers/waitingListRules";
@@ -12,9 +13,10 @@ import { buildDashboard } from "../helpers/dashboardSummary";
  * helpers/dashboardSummary.js (sem SQL novo).
  */
 export async function getDashboardData() {
-  const [sessions, contacts] = await Promise.all([
+  const [sessions, contacts, students] = await Promise.all([
     getExperimentals(),
     getContacts(),
+    getStudentPendingCounts(),
   ]);
 
   // Vagas abertas por categoria, para "lista: podem agendar agora"
@@ -27,5 +29,10 @@ export async function getDashboardData() {
 
   const availability = await getOpenTrialOptionsByCategory(waitingCategoryIds);
 
-  return buildDashboard({ sessions, contacts, availability });
+  const dashboard = buildDashboard({ sessions, contacts, availability });
+
+  // Pós-matrícula: alunos com pendência atrasada (contrato, pagamento...)
+  dashboard.pending.studentsOverdue = students.overdue;
+
+  return dashboard;
 }
