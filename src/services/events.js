@@ -15,7 +15,7 @@ const PARTICIPANT_SELECT = `
 export async function getEvents() {
   const { data, error } = await supabase
     .from("events")
-    .select("*, event_participants(status)")
+    .select("*, event_participants(status, students(status))")
     .order("season", { ascending: false })
     .order("position")
     .order("name");

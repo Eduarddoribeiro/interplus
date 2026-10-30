@@ -72,6 +72,7 @@ export default function EventDetails() {
   const [sort, setSort] = useState(
     SORTS.some((item) => item.value === searchParams.get("ordem")) ? searchParams.get("ordem") : "categoria",
   );
+  const [showLeft, setShowLeft] = useState(searchParams.get("saiu") === "1");
 
   useEffect(() => {
     const params = {};
@@ -80,8 +81,9 @@ export default function EventDetails() {
     if (category !== "all") params.categoria = category;
     if (situation !== "all") params.situacao = situation;
     if (sort !== "categoria") params.ordem = sort;
+    if (showLeft) params.saiu = "1";
     setSearchParams(params, { replace: true });
-  }, [round, search, category, situation, sort, setSearchParams]);
+  }, [round, search, category, situation, sort, showLeft, setSearchParams]);
 
   useEffect(() => {
     load();
@@ -147,12 +149,17 @@ export default function EventDetails() {
     }));
   }, [data]);
 
+  // Quem saiu da escola fica escondido e nunca entra em "vão jogar"
+  const activeRows = useMemo(() => allRows.filter((row) => row.student.status !== "left"), [allRows]);
+  const leftCount = allRows.length - activeRows.length;
+  const baseRows = showLeft ? allRows : activeRows;
+
   const categories = useMemo(
     () =>
-      [...new Set(allRows.map((row) => row.category).filter(Boolean))].sort((a, b) =>
+      [...new Set(baseRows.map((row) => row.category).filter(Boolean))].sort((a, b) =>
         a.localeCompare(b, "pt-BR", { numeric: true }),
       ),
-    [allRows],
+    [baseRows],
   );
 
   const rows = useMemo(() => {
@@ -160,7 +167,7 @@ export default function EventDetails() {
     const term = search.trim().toLowerCase();
     const statusOf = (row) => row.statuses[focus.id] ?? "";
 
-    const filtered = allRows.filter((row) => {
+    const filtered = baseRows.filter((row) => {
       if (term && !row.student.name.toLowerCase().includes(term)) return false;
       if (category !== "all" && row.category !== category) return false;
       const status = statusOf(row);
@@ -176,7 +183,7 @@ export default function EventDetails() {
     }[sort];
 
     return filtered.sort(compare);
-  }, [allRows, focus, search, category, situation, sort]);
+  }, [baseRows, focus, search, category, situation, sort]);
 
   if (loading) {
     return (
@@ -200,9 +207,12 @@ export default function EventDetails() {
   }
 
   const { event, rounds } = data;
-  const open = data.participants.filter((participant) => EVENT_STATUS_OPEN.has(participant.status)).length;
+  const shownIds = new Set(baseRows.map((row) => row.student.id));
+  const open = data.participants.filter(
+    (participant) => shownIds.has(participant.student_id) && EVENT_STATUS_OPEN.has(participant.status),
+  ).length;
   const focusName = focus.id === event.id ? "Inscrição" : focus.name;
-  const playing = allRows.filter((row) => EVENT_STATUS_PLAYING.has(row.statuses[focus.id]));
+  const playing = activeRows.filter((row) => EVENT_STATUS_PLAYING.has(row.statuses[focus.id]));
   const filtering = search || category !== "all" || situation !== "all";
 
   // Quem joga, por categoria, em texto pronto para colar no WhatsApp
@@ -263,7 +273,7 @@ export default function EventDetails() {
               `Temporada ${event.season}`,
               event.event_date ? formatDate(event.event_date) : null,
               event.fee != null ? `taxa ${formatMoney(event.fee)}` : null,
-              `${allRows.length} aluno${allRows.length === 1 ? "" : "s"}`,
+              `${activeRows.length} aluno${activeRows.length === 1 ? "" : "s"}`,
             ]
               .filter(Boolean)
               .join(", ")}
@@ -369,13 +379,22 @@ export default function EventDetails() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm tabular-nums text-muted">
               {focusName}: {playing.length} vão jogar.
-              {filtering ? ` Mostrando ${rows.length} de ${allRows.length}.` : ""}
+              {filtering ? ` Mostrando ${rows.length} de ${baseRows.length}.` : ""}
               {situation !== "all" ? ` A situação filtrada é a da ${focusName}.` : ""}
             </p>
-            <Button size="sm" onClick={copyList} disabled={playing.length === 0}>
-              <Copy size={15} aria-hidden="true" />
-              Copiar lista da {focusName}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {leftCount > 0 && (
+                <Button size="sm" variant="quiet" aria-pressed={showLeft} onClick={() => setShowLeft((value) => !value)}>
+                  {showLeft
+                    ? "Esconder quem saiu da escola"
+                    : `Mostrar quem saiu da escola (${leftCount})`}
+                </Button>
+              )}
+              <Button size="sm" onClick={copyList} disabled={playing.length === 0}>
+                <Copy size={15} aria-hidden="true" />
+                Copiar lista da {focusName}
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -423,7 +442,11 @@ export default function EventDetails() {
                     <Link to={`/admin/students/${student.id}`} className="font-medium hover:underline">
                       {student.name}
                     </Link>
-                    {category && <span className="block text-muted">{category}</span>}
+                    {(category || student.status === "left") && (
+                      <span className="block text-muted">
+                        {[category, student.status === "left" ? "saiu da escola" : null].filter(Boolean).join(", ")}
+                      </span>
+                    )}
                   </th>
                   {columns.map((column) => {
                     const status = statuses[column.id] ?? "";
