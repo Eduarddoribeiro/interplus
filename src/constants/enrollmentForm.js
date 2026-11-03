@@ -23,17 +23,25 @@ export const GENDER_OPTIONS = ["Masculino", "Feminino"];
 
 export const SCHOOL_TYPE_OPTIONS = ["Pública", "Particular"];
 
-export const UNIFORM_SIZE_OPTIONS = [
-  "Tamanho 8",
-  "Tamanho 10",
-  "Tamanho 12",
-  "Tamanho 14",
-  "PP",
-  "P",
-  "M",
-  "G",
-  "GG",
+// Tabela de medidas do uniforme (camiseta), da escola. O valor gravado
+// segue a grafia do Google Forms antigo ("Tamanho 10", "P"), para as
+// fichas antigas e as novas ficarem iguais
+export const UNIFORM_SIZES = [
+  { value: "Tamanho 4", label: "4", width: 22, height: 34 },
+  { value: "Tamanho 6", label: "6", width: 24, height: 36 },
+  { value: "Tamanho 8", label: "8", width: 26, height: 38 },
+  { value: "Tamanho 10", label: "10", width: 28, height: 40 },
+  { value: "Tamanho 12", label: "12", width: 30, height: 42 },
+  { value: "P", label: "P", width: 34, height: 44 },
+  { value: "M", label: "M", width: 36, height: 46 },
+  { value: "G", label: "G", width: 38, height: 48 },
+  { value: "GG", label: "GG", width: 40, height: 52 },
 ];
+
+// Opção da lista: "Tamanho 8: 26 × 38 cm"
+export const uniformSizeLabel = (size) => `${size.value}: ${size.width} × ${size.height} cm`;
+
+export const UNIFORM_SIZE_OPTIONS = UNIFORM_SIZES.map((size) => ({ value: size.value, label: uniformSizeLabel(size) }));
 
 // Mesma lista e grafia do Sogni, para o cadastro bater lá
 // ("Não Informado" fica de fora: a pergunta é opcional)

@@ -1,7 +1,7 @@
 import { Suspense, useState } from "react";
 import { Outlet } from "react-router-dom";
 
-import Sidebar from "./Sidebar";
+import Sidebar, { menuAlert } from "./Sidebar";
 import Topbar from "./Topbar";
 import usePendingCounts from "./usePendingCounts";
 
@@ -36,7 +36,7 @@ export default function Layout() {
       <div className="min-w-0 flex-1 bg-canvas text-ink">
         {isDemo && <DemoBanner />}
 
-        <Topbar onOpenMenu={() => setMenuOpen(true)} />
+        <Topbar onOpenMenu={() => setMenuOpen(true)} alert={menuAlert(pending)} />
 
         <main className="mx-auto max-w-[1400px] p-4 sm:p-6 lg:px-10 lg:py-8">
           {/* O menu continua na tela enquanto a página é baixada */}
@@ -45,6 +45,7 @@ export default function Layout() {
               context={{
                 openNewContact: () => setNewContactOpen(true),
                 contactsVersion,
+                pending,
               }}
             />
           </Suspense>

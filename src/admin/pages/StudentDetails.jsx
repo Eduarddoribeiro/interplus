@@ -25,11 +25,10 @@ import { getActiveCategories } from "../../services/categories";
 import { getActiveTrainingGroups } from "../../services/administration/trainingGroups";
 
 import {
-  PAYMENT_METHOD_LABEL,
-  PAYMENT_METHOD_OPTIONS,
   STUDENT_TASKS,
   TASK_STATUS_LABEL,
 } from "../../constants/studentTasks";
+import { UNIFORM_SIZE_OPTIONS } from "../../constants/enrollmentForm";
 import { EVENT_STATUS_OPTIONS, EVENT_STATUS_TONE } from "../../constants/eventStatus";
 import { createWhatsAppUrl, getTodayISO } from "../../helpers/contactPresentation";
 import { formatPhone } from "../../helpers/phoneHelpers";
@@ -452,9 +451,7 @@ function EnrollmentPanel({ enrollment, onEdit }) {
           ["Turma", enrollment.training_groups?.name],
           ["Início", formatDate(enrollment.start_date)],
           ["Uniforme", enrollment.uniform_size],
-          ["Pagamento", PAYMENT_METHOD_LABEL[enrollment.payment_method]],
           ["Vencimento", enrollment.due_day ? `Dia ${enrollment.due_day}` : null],
-          ["Próxima ação", enrollment.next_action],
           ["Observação", enrollment.notes],
         ]}
       />
@@ -489,13 +486,20 @@ function EnrollmentDialog({ open, onClose, enrollment, studentName, onSaved }) {
         })),
       },
       { name: "start_date", label: "Início *", type: "date", required: true },
-      { name: "uniform_size", label: "Tamanho do uniforme" },
-      { name: "payment_method", label: "Forma de pagamento", type: "select", options: PAYMENT_METHOD_OPTIONS },
+      {
+        name: "uniform_size",
+        label: "Tamanho do uniforme",
+        type: "select",
+        // Tamanho antigo, fora da tabela atual (ex.: "Tamanho 14"), continua na lista para não sumir
+        options:
+          enrollment?.uniform_size && !UNIFORM_SIZE_OPTIONS.some((option) => option.value === enrollment.uniform_size)
+            ? [...UNIFORM_SIZE_OPTIONS, { value: enrollment.uniform_size, label: enrollment.uniform_size }]
+            : UNIFORM_SIZE_OPTIONS,
+      },
       { name: "due_day", label: "Dia de vencimento", type: "number" },
-      { name: "next_action", label: "Próxima ação", wide: true },
       { name: "notes", label: "Observação", type: "textarea" },
     ],
-    [categories, groups],
+    [categories, groups, enrollment?.uniform_size],
   );
 
   if (!enrollment) return null;
