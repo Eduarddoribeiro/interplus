@@ -33,6 +33,7 @@ Mudanças no `tailwind.config.js` exigem reiniciar o servidor de desenvolvimento
 | `/` | Landing (`src/pages/Landing.jsx`) |
 | `/experimental` | Formulário público de aula experimental (`src/components/public/*`) |
 | `/aula/:token` | Lista de presença do professor (`CoachSession.jsx`, via RPCs `coach_*`) |
+| `/matricula/:token` | Ficha de matrícula que a família preenche (`EnrollmentForm.jsx`, via RPCs `public_enrollment_*`) |
 | `/beneficios` | Clube de benefícios (projeto original do repositório) |
 | `/admin/login` | Login do painel |
 | `/admin` | Visão geral (pendências, agenda, retornos, resultado do mês) |
@@ -79,7 +80,7 @@ src/demo/                # modo demonstração: cliente falso do Supabase + dado
 
 Tabelas principais: `students`, `guardians`, `student_guardians`, `enrollments`, `enrollment_tasks`, `student_health`, `events`, `event_participants` (pós-matrícula, ver abaixo), `contacts`, `experimental_sessions`, `training_groups`, `training_group_schedules`, `training_group_categories`, `training_group_schedule_coaches`, `categories`, `locations`, `units`, `modalities`, `coaches`, `coach_links`, `staff_users`.
 
-RPCs públicas (`SECURITY DEFINER`): `public_trial_options`, `public_category_locations`, `public_register`, `coach_session_list`, `coach_mark_attendance`.
+RPCs públicas (`SECURITY DEFINER`): `public_trial_options`, `public_category_locations`, `public_register`, `coach_session_list`, `coach_mark_attendance`, `public_enrollment_form`, `public_enrollment_submit`.
 
 RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálogo ativo e cadastra pela RPC. O anon não tem acesso a contatos nem a sessões.
 
@@ -103,6 +104,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Eventos: rodada = evento filho (`parent_id`) do campeonato. A situação de cada aluno (`event_participants.status`): interessado, confirmado, pagamento pendente, pago, isento, não participou, devolver.
 - Tela do evento: abre só na rodada atual (a última com alguém marcado), com "Todas as rodadas" para o histórico. Busca por nome, filtros de categoria e de situação ("Vão jogar" = confirmado, pagamento pendente, pago ou isento), ordem por categoria, nome ou situação. "Copiar lista da Rodada N" copia quem vai jogar, por categoria, para colar no WhatsApp. Quem saiu da escola fica escondido (botão "Mostrar quem saiu da escola", `?saiu=1`) e não conta em "vão jogar", na lista copiada, no total de alunos nem em "para cobrar ou devolver" (também na lista de Eventos).
 - Dono de cada dado: o Sogni é a base oficial de cadastro e mensalidade. O CRM guarda o que o Sogni não controla: contrato, taxas, rodadas, uniforme, comunidade. O CPF e os documentos ficam nos dois, porque são passados ao Sogni.
+- Ficha pela família (no lugar do Google Forms, mesmas perguntas): na ficha do aluno, "Enviar formulário" cria um link individual (`enrollment_invites`, 7 dias, uso único; o banco guarda só o hash) e mostra a mensagem pronta para o WhatsApp do responsável. Enviar de novo invalida o link anterior. A família preenche em 4 etapas (aluno, responsáveis, saúde, autorização) e `public_enrollment_submit` grava na ficha que já existe: campo vazio não apaga o que a escola tinha, as perguntas de saúde são obrigatórias ("Não" se não houver) e a autorização cobre também a saúde, e o aceite fica em `enrollment_consents` (texto, versão e data, não se edita). A "Próxima ação" da matrícula vira "Conferir o formulário preenchido pela família" se estiver vazia. Textos da autorização e opções em `constants/enrollmentForm.js` (mudou o texto, troque `CONSENT_VERSION`); regras em `helpers/enrollmentForm.js` (com testes).
 - Importação da planilha (`helpers/studentImport.js`, com testes): lê o CSV no navegador, reconhece as colunas pelo cabeçalho e avisa quem já existe como contato (mesmo telefone e primeiro nome, ou mesmo nome e nascimento) ou já foi importado. Pagamento com "—" vira "Não se aplica"; "Ativo: Não" entra como aluno que saiu.
 - Número da camisa (`students.shirt_number`, único na escola toda, inclusive com quem saiu) e goleiro (`students.goalkeeper`). Linha recebe o próximo número depois do maior da linha; goleiro usa 1, 12, 23, 34... (de 11 em 11), e esses números nunca vão para a linha. A regra fica em `helpers/shirtNumbers.js` (com testes). O número aparece na ficha, na lista de alunos, na tabela do evento (com ordem por número) e na lista copiada.
 - Visão geral e menu: "Matrículas atrasadas" = alunos ativos com alguma pendência vencida (aba "Atrasadas" em Alunos).
@@ -195,3 +197,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-10-30: tela do evento com a rodada atual em destaque, busca, filtros, ordem e "Copiar lista" da rodada para o WhatsApp. A 1ª mensalidade deixa de aparecer como pendência (é paga direto no Sogni).
 - 2026-10-30: quem saiu da escola fica escondido nos eventos e não conta em "vão jogar" nem nas cobranças.
 - 2026-10-31: número da camisa e goleiro na ficha do aluno, com a tela "Números de camisa" para preencher todos e a sugestão do próximo número (linha em ordem, goleiro de 11 em 11). SQL aplicado e numeração atual (88 alunos) gravada a partir da lista da escola.
+- 2026-11-02: ficha de matrícula pela família por link individual (fase 3): link de 7 dias e uso único enviado pelo WhatsApp a partir da ficha do aluno, formulário com as perguntas do Google Forms em 4 etapas, saúde obrigatória, autorização de uso dos dados (inclusive saúde) registrada com texto, versão e data. SQL aplicado e conferido.
