@@ -11,7 +11,7 @@ import { buildSeed } from "./seed";
 import { STUDENT_TASKS } from "../constants/studentTasks";
 
 // v2: alunos, responsáveis, matrículas e eventos
-const STORAGE_KEY = "demo-db-v5";
+const STORAGE_KEY = "demo-db-v6";
 const AUTH_KEY = "demo-signed-out";
 
 /* =========================================================
@@ -316,7 +316,7 @@ class Query {
         updated_at: now(),
         ...(name === "coach_links" ? { token: crypto.randomUUID().replace(/-/g, "") } : {}),
         ...(name === "enrollment_invites"
-          ? { expires_at: new Date(Date.now() + 7 * 86400000).toISOString(), used_at: null, revoked_at: null }
+          ? { expires_at: new Date(Date.now() + 7 * 86400000).toISOString(), used_at: null, revoked_at: null, reviewed_at: null }
           : {}),
         ...values,
       }));

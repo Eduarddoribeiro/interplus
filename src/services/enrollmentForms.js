@@ -64,10 +64,32 @@ export async function submitEnrollmentForm(token, payload) {
 }
 
 // Situação do último link de um aluno
-export function inviteStatus(invite, now = new Date()) {
-  if (!invite) return "none";
-  if (invite.used_at) return "used";
-  if (invite.revoked_at) return "replaced";
-  if (new Date(invite.expires_at) < now) return "expired";
-  return "open";
+export { inviteStatus } from "../helpers/familyForms";
+
+// Alunos com o link de cada um, para a tela Fichas da família e a Visão geral
+export async function getFamilyForms() {
+  const { data, error } = await supabase
+    .from("students")
+    .select(
+      `id, name, status,
+       enrollments(season, categories(name)),
+       enrollment_invites(id, created_at, expires_at, used_at, revoked_at, reviewed_at)`,
+    )
+    .eq("status", "active")
+    .order("name");
+
+  if (error) throw error;
+
+  return data ?? [];
+}
+
+// A coordenação conferiu os dados que a família enviou
+export async function markInviteReviewed(inviteId) {
+  const { data } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("enrollment_invites")
+    .update({ reviewed_at: new Date().toISOString(), reviewed_by: data?.user?.id ?? null })
+    .eq("id", inviteId);
+
+  if (error) throw error;
 }

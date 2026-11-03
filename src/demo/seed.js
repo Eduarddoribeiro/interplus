@@ -666,6 +666,26 @@ export function buildSeed() {
     });
   });
 
+  // Fichas da família: 2 para conferir, 1 conferida, 1 vencida e 2 aguardando
+  const enrollment_invites = students
+    .filter((student) => student.status === "active")
+    .slice(0, 6)
+    .map((student, index) => {
+      const sent = [-4, -2, -9, -12, -1, -3][index];
+      return {
+        id: crypto.randomUUID(),
+        student_id: student.id,
+        token_hash: crypto.randomUUID().replace(/-/g, ""),
+        created_by: null,
+        created_at: stamp(sent),
+        expires_at: stamp(sent + 7),
+        used_at: index < 3 ? stamp(sent + 1, 21) : null,
+        revoked_at: null,
+        reviewed_at: index === 2 ? stamp(sent + 2) : null,
+        reviewed_by: null,
+      };
+    });
+
   return {
     units,
     locations,
@@ -687,5 +707,6 @@ export function buildSeed() {
     student_health,
     events,
     event_participants,
+    enrollment_invites,
   };
 }

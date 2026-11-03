@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronRight, FileUp, MessageCircle, Plus, Search, Shirt } from "lucide-react";
+import { ChevronRight, ClipboardCheck, FileUp, MessageCircle, Plus, Search, Shirt } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
 import { Button, Dialog, DialogActions, Panel, Tabs, inputClass, urgencyRail } from "../ui";
@@ -152,6 +152,10 @@ export default function Students() {
         summary={`${counts.ativos} ativos, ${counts.atrasadas} com pendência atrasada.`}
         actions={
           <>
+            <Button to="/admin/students/fichas">
+              <ClipboardCheck size={18} aria-hidden="true" />
+              Fichas da família
+            </Button>
             <Button to="/admin/students/camisas">
               <Shirt size={18} aria-hidden="true" />
               Números de camisa

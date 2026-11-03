@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Copy, MessageCircle, Send } from "lucide-react";
+import { CheckCircle2, Copy, MessageCircle, Send } from "lucide-react";
 
 import { Button, Dialog, DialogActions, Panel } from "../../ui";
 import { toast } from "../common/Toaster";
 
-import { createEnrollmentInvite, inviteStatus } from "../../../services/enrollmentForms";
+import { createEnrollmentInvite, inviteStatus, markInviteReviewed } from "../../../services/enrollmentForms";
 import { LINK_DAYS } from "../../../constants/enrollmentForm";
 import { createWhatsAppUrl } from "../../../helpers/contactPresentation";
 import { errorMessage } from "../../../helpers/errorMessage";
@@ -16,9 +16,11 @@ const newest = (items, field) => [...(items ?? [])].sort((a, b) => b[field].loca
 /*
  * Ficha de matrícula pela família: gera o link individual (7 dias,
  * uso único) e abre o WhatsApp do responsável com a mensagem pronta.
+ * Depois que a família envia, a coordenação marca como conferida.
  */
 export default function EnrollmentFormPanel({ student, guardian, onChange }) {
   const [creating, setCreating] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [link, setLink] = useState(null);
 
   const invite = newest(student.enrollment_invites, "created_at");
@@ -38,12 +40,30 @@ export default function EnrollmentFormPanel({ student, guardian, onChange }) {
     }
   }
 
+  async function review() {
+    try {
+      setReviewing(true);
+      await markInviteReviewed(invite.id);
+      toast("Ficha marcada como conferida.", { type: "success" });
+      onChange();
+    } catch (err) {
+      console.error("Erro ao marcar a ficha:", err);
+      toast(errorMessage(err, "Não foi possível marcar como conferida. Tente de novo."));
+    } finally {
+      setReviewing(false);
+    }
+  }
+
+  const toReview = status === "used" && !invite.reviewed_at;
+
   const text = {
     none: "A família ainda não recebeu a ficha de matrícula.",
     replaced: "A família ainda não recebeu a ficha de matrícula.",
     open: `Enviado em ${formatDate(invite?.created_at)}. O link vale até ${formatDate(invite?.expires_at)}.`,
     expired: `O link enviado em ${formatDate(invite?.created_at)} venceu sem resposta.`,
-    used: `Preenchida pela família em ${formatDate(invite?.used_at)}.`,
+    used: invite?.reviewed_at
+      ? `Preenchida pela família em ${formatDate(invite.used_at)} e conferida em ${formatDate(invite.reviewed_at)}.`
+      : `Preenchida pela família em ${formatDate(invite?.used_at)}. Os dados já estão nesta ficha: confira e marque como conferida.`,
   }[status];
 
   return (
@@ -65,6 +85,12 @@ export default function EnrollmentFormPanel({ student, guardian, onChange }) {
         )}
         {status === "open" && (
           <p className="text-muted">Enviar de novo cria outro link, e o anterior deixa de valer.</p>
+        )}
+        {toReview && (
+          <Button size="sm" className="mt-2" onClick={review} disabled={reviewing}>
+            <CheckCircle2 size={15} aria-hidden="true" />
+            {reviewing ? "Salvando…" : "Marcar como conferida"}
+          </Button>
         )}
       </div>
 
