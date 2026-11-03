@@ -45,6 +45,7 @@ Mudanças no `tailwind.config.js` exigem reiniciar o servidor de desenvolvimento
 | `/admin/students/import` | Importar a planilha de matrículas (CSV) |
 | `/admin/students/camisas` | Números de camisa de todos os ativos numa tela só |
 | `/admin/students/fichas` | Fichas da família: para conferir, link vencido, aguardando e conferidas (`?aba=`) |
+| `/admin/tarefas` | Tarefas da equipe: quadro A fazer / Fazendo / Feito (`?quem=minhas`, `?prazo=atrasadas\|hoje`) |
 | `/admin/events`, `/admin/events/:id` | Eventos (Taça Gaúcha e rodadas, passeios, copas) |
 | `/admin/reports` | Relatórios |
 | `/admin/administration/*` | Unidades, locais, modalidades, categorias, turmas e horários |
@@ -79,7 +80,7 @@ src/demo/                # modo demonstração: cliente falso do Supabase + dado
 
 ## Dados (Supabase)
 
-Tabelas principais: `students`, `guardians`, `student_guardians`, `enrollments`, `enrollment_tasks`, `student_health`, `events`, `event_participants` (pós-matrícula, ver abaixo), `contacts`, `experimental_sessions`, `training_groups`, `training_group_schedules`, `training_group_categories`, `training_group_schedule_coaches`, `categories`, `locations`, `units`, `modalities`, `coaches`, `coach_links`, `staff_users`.
+Tabelas principais: `students`, `guardians`, `student_guardians`, `enrollments`, `enrollment_tasks`, `student_health`, `events`, `event_participants` (pós-matrícula, ver abaixo), `contacts`, `experimental_sessions`, `training_groups`, `training_group_schedules`, `training_group_categories`, `training_group_schedule_coaches`, `categories`, `locations`, `units`, `modalities`, `coaches`, `coach_links`, `staff_users`, `staff_tasks` (tarefas da equipe, ver abaixo).
 
 RPCs públicas (`SECURITY DEFINER`): `public_trial_options`, `public_category_locations`, `public_register`, `coach_session_list`, `coach_mark_attendance`, `public_enrollment_form`, `public_enrollment_submit`.
 
@@ -109,6 +110,14 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Importação da planilha (`helpers/studentImport.js`, com testes): lê o CSV no navegador, reconhece as colunas pelo cabeçalho e avisa quem já existe como contato (mesmo telefone e primeiro nome, ou mesmo nome e nascimento) ou já foi importado. Pagamento com "—" vira "Não se aplica"; "Ativo: Não" entra como aluno que saiu.
 - Número da camisa (`students.shirt_number`, único na escola toda, inclusive com quem saiu) e goleiro (`students.goalkeeper`). Linha recebe o próximo número depois do maior da linha; goleiro usa 1, 12, 23, 34... (de 11 em 11), e esses números nunca vão para a linha. A regra fica em `helpers/shirtNumbers.js` (com testes). O número aparece na ficha, na lista de alunos, na tabela do evento (com ordem por número) e na lista copiada.
 - Visão geral e menu: "Matrículas atrasadas" = alunos ativos com alguma pendência vencida (aba "Atrasadas" em Alunos).
+
+### Tarefas da equipe
+
+- `staff_tasks`: tarefas do dia a dia da equipe, sem ligação com contato ou aluno. Colunas A fazer, Fazendo e Feito (`status` todo / doing / done), ordenadas pelo prazo. Feito mostra só os últimos 14 dias (`DONE_VISIBLE_DAYS`).
+- Responsável escolhido entre a equipe pela RPC `staff_members()` (nome em `staff_users.name`; sem nome, a parte do e-mail antes do @).
+- Repetir (diária, semanal, mensal): ao concluir, o gatilho `staff_tasks_before_update` cria a próxima com o prazo seguinte, uma vez só (`next_created`). Reabrir e concluir de novo não duplica. A conta do prazo é igual em `staff_task_next_due` (banco) e `nextDueDate` (`helpers/taskBoard.js`, com testes).
+- No computador arrasta entre colunas (só com mouse); no celular, uma coluna por aba e botões no cartão (Começar, Concluir, Reabrir). Excluir pede confirmação.
+- Visão geral: "Tarefas atrasadas" (vermelho, `?prazo=atrasadas`) e "Tarefas para hoje" (amarelo, `?prazo=hoje`). O menu mostra só as atrasadas.
 
 ### Migração planejada do funil (não aplicada)
 
@@ -200,3 +209,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-10-31: número da camisa e goleiro na ficha do aluno, com a tela "Números de camisa" para preencher todos e a sugestão do próximo número (linha em ordem, goleiro de 11 em 11). SQL aplicado e numeração atual (88 alunos) gravada a partir da lista da escola.
 - 2026-11-02: ficha de matrícula pela família por link individual (fase 3): link de 7 dias e uso único enviado pelo WhatsApp a partir da ficha do aluno, formulário com as perguntas do Google Forms em 4 etapas, saúde obrigatória, autorização de uso dos dados (inclusive saúde) registrada com texto, versão e data. SQL aplicado e conferido.
 - 2026-11-03: fichas da família na Visão geral (para conferir, link vencido, aguardando) e na tela Fichas da família, com "Marcar como conferida" na ficha do aluno. SQL aplicado e conferido.
+- 2026-11-03: tarefas da equipe (`/admin/tarefas`): quadro A fazer / Fazendo / Feito com responsável, prazo, área e repetição, item "Tarefas" no menu com as atrasadas e cartões na Visão geral. SQL `20261104120000_tarefas_equipe.sql`.
