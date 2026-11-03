@@ -32,6 +32,7 @@ const Students = lazyPage(() => import("./admin/pages/Students"));
 const StudentDetails = lazyPage(() => import("./admin/pages/StudentDetails"));
 const StudentImport = lazyPage(() => import("./admin/pages/StudentImport"));
 const ShirtNumbers = lazyPage(() => import("./admin/pages/ShirtNumbers"));
+const FamilyForms = lazyPage(() => import("./admin/pages/FamilyForms"));
 const Events = lazyPage(() => import("./admin/pages/Events"));
 const EventDetails = lazyPage(() => import("./admin/pages/EventDetails"));
 
@@ -136,6 +137,11 @@ export default function App() {
             <Route
               path="students/camisas"
               element={<ShirtNumbers />}
+            />
+
+            <Route
+              path="students/fichas"
+              element={<FamilyForms />}
             />
 
             <Route

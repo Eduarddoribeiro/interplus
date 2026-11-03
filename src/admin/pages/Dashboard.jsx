@@ -17,12 +17,15 @@ const PENDING_COLUMNS = {
   3: "xl:grid-cols-3",
   4: "xl:grid-cols-4",
   5: "xl:grid-cols-3",
+  6: "xl:grid-cols-3",
+  7: "xl:grid-cols-4",
 };
 
 // Texto da linha informativa (depois do número)
 const INFO_TEXT = {
   waitingNow: "famílias da lista de interesse podem agendar agora",
   triage: "contatos para triagem",
+  formsWaiting: "fichas aguardando a família",
 };
 
 // Rótulos curtos da agenda (cabem numa linha)
@@ -224,6 +227,22 @@ export default function Dashboard() {
       to: "/admin/students?aba=atrasadas",
     },
     {
+      key: "formsToReview",
+      urgency: "attention",
+      value: pending.formsToReview,
+      title: "Fichas para conferir",
+      text: "A família preencheu a ficha de matrícula",
+      to: "/admin/students/fichas",
+    },
+    {
+      key: "formsExpired",
+      urgency: "attention",
+      value: pending.formsExpired,
+      title: "Fichas com link vencido",
+      text: "A família não preencheu em 7 dias",
+      to: "/admin/students/fichas?aba=vencido",
+    },
+    {
       key: "waitingNow",
       value: pending.waitingNow,
       title: "Lista de interesse com vaga",
@@ -236,6 +255,13 @@ export default function Dashboard() {
       title: "Contatos para triagem",
       text: "Vieram pelo WhatsApp ou estão sem nome",
       to: "/admin/contacts?aba=triage",
+    },
+    {
+      key: "formsWaiting",
+      value: pending.formsWaiting,
+      title: "Fichas aguardando a família",
+      text: "Link enviado e ainda válido",
+      to: "/admin/students/fichas?aba=aguardando",
     },
   ].filter((item) => item.value > 0);
 

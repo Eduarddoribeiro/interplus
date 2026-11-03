@@ -61,3 +61,6 @@ Hoje a matrícula entra por um Google Forms e o controle é feito numa planilha 
   - fase 3 implementada no branch `feat/formulario-matricula`: o link sai da ficha do aluno (que a coordenação cria ao matricular), então o formulário completa uma ficha que já existe em vez de criar outra;
   - perguntas e opções iguais às do Google Forms, conferidas só pelos cabeçalhos e pela contagem das respostas de múltipla escolha; a foto 3x4 ainda não está no formulário;
   - testado na demonstração: link criado, validação de cada etapa, envio, link usado não abre de novo e a ficha recebe os dados e a autorização.
+- 2026-11-03:
+  - acompanhamento das fichas no branch `feat/fichas-familia`: Visão geral com "Fichas para conferir" e "Fichas com link vencido" como pendências e "aguardando a família" na linha discreta; tela Fichas da família; "Marcar como conferida" na ficha do aluno;
+  - o link continua saindo só depois de "Registrar matrícula": o aluno conta como matriculado a partir daí, e quem não preenche aparece em "link vencido".

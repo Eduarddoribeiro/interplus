@@ -1,10 +1,12 @@
 import { getContacts, getExperimentals } from "./contacts";
 import { getOpenTrialOptionsByCategory } from "./administration/trialSlots";
 import { getStudentPendingCounts } from "./students";
+import { getFamilyForms } from "./enrollmentForms";
 
 import { CONTACT_STATUS } from "../constants/contactStatus";
 import { getInterestCategory } from "../helpers/waitingListRules";
 import { buildDashboard } from "../helpers/dashboardSummary";
+import { familyFormGroups } from "../helpers/familyForms";
 
 /**
  * Visão geral: pendências do dia, agenda, retornos e resultado do mês.
@@ -13,10 +15,11 @@ import { buildDashboard } from "../helpers/dashboardSummary";
  * helpers/dashboardSummary.js (sem SQL novo).
  */
 export async function getDashboardData() {
-  const [sessions, contacts, students] = await Promise.all([
+  const [sessions, contacts, students, familyForms] = await Promise.all([
     getExperimentals(),
     getContacts(),
     getStudentPendingCounts(),
+    getFamilyForms(),
   ]);
 
   // Vagas abertas por categoria, para "lista: podem agendar agora"
@@ -33,6 +36,12 @@ export async function getDashboardData() {
 
   // Pós-matrícula: alunos com pendência atrasada (contrato, pagamento...)
   dashboard.pending.studentsOverdue = students.overdue;
+
+  // Fichas da família: preenchidas para conferir, links vencidos, aguardando
+  const forms = familyFormGroups(familyForms);
+  dashboard.pending.formsToReview = forms.conferir.length;
+  dashboard.pending.formsExpired = forms.vencido.length;
+  dashboard.pending.formsWaiting = forms.aguardando.length;
 
   return dashboard;
 }

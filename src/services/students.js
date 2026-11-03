@@ -24,7 +24,7 @@ const DETAIL_SELECT = `
   student_guardians(position, relationship, guardians(*)),
   enrollments(*, categories(id, name), training_groups(id, name),
     enrollment_tasks(id, kind, status, due_date, done_at)),
-  enrollment_invites(id, created_at, expires_at, used_at, revoked_at),
+  enrollment_invites(id, created_at, expires_at, used_at, revoked_at, reviewed_at),
   enrollment_consents(version, health_consent, accepted_by, accepted_at)
 `;
 
