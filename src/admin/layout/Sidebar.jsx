@@ -33,31 +33,38 @@ const USER = isDemo
  * atenção. Números só informativos (lista de interesse, triagem)
  * ficam nas próprias telas, para o menu não virar ruído.
  */
-function menuCount(key, pending) {
-  if (!pending) return null;
+const count = (value, urgency, title) => (value ? { value, urgency, title } : null);
+
+// Lista de contadores do item (Alunos pode ter dois: atrasadas e fichas)
+export function menuCounts(key, pending) {
+  if (!pending) return [];
 
   switch (key) {
     case "experimentals":
-      if (pending.overdue) return { value: pending.overdue, urgency: "alert" };
-      if (pending.toConfirm) return { value: pending.toConfirm, urgency: "attention" };
-      return null;
+      return [
+        count(pending.overdue, "alert", "experimentais sem baixa") ??
+          count(pending.toConfirm, "attention", "experimentais para confirmar"),
+      ].filter(Boolean);
     case "followUps":
-      return pending.followUpsDue ? { value: pending.followUpsDue, urgency: "alert" } : null;
+      return [count(pending.followUpsDue, "alert", "retornos vencidos")].filter(Boolean);
     case "students":
-      return pending.studentsOverdue ? { value: pending.studentsOverdue, urgency: "alert" } : null;
+      return [
+        count(pending.studentsOverdue, "alert", "alunos com pendência atrasada"),
+        count(pending.formsToReview, "attention", "fichas da família para conferir"),
+      ].filter(Boolean);
     case "tasks":
-      return pending.tasksOverdue ? { value: pending.tasksOverdue, urgency: "alert" } : null;
+      return [count(pending.tasksOverdue, "alert", "tarefas atrasadas")].filter(Boolean);
     default:
-      return null;
+      return [];
   }
 }
 
-const COUNT_TITLE = {
-  experimentals: "experimentais com pendência",
-  followUps: "retornos vencidos",
-  students: "alunos com pendência atrasada",
-  tasks: "tarefas atrasadas",
-};
+const mostUrgent = (counts) => counts.find((entry) => entry.urgency === "alert") ?? counts[0] ?? null;
+
+// Para o botão do menu no celular: o contador mais urgente de todos os itens
+export function menuAlert(pending) {
+  return mostUrgent(menu.flatMap((item) => menuCounts(item.key, pending)));
+}
 
 const COLLAPSED_KEY = "admin-sidebar-collapsed";
 
@@ -188,7 +195,8 @@ export default function Sidebar({ open = false, onClose, pending }) {
           <ul className="space-y-0.5">
             {menu.map((item) => {
               const Icon = item.icon;
-              const count = menuCount(item.key, pending);
+              const counts = menuCounts(item.key, pending);
+              const dot = mostUrgent(counts);
 
               return (
                 <li key={item.key}>
@@ -211,11 +219,11 @@ export default function Sidebar({ open = false, onClose, pending }) {
                       <Icon size={18} aria-hidden="true" />
 
                       {/* Recolhido: o contador vira um ponto no ícone */}
-                      {count && collapsed && (
+                      {dot && collapsed && (
                         <span
                           aria-hidden="true"
                           className={`absolute -right-1 -top-1 hidden h-2 w-2 rounded-full ring-2 ring-white lg:block ${
-                            count.urgency === "alert" ? "bg-alert" : "bg-attention"
+                            dot.urgency === "alert" ? "bg-alert" : "bg-attention"
                           }`}
                         />
                       )}
@@ -223,13 +231,14 @@ export default function Sidebar({ open = false, onClose, pending }) {
 
                     <span className={`flex-1 ${collapsed ? "lg:sr-only" : ""}`}>{item.label}</span>
 
-                    {count && (
-                      <span
-                        title={`${count.value} ${COUNT_TITLE[item.key]}`}
-                        className={collapsed ? "lg:sr-only" : ""}
-                      >
-                        <Count value={count.value} urgency={count.urgency} />
-                        <span className="sr-only"> {COUNT_TITLE[item.key]}</span>
+                    {counts.length > 0 && (
+                      <span className={`flex gap-1 ${collapsed ? "lg:sr-only" : ""}`}>
+                        {counts.map((entry) => (
+                          <span key={entry.title} title={`${entry.value} ${entry.title}`}>
+                            <Count value={entry.value} urgency={entry.urgency} />
+                            <span className="sr-only"> {entry.title}</span>
+                          </span>
+                        ))}
                       </span>
                     )}
                   </NavLink>

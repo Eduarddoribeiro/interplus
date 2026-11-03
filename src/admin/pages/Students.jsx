@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { ChevronRight, ClipboardCheck, FileUp, MessageCircle, Plus, Search, Shirt } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
-import { Button, Dialog, DialogActions, Panel, Tabs, inputClass, urgencyRail } from "../ui";
+import { Button, Count, Dialog, DialogActions, Panel, Tabs, inputClass, urgencyRail } from "../ui";
 import { toast } from "../components/common/Toaster";
 import { Field } from "../components/students/FieldsDialog";
 
@@ -87,6 +87,9 @@ export default function Students() {
 
   const today = getTodayISO();
 
+  // Fichas preenchidas pela família esperando conferência (contador do menu)
+  const formsToReview = useOutletContext()?.pending?.formsToReview ?? 0;
+
   const rows = useMemo(
     () =>
       students.map((student) => {
@@ -155,6 +158,12 @@ export default function Students() {
             <Button to="/admin/students/fichas">
               <ClipboardCheck size={18} aria-hidden="true" />
               Fichas da família
+              {formsToReview > 0 && (
+                <>
+                  <Count value={formsToReview} urgency="attention" />
+                  <span className="sr-only"> para conferir</span>
+                </>
+              )}
             </Button>
             <Button to="/admin/students/camisas">
               <Shirt size={18} aria-hidden="true" />

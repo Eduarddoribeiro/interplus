@@ -16,6 +16,7 @@ import {
   SCHOOL_TYPE_OPTIONS,
   STATE_OPTIONS,
   UNIFORM_SIZE_OPTIONS,
+  UNIFORM_SIZES,
 } from "../constants/enrollmentForm";
 import { getTodayISO } from "../helpers/contactPresentation";
 import { errorMessage } from "../helpers/errorMessage";
@@ -319,13 +320,17 @@ export default function EnrollmentForm() {
                 </Section>
 
                 <Section title="Uniforme e mensalidade">
-                  <SelectField
-                    label="Tamanho do uniforme"
-                    options={UNIFORM_SIZE_OPTIONS}
-                    value={form.enrollment.uniform_size}
-                    onChange={(value) => update("enrollment.uniform_size", value)}
-                    {...field("enrollment.uniform_size", { required: true })}
-                  />
+                  <div className="space-y-2">
+                    <SelectField
+                      label="Tamanho do uniforme"
+                      hint="Medidas da camiseta: largura × altura."
+                      options={UNIFORM_SIZE_OPTIONS}
+                      value={form.enrollment.uniform_size}
+                      onChange={(value) => update("enrollment.uniform_size", value)}
+                      {...field("enrollment.uniform_size", { required: true })}
+                    />
+                    <SizeTable />
+                  </div>
                   <Choice
                     label="Melhor dia de vencimento"
                     options={DUE_DAY_OPTIONS.map((day) => ({ value: String(day), label: `Dia ${day}` }))}
@@ -515,14 +520,47 @@ function SelectField({ id, label, required, hint, error, value, onChange, option
         {...props}
       >
         <option value="">Escolher</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
+        {options.map((option) => {
+          const item = typeof option === "string" ? { value: option, label: option } : option;
+          return (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          );
+        })}
       </select>
       <ErrorText id={id} error={error} />
     </div>
+  );
+}
+
+// Tabela de medidas do uniforme, aberta só se a família quiser comparar
+function SizeTable() {
+  return (
+    <details className="rounded-lg border border-line bg-white text-sm">
+      <summary className="cursor-pointer rounded-lg px-3 py-2.5 font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink">
+        Ver tabela de medidas
+      </summary>
+      <table className="w-full border-t border-line text-left tabular-nums">
+        <caption className="sr-only">Medidas da camiseta do uniforme, em centímetros</caption>
+        <thead className="text-muted">
+          <tr>
+            <th scope="col" className="px-3 py-2 font-medium">Tamanho</th>
+            <th scope="col" className="px-3 py-2 font-medium">Largura</th>
+            <th scope="col" className="px-3 py-2 font-medium">Altura</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {UNIFORM_SIZES.map((size) => (
+            <tr key={size.value}>
+              <th scope="row" className="px-3 py-2 font-medium">{size.label}</th>
+              <td className="px-3 py-2">{size.width} cm</td>
+              <td className="px-3 py-2">{size.height} cm</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
   );
 }
 
