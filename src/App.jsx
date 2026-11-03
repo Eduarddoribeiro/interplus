@@ -16,6 +16,7 @@ const Benefits = lazyPage(() => import("./pages/Benefits"));
 const Landing = lazyPage(() => import("./pages/Landing"));
 const PublicRegistration = lazyPage(() => import("./pages/PublicRegistration"));
 const CoachSession = lazyPage(() => import("./pages/CoachSession"));
+const EnrollmentForm = lazyPage(() => import("./pages/EnrollmentForm"));
 
 const Layout = lazyPage(() => import("./admin/layout/Layout"));
 
@@ -67,6 +68,12 @@ export default function App() {
           <Route
             path="/aula/:token"
             element={<CoachSession />}
+          />
+
+          {/* Famílias: ficha de matrícula (link individual, sem login) */}
+          <Route
+            path="/matricula/:token"
+            element={<EnrollmentForm />}
           />
 
           {/* LOGIN */}

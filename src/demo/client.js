@@ -11,7 +11,7 @@ import { buildSeed } from "./seed";
 import { STUDENT_TASKS } from "../constants/studentTasks";
 
 // v2: alunos, responsáveis, matrículas e eventos
-const STORAGE_KEY = "demo-db-v4";
+const STORAGE_KEY = "demo-db-v5";
 const AUTH_KEY = "demo-signed-out";
 
 /* =========================================================
@@ -67,6 +67,8 @@ const UUID_TABLES = new Set([
   "enrollments",
   "enrollment_tasks",
   "events",
+  "enrollment_invites",
+  "enrollment_consents",
 ]);
 
 function nextId(name) {
@@ -313,6 +315,9 @@ class Query {
         created_at: now(),
         updated_at: now(),
         ...(name === "coach_links" ? { token: crypto.randomUUID().replace(/-/g, "") } : {}),
+        ...(name === "enrollment_invites"
+          ? { expires_at: new Date(Date.now() + 7 * 86400000).toISOString(), used_at: null, revoked_at: null }
+          : {}),
         ...values,
       }));
       table(name).push(...rows);
@@ -696,8 +701,131 @@ function createStudentEnrollment({ p }) {
   return studentId;
 }
 
+/* Formulário de matrícula: mesmas regras de public_enrollment_form
+ * e public_enrollment_submit no banco real */
+async function findInvite(token) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token ?? ""));
+  const hash = [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return table("enrollment_invites").find((row) => row.token_hash === hash) ?? null;
+}
+
+function inviteProblem(invite) {
+  if (!invite) return "invalid";
+  if (invite.revoked_at) return "replaced";
+  if (invite.used_at) return "used";
+  if (invite.expires_at < now()) return "expired";
+  return null;
+}
+
+const guardiansOfStudent = (studentId) =>
+  table("student_guardians")
+    .filter((link) => sameValue(link.student_id, studentId))
+    .sort((a, b) => a.position - b.position)
+    .map((link) => ({ link, guardian: table("guardians").find((row) => sameValue(row.id, link.guardian_id)) }));
+
+const latestEnrollment = (studentId) =>
+  table("enrollments")
+    .filter((row) => sameValue(row.student_id, studentId))
+    .sort((a, b) => b.season - a.season)[0];
+
+const keep = (values) =>
+  Object.fromEntries(
+    Object.entries(values)
+      .map(([key, value]) => [key, typeof value === "string" ? value.trim() : value])
+      .filter(([, value]) => value !== "" && value != null),
+  );
+
+async function publicEnrollmentForm({ p_token: token }) {
+  const invite = await findInvite(token);
+  const problem = inviteProblem(invite);
+  if (problem) return { status: problem };
+
+  const student = table("students").find((row) => sameValue(row.id, invite.student_id));
+  if (student?.status !== "active") return { status: "invalid" };
+
+  const guardians = guardiansOfStudent(student.id).map(({ guardian }) => guardian ?? {});
+  const enrollment = latestEnrollment(student.id);
+
+  return {
+    status: "ok",
+    expires_at: invite.expires_at,
+    category: table("categories").find((row) => sameValue(row.id, enrollment?.category_id))?.name ?? null,
+    student: { name: student.name, birth_date: student.birth_date },
+    guardians: [0, 1].map((index) => ({
+      name: guardians[index]?.name ?? null,
+      phone: guardians[index]?.phone ?? null,
+      email: guardians[index]?.email ?? null,
+    })),
+  };
+}
+
+async function publicEnrollmentSubmit({ p_token: token, p }) {
+  const invite = await findInvite(token);
+  const problem = inviteProblem(invite);
+  if (problem === "used") throw new Error("Este formulário já foi enviado.");
+  if (problem === "expired") throw new Error("Este link venceu. Peça um novo à escola.");
+  if (problem) throw new Error("Este link não vale mais. Peça um novo à escola.");
+
+  const consent = p?.consent ?? {};
+  if (consent.accepted !== true || !consent.version || !consent.purpose_text || !consent.accepted_by?.trim()) {
+    throw new Error("Confirme a autorização para enviar.");
+  }
+  if (!p.student?.name?.trim()) throw new Error("Informe o nome do aluno.");
+
+  const student = table("students").find((row) => sameValue(row.id, invite.student_id));
+  Object.assign(student, keep(p.student), { updated_at: now() });
+
+  const existing = guardiansOfStudent(student.id);
+  (p.guardians ?? []).slice(0, 2).forEach((values, index) => {
+    if (!values?.name?.trim()) return;
+    const position = index + 1;
+    let guardian = existing.find(({ link }) => link.position === position)?.guardian;
+
+    if (!guardian) {
+      guardian = { id: nextId("guardians"), created_at: now() };
+      table("guardians").push(guardian);
+      table("student_guardians").push({ student_id: student.id, guardian_id: guardian.id, position, relationship: null });
+    }
+
+    Object.assign(guardian, keep(values), { updated_at: now() });
+  });
+
+  const enrollment = latestEnrollment(student.id);
+  if (enrollment) {
+    Object.assign(enrollment, keep(p.enrollment ?? {}), {
+      next_action: enrollment.next_action ?? "Conferir o formulário preenchido pela família",
+      updated_at: now(),
+    });
+  }
+
+  if (consent.health === true) {
+    const values = keep(p.health ?? {});
+    const health = table("student_health").find((row) => sameValue(row.student_id, student.id));
+    if (health) Object.assign(health, values, { updated_at: now() });
+    else table("student_health").push({ ...values, student_id: student.id, updated_at: now() });
+  }
+
+  table("enrollment_consents").push({
+    id: nextId("enrollment_consents"),
+    student_id: student.id,
+    invite_id: invite.id,
+    version: consent.version,
+    purpose_text: consent.purpose_text,
+    health_consent: consent.health === true,
+    health_text: consent.health === true ? consent.health_text : null,
+    accepted_by: consent.accepted_by.trim(),
+    accepted_at: now(),
+  });
+
+  invite.used_at = now();
+  persist();
+  return null;
+}
+
 const RPC = {
   create_student_enrollment: createStudentEnrollment,
+  public_enrollment_form: publicEnrollmentForm,
+  public_enrollment_submit: publicEnrollmentSubmit,
   public_trial_options: trialOptions,
   public_category_locations: categoryLocations,
   public_register: publicRegister,
@@ -764,7 +892,7 @@ export function createDemoClient() {
       try {
         const handler = RPC[name];
         if (!handler) return { data: null, error: { message: `Função ${name} indisponível na demonstração.` } };
-        return { data: handler(params), error: null };
+        return { data: await handler(params), error: null };
       } catch (err) {
         return { data: null, error: { message: err.message } };
       }

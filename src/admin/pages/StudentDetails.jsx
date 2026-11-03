@@ -5,6 +5,7 @@ import { ArrowLeft, Check, Edit3, Eye, EyeOff, Lock, MessageCircle, Plus } from 
 import { Button, Dialog, DialogActions, Panel, inputClass } from "../ui";
 import { toast } from "../components/common/Toaster";
 import FieldsDialog, { Field } from "../components/students/FieldsDialog";
+import EnrollmentFormPanel from "../components/students/EnrollmentFormPanel";
 
 import {
   addGuardian,
@@ -226,6 +227,7 @@ export default function StudentDetails() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="space-y-6">
           {enrollment && <TasksPanel enrollment={enrollment} onChange={load} disabled={left} />}
+          {!left && <EnrollmentFormPanel student={student} guardian={guardians[0] ?? null} onChange={load} />}
           <EventsPanel studentId={student.id} events={events} onChange={load} />
           <HealthPanel studentId={student.id} />
         </div>
