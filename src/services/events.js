@@ -8,7 +8,7 @@ import { supabase } from "../lib/supabase";
 
 const PARTICIPANT_SELECT = `
   event_id, student_id, status, notes,
-  students(id, name, birth_date, status,
+  students(id, name, birth_date, status, shirt_number,
     enrollments(season, categories(id, name)))
 `;
 

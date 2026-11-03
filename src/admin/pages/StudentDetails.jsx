@@ -49,6 +49,16 @@ const STUDENT_FIELDS = [
   { name: "school", label: "Escola" },
   { name: "school_type", label: "Instituição (pública ou privada)" },
   { name: "field_position", label: "Posição" },
+  { name: "shirt_number", label: "Número da camisa", type: "number" },
+  {
+    name: "goalkeeper",
+    label: "Goleiro",
+    type: "select",
+    options: [
+      { value: "sim", label: "Sim (números 1, 12, 23…)" },
+      { value: "nao", label: "Não" },
+    ],
+  },
   { name: "club_team", label: "Time do coração" },
   { name: "favorite_player", label: "Jogador preferido" },
   { name: "idol", label: "Ídolo" },
@@ -181,6 +191,7 @@ export default function StudentDetails() {
           <h1 className="font-display text-[2.6rem] font-semibold leading-[0.9]">{student.name}</h1>
           <p className="mt-1 text-sm text-muted">
             {[
+              student.shirt_number ? `camisa ${student.shirt_number}${student.goalkeeper ? " (goleiro)" : ""}` : null,
               enrollment?.categories?.name,
               age != null ? `${age} anos` : null,
               enrollment ? `matrícula ${enrollment.season} desde ${formatDate(enrollment.start_date)}` : "sem matrícula",
@@ -236,9 +247,14 @@ export default function StudentDetails() {
         title="Editar dados do aluno"
         description={student.name}
         fields={STUDENT_FIELDS}
-        values={student}
+        values={{ ...student, goalkeeper: student.goalkeeper ? "sim" : "nao" }}
         onSave={async (values) => {
-          await updateStudent(student.id, values);
+          try {
+            await updateStudent(student.id, { ...values, goalkeeper: values.goalkeeper === "sim" });
+          } catch (err) {
+            if (err?.code === "23505") throw new Error(`O número ${values.shirt_number} já é de outro aluno.`);
+            throw err;
+          }
           toast("Dados do aluno salvos.", { type: "success" });
           load();
         }}
@@ -624,6 +640,16 @@ function StudentPanel({ student, onEdit }) {
           ["Celular", student.phone ? formatPhone(student.phone) : null],
           ["Escola", [student.school, student.school_type].filter(Boolean).join(", ")],
           ["Posição", student.field_position],
+          [
+            "Camisa",
+            student.shirt_number ? (
+              `${student.shirt_number}${student.goalkeeper ? ", goleiro" : ""}`
+            ) : student.status === "active" ? (
+              <Link to="/admin/students/camisas" className="underline underline-offset-4">
+                Sem número. Dar número
+              </Link>
+            ) : null,
+          ],
           ["Time", student.club_team],
           ["Jogador preferido", student.favorite_player],
           ["Ídolo", student.idol],

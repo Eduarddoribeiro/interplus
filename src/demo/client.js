@@ -11,7 +11,7 @@ import { buildSeed } from "./seed";
 import { STUDENT_TASKS } from "../constants/studentTasks";
 
 // v2: alunos, responsáveis, matrículas e eventos
-const STORAGE_KEY = "demo-db-v3";
+const STORAGE_KEY = "demo-db-v4";
 const AUTH_KEY = "demo-signed-out";
 
 /* =========================================================

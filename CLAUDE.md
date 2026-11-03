@@ -42,6 +42,7 @@ Mudanças no `tailwind.config.js` exigem reiniciar o servidor de desenvolvimento
 | `/admin/waiting-list` | Lista de interesse e quadro de demanda |
 | `/admin/students`, `/admin/students/:id` | Alunos e ficha do aluno (pós-matrícula) |
 | `/admin/students/import` | Importar a planilha de matrículas (CSV) |
+| `/admin/students/camisas` | Números de camisa de todos os ativos numa tela só |
 | `/admin/events`, `/admin/events/:id` | Eventos (Taça Gaúcha e rodadas, passeios, copas) |
 | `/admin/reports` | Relatórios |
 | `/admin/administration/*` | Unidades, locais, modalidades, categorias, turmas e horários |
@@ -103,6 +104,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Tela do evento: abre só na rodada atual (a última com alguém marcado), com "Todas as rodadas" para o histórico. Busca por nome, filtros de categoria e de situação ("Vão jogar" = confirmado, pagamento pendente, pago ou isento), ordem por categoria, nome ou situação. "Copiar lista da Rodada N" copia quem vai jogar, por categoria, para colar no WhatsApp. Quem saiu da escola fica escondido (botão "Mostrar quem saiu da escola", `?saiu=1`) e não conta em "vão jogar", na lista copiada, no total de alunos nem em "para cobrar ou devolver" (também na lista de Eventos).
 - Dono de cada dado: o Sogni é a base oficial de cadastro e mensalidade. O CRM guarda o que o Sogni não controla: contrato, taxas, rodadas, uniforme, comunidade. O CPF e os documentos ficam nos dois, porque são passados ao Sogni.
 - Importação da planilha (`helpers/studentImport.js`, com testes): lê o CSV no navegador, reconhece as colunas pelo cabeçalho e avisa quem já existe como contato (mesmo telefone e primeiro nome, ou mesmo nome e nascimento) ou já foi importado. Pagamento com "—" vira "Não se aplica"; "Ativo: Não" entra como aluno que saiu.
+- Número da camisa (`students.shirt_number`, único na escola toda, inclusive com quem saiu) e goleiro (`students.goalkeeper`). Linha recebe o próximo número depois do maior da linha; goleiro usa 1, 12, 23, 34... (de 11 em 11), e esses números nunca vão para a linha. A regra fica em `helpers/shirtNumbers.js` (com testes). O número aparece na ficha, na lista de alunos, na tabela do evento (com ordem por número) e na lista copiada.
 - Visão geral e menu: "Matrículas atrasadas" = alunos ativos com alguma pendência vencida (aba "Atrasadas" em Alunos).
 
 ### Migração planejada do funil (não aplicada)
@@ -151,7 +153,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Avisos: `toast(mensagem, { type, action })` de `common/Toaster`. Sucesso usa `role="status"`; com `action` (ex.: "Desfazer") o aviso fica 10 s e para enquanto o mouse está em cima.
 - Desfazer: depois de Confirmar/Veio/Faltou e depois de arquivar (um ou em lote). Encerrar e Mover para lista em lote não têm desfazer exato, então pedem confirmação com a quantidade ("Encerrar 23 contatos?").
 - Erros na tela: `errorMessage(err, "texto de reserva")` de `helpers/errorMessage.js`. Mensagens nossas (em português) aparecem; erros técnicos do Supabase viram o texto de reserva.
-- Estado das listas na URL: Contatos guarda `aba`, `busca`, `categoria`, `origem`, `parados` e `pagina`; Experimentais e Retornos guardam `filtro`; Alunos guarda `aba`, `busca` e `categoria`; o evento guarda `rodada`, `busca`, `categoria`, `situacao`, `ordem` e `saiu`. Cada card da Visão geral abre uma aba com exatamente o número que mostra (ex.: "Retornos atrasados" → `?filtro=overdue`, "Aulas para confirmar" → aba "A confirmar", mesma regra de 48h via `CONFIRM_DAYS`). Ao voltar de um contato, a lista reabre no mesmo lugar.
+- Estado das listas na URL: Contatos guarda `aba`, `busca`, `categoria`, `origem`, `parados` e `pagina`; Experimentais e Retornos guardam `filtro`; Alunos guarda `aba`, `busca` e `categoria`; o evento guarda `rodada`, `busca`, `categoria`, `situacao`, `ordem` e `saiu`. A busca de Alunos, de Números de camisa e do evento também acha pelo número da camisa. Cada card da Visão geral abre uma aba com exatamente o número que mostra (ex.: "Retornos atrasados" → `?filtro=overdue`, "Aulas para confirmar" → aba "A confirmar", mesma regra de 48h via `CONFIRM_DAYS`). Ao voltar de um contato, a lista reabre no mesmo lugar.
 - Cadastros (Administração): `CrudPage`, `CrudTable` (rola para o lado no celular), `CrudModal`, `ConfirmDialog` (o botão repete o verbo do título). Situação é texto colorido, sem pílula. As ações de cada linha são `Button` `quiet` `sm`.
 
 ## Landing
@@ -192,3 +194,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-10-30: pós-matrícula no painel: telas Alunos (pendências da matrícula, responsáveis, dados, saúde só ao abrir, saída) e Eventos (Taça Gaúcha com tabela aluno x rodada), importação da planilha de matrículas com aviso de quem já passou pelo CRM, card "Matrículas atrasadas" na Visão geral. Matricular um contato cria a ficha do aluno. SQL aplicado e planilha importada.
 - 2026-10-30: tela do evento com a rodada atual em destaque, busca, filtros, ordem e "Copiar lista" da rodada para o WhatsApp. A 1ª mensalidade deixa de aparecer como pendência (é paga direto no Sogni).
 - 2026-10-30: quem saiu da escola fica escondido nos eventos e não conta em "vão jogar" nem nas cobranças.
+- 2026-10-31: número da camisa e goleiro na ficha do aluno, com a tela "Números de camisa" para preencher todos e a sugestão do próximo número (linha em ordem, goleiro de 11 em 11). SQL aplicado e numeração atual (88 alunos) gravada a partir da lista da escola.
