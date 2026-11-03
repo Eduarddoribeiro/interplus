@@ -4,6 +4,7 @@ import {
   CalendarDays,
   PhoneCall,
   ListChecks,
+  ClipboardCheck,
   BarChart3,
   ShieldCheck,
   GraduationCap,
@@ -44,6 +45,8 @@ function menuCount(key, pending) {
       return pending.followUpsDue ? { value: pending.followUpsDue, urgency: "alert" } : null;
     case "students":
       return pending.studentsOverdue ? { value: pending.studentsOverdue, urgency: "alert" } : null;
+    case "tasks":
+      return pending.tasksOverdue ? { value: pending.tasksOverdue, urgency: "alert" } : null;
     default:
       return null;
   }
@@ -53,6 +56,7 @@ const COUNT_TITLE = {
   experimentals: "experimentais com pendência",
   followUps: "retornos vencidos",
   students: "alunos com pendência atrasada",
+  tasks: "tarefas atrasadas",
 };
 
 const COLLAPSED_KEY = "admin-sidebar-collapsed";
@@ -72,6 +76,7 @@ const menu = [
   { key: "followUps", label: "Retornos", icon: PhoneCall, to: "/admin/follow-ups" },
   { key: "waitingList", label: "Lista de interesse", icon: ListChecks, to: "/admin/waiting-list" },
   { key: "students", label: "Alunos", icon: GraduationCap, to: "/admin/students" },
+  { key: "tasks", label: "Tarefas", icon: ClipboardCheck, to: "/admin/tarefas" },
   { key: "events", label: "Eventos", icon: Trophy, to: "/admin/events" },
   { key: "reports", label: "Relatórios", icon: BarChart3, to: "/admin/reports" },
   { key: "administration", label: "Administração", icon: ShieldCheck, to: "/admin/administration" },

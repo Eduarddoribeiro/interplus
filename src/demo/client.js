@@ -9,9 +9,11 @@
 
 import { buildSeed } from "./seed";
 import { STUDENT_TASKS } from "../constants/studentTasks";
+import { toLocalISO } from "../helpers/dashboardSummary";
+import { nextDueDate } from "../helpers/taskBoard";
 
 // v2: alunos, responsáveis, matrículas e eventos
-const STORAGE_KEY = "demo-db-v6";
+const STORAGE_KEY = "demo-db-v7";
 const AUTH_KEY = "demo-signed-out";
 
 /* =========================================================
@@ -69,6 +71,7 @@ const UUID_TABLES = new Set([
   "events",
   "enrollment_invites",
   "enrollment_consents",
+  "staff_tasks",
 ]);
 
 function nextId(name) {
@@ -318,13 +321,18 @@ class Query {
         ...(name === "enrollment_invites"
           ? { expires_at: new Date(Date.now() + 7 * 86400000).toISOString(), used_at: null, revoked_at: null, reviewed_at: null }
           : {}),
+        ...(name === "staff_tasks"
+          ? { status: "todo", repeat: "none", next_created: false, done_at: null, created_by: DEMO_USER.id }
+          : {}),
         ...values,
       }));
       table(name).push(...rows);
       persist();
     } else if (this.operation === "update") {
       rows = this.matching();
-      rows.forEach((row) => Object.assign(row, this.values));
+      rows.forEach((row) =>
+        name === "staff_tasks" ? updateStaffTask(row, this.values) : Object.assign(row, this.values),
+      );
       persist();
     } else if (this.operation === "delete") {
       rows = this.matching();
@@ -822,7 +830,46 @@ async function publicEnrollmentSubmit({ p_token: token, p }) {
   return null;
 }
 
+/* =========================================================
+ * TAREFAS DA EQUIPE: o mesmo que o gatilho staff_tasks_before_update
+ * =======================================================*/
+function updateStaffTask(row, values) {
+  const before = { ...row };
+  Object.assign(row, values, { updated_at: now() });
+
+  if (row.status === "done" && before.status !== "done") {
+    row.done_at = row.done_at ?? now();
+
+    if (row.repeat !== "none" && !before.next_created) {
+      table("staff_tasks").push({
+        id: nextId("staff_tasks"),
+        title: row.title,
+        notes: row.notes,
+        area: row.area,
+        status: "todo",
+        due_date: nextDueDate(row.due_date, row.repeat, toLocalISO()),
+        assigned_to: row.assigned_to,
+        repeat: row.repeat,
+        next_created: false,
+        done_at: null,
+        created_by: DEMO_USER.id,
+        created_at: now(),
+        updated_at: now(),
+      });
+      row.next_created = true;
+    }
+  } else if (row.status !== "done") {
+    row.done_at = null;
+  }
+}
+
+const DEMO_STAFF = [
+  { user_id: "demo-user", name: "Visitante" },
+  { user_id: "demo-secretaria", name: "Camila" },
+];
+
 const RPC = {
+  staff_members: () => DEMO_STAFF,
   create_student_enrollment: createStudentEnrollment,
   public_enrollment_form: publicEnrollmentForm,
   public_enrollment_submit: publicEnrollmentSubmit,

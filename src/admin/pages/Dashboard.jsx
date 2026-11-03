@@ -19,6 +19,8 @@ const PENDING_COLUMNS = {
   5: "xl:grid-cols-3",
   6: "xl:grid-cols-3",
   7: "xl:grid-cols-4",
+  8: "xl:grid-cols-4",
+  9: "xl:grid-cols-3",
 };
 
 // Texto da linha informativa (depois do número)
@@ -241,6 +243,22 @@ export default function Dashboard() {
       title: "Fichas com link vencido",
       text: "A família não preencheu em 7 dias",
       to: "/admin/students/fichas?aba=vencido",
+    },
+    {
+      key: "tasksOverdue",
+      urgency: "alert",
+      value: pending.tasksOverdue,
+      title: "Tarefas atrasadas",
+      text: "Tarefas da equipe com o prazo vencido",
+      to: "/admin/tarefas?prazo=atrasadas",
+    },
+    {
+      key: "tasksToday",
+      urgency: "attention",
+      value: pending.tasksToday,
+      title: "Tarefas para hoje",
+      text: "Tarefas da equipe com prazo hoje",
+      to: "/admin/tarefas?prazo=hoje",
     },
     {
       key: "waitingNow",

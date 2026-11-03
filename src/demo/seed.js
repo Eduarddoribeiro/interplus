@@ -686,6 +686,36 @@ export function buildSeed() {
       };
     });
 
+  // Tarefas da equipe: atrasadas, de hoje, futuras, repetidas e feitas
+  const task = (title, fields) => ({
+    id: crypto.randomUUID(),
+    title,
+    notes: null,
+    area: null,
+    status: "todo",
+    due_date: null,
+    assigned_to: null,
+    repeat: "none",
+    next_created: false,
+    done_at: null,
+    created_by: "demo-user",
+    created_at: stamp(-10),
+    updated_at: stamp(-10),
+    ...fields,
+  });
+  const staff_tasks = [
+    task("Conferir mensalidades no Sogni", { area: "Financeiro", due_date: iso(daysFromToday(-2)), assigned_to: "demo-secretaria", repeat: "monthly" }),
+    task("Mandar a lista da rodada para o grupo", { area: "Eventos", due_date: iso(daysFromToday(0)), assigned_to: "demo-user" }),
+    task("Postar o treino da semana no Instagram", { area: "Comunicação", due_date: iso(daysFromToday(0)), assigned_to: "demo-secretaria", repeat: "weekly" }),
+    task("Fazer o pedido de uniformes ao fornecedor", { area: "Uniforme", due_date: iso(daysFromToday(4)), assigned_to: "demo-user", notes: "Juntar os tamanhos pendentes das matrículas novas." }),
+    task("Repor coletes e cones", { area: "Estrutura", due_date: iso(daysFromToday(9)) }),
+    task("Reservar a van para a Taça", { area: "Eventos", status: "doing", due_date: iso(daysFromToday(2)), assigned_to: "demo-user" }),
+    task("Renovar o seguro atleta", { area: "Secretaria", status: "doing", assigned_to: "demo-secretaria" }),
+    task("Pagar o aluguel da quadra", { area: "Financeiro", status: "done", due_date: iso(daysFromToday(-3)), assigned_to: "demo-user", repeat: "monthly", next_created: true, done_at: stamp(-3, 15) }),
+    task("Pagar o aluguel da quadra", { area: "Financeiro", due_date: iso(daysFromToday(27)), assigned_to: "demo-user", repeat: "monthly", created_at: stamp(-3, 15) }),
+    task("Imprimir as fichas de avaliação", { area: "Secretaria", status: "done", done_at: stamp(-1, 11) }),
+  ];
+
   return {
     units,
     locations,
@@ -708,5 +738,6 @@ export function buildSeed() {
     events,
     event_participants,
     enrollment_invites,
+    staff_tasks,
   };
 }
