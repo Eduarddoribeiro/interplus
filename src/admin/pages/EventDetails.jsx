@@ -33,6 +33,7 @@ const SORTS = [
   { value: "categoria", label: "categoria" },
   { value: "nome", label: "nome" },
   { value: "situacao", label: "situação" },
+  { value: "numero", label: "número da camisa" },
 ];
 
 const statusRank = (status) => {
@@ -168,7 +169,7 @@ export default function EventDetails() {
     const statusOf = (row) => row.statuses[focus.id] ?? "";
 
     const filtered = baseRows.filter((row) => {
-      if (term && !row.student.name.toLowerCase().includes(term)) return false;
+      if (term && !row.student.name.toLowerCase().includes(term) && String(row.student.shirt_number ?? "") !== term) return false;
       if (category !== "all" && row.category !== category) return false;
       const status = statusOf(row);
       if (situation === "playing") return EVENT_STATUS_PLAYING.has(status);
@@ -179,6 +180,7 @@ export default function EventDetails() {
     const compare = {
       categoria: (a, b) => byCategory(a, b) || byName(a, b),
       nome: byName,
+      numero: (a, b) => (a.student.shirt_number ?? Infinity) - (b.student.shirt_number ?? Infinity) || byName(a, b),
       situacao: (a, b) => statusRank(statusOf(a)) - statusRank(statusOf(b)) || byCategory(a, b) || byName(a, b),
     }[sort];
 
@@ -222,12 +224,13 @@ export default function EventDetails() {
       .sort((a, b) => byCategory(a, b) || byName(a, b))
       .forEach((row) => {
         const key = row.category || "Sem categoria";
-        groups.set(key, [...(groups.get(key) ?? []), row.student.name]);
+        const { name, shirt_number: number } = row.student;
+        groups.set(key, [...(groups.get(key) ?? []), number ? `${number} ${name}` : name]);
       });
 
     const lines = [`${event.name}, ${focusName}: ${playing.length} aluno${playing.length === 1 ? "" : "s"}`];
-    groups.forEach((names, name) => {
-      lines.push("", `${name} (${names.length})`, ...names.map((item) => `- ${item}`));
+    groups.forEach((names, group) => {
+      lines.push("", `${group} (${names.length})`, ...names.map((item) => `- ${item}`));
     });
 
     try {
@@ -440,6 +443,7 @@ export default function EventDetails() {
                 <tr key={student.id} className="border-t border-line">
                   <th scope="row" className="sticky left-0 bg-white px-4 py-2 text-left font-normal">
                     <Link to={`/admin/students/${student.id}`} className="font-medium hover:underline">
+                      {student.shirt_number && <span className="mr-1.5 tabular-nums text-muted">{student.shirt_number}</span>}
                       {student.name}
                     </Link>
                     {(category || student.status === "left") && (

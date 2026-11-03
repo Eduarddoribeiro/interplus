@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronRight, FileUp, MessageCircle, Plus, Search } from "lucide-react";
+import { ChevronRight, FileUp, MessageCircle, Plus, Search, Shirt } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
 import { Button, Dialog, DialogActions, Panel, Tabs, inputClass, urgencyRail } from "../ui";
@@ -134,6 +134,7 @@ export default function Students() {
         if (!term) return true;
         const guardians = guardiansOf(row.student);
         const text = normalize([row.student.name, ...guardians.map((guardian) => guardian.name)].join(" "));
+        if (digits && String(row.student.shirt_number ?? "") === search.trim()) return true;
         const phones = guardians.map((guardian) => (guardian.phone ?? "").replace(/\D/g, ""));
         return text.includes(term) || (digits.length >= 4 && phones.some((phone) => phone.includes(digits)));
       })
@@ -151,6 +152,10 @@ export default function Students() {
         summary={`${counts.ativos} ativos, ${counts.atrasadas} com pendência atrasada.`}
         actions={
           <>
+            <Button to="/admin/students/camisas">
+              <Shirt size={18} aria-hidden="true" />
+              Números de camisa
+            </Button>
             <Button to="/admin/students/import">
               <FileUp size={18} aria-hidden="true" />
               Importar planilha
@@ -269,7 +274,13 @@ function StudentRow({ row }) {
         <span className="min-w-0">
           <span className="block truncate font-semibold">{student.name}</span>
           <span className="block text-sm text-muted">
-            {[categoryName, age != null ? `${age} anos` : null].filter(Boolean).join(", ") || "Sem categoria"}
+            {[
+              student.shirt_number ? `camisa ${student.shirt_number}` : null,
+              categoryName,
+              age != null ? `${age} anos` : null,
+            ]
+              .filter(Boolean)
+              .join(", ") || "Sem categoria"}
           </span>
         </span>
 

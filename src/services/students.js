@@ -13,7 +13,7 @@ import { STUDENT_TASK_LABEL } from "../constants/studentTasks";
  */
 
 const LIST_SELECT = `
-  id, name, birth_date, phone, status, left_at, contact_id, created_at,
+  id, name, birth_date, phone, status, left_at, contact_id, created_at, shirt_number, goalkeeper,
   student_guardians(position, guardians(id, name, phone)),
   enrollments(id, season, start_date, category_id, categories(id, name),
     enrollment_tasks(id, kind, status, due_date))

@@ -489,6 +489,8 @@ export function buildSeed() {
       how_found: pick(["Instagram", "Indicação de amigo", "Passou em frente"]),
       photo_url: null,
       sogni_id: null,
+      shirt_number: null,
+      goalkeeper: false,
       status: left ? "left" : "active",
       left_at: left ? iso(daysFromToday(-between(5, 60))) : null,
       left_reason: left ? pick(["Mudou de cidade", "Horário da escola mudou", "Foi para outro esporte"]) : null,
@@ -620,6 +622,20 @@ export function buildSeed() {
   });
 
   const activeStudents = students.filter((student) => student.status === "active");
+
+  // Camisas: linha em ordem (pulando 1, 12, 23...), goleiro de 11 em 11;
+  // os três últimos ficam sem número para mostrar a sugestão
+  let line = 1;
+  let keeper = -10;
+  students.slice(0, -3).forEach((student) => {
+    student.goalkeeper = student.field_position === "Goleiro";
+    if (student.goalkeeper) student.shirt_number = keeper += 11;
+    else {
+      do line += 1;
+      while (line % 11 === 1);
+      student.shirt_number = line;
+    }
+  });
 
   activeStudents.slice(0, 22).forEach((student) => {
     event_participants.push({
