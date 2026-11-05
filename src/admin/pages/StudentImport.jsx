@@ -13,6 +13,7 @@ import { enrollContact, getContacts } from "../../services/contacts";
 import { getCategories } from "../../services/categories";
 import { CONTACT_STATUS_LABEL } from "../../constants/contactStatus";
 import { errorMessage } from "../../helpers/errorMessage";
+import { BRAND } from "../../constants/brand";
 
 // O que fazer com cada linha
 const ACTION = {
@@ -290,7 +291,7 @@ export default function StudentImport() {
                 />
               </label>
               <Check checked={inSogni} onChange={setInSogni}>
-                Todos já estão cadastrados no Sogni
+                Todos já estão cadastrados no {BRAND.financeSystem}
               </Check>
               <Check checked={withHealth} onChange={setWithHealth}>
                 Importar os dados de saúde

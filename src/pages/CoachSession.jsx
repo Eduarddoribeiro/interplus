@@ -7,6 +7,7 @@ import {
   markCoachAttendance,
 } from "../services/coachLinks";
 import { errorMessage } from "../helpers/errorMessage";
+import { BRAND } from "../constants/brand";
 
 const formatTime = (time) => time?.slice(0, 5) ?? "";
 
@@ -89,8 +90,8 @@ export default function CoachSession() {
       <header className="border-b border-line bg-white">
         <div className="mx-auto max-w-lg px-4 pb-4 pt-5">
           <img
-            src="/logo-recorte-vermelho.svg"
-            alt="Escola Oficial do Inter, Viamão"
+            src={BRAND.logo}
+            alt={BRAND.logoAlt}
             width={112}
             height={46}
             className="h-auto w-28"

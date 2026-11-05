@@ -34,6 +34,7 @@ import { createWhatsAppUrl, getTodayISO } from "../../helpers/contactPresentatio
 import { formatPhone } from "../../helpers/phoneHelpers";
 import { getAge } from "../../helpers/dateHelpers";
 import { errorMessage } from "../../helpers/errorMessage";
+import { BRAND } from "../../constants/brand";
 
 /* =========================================================
  * CAMPOS DE CADA BLOCO
@@ -63,7 +64,7 @@ const STUDENT_FIELDS = [
   { name: "favorite_player", label: "Jogador preferido" },
   { name: "idol", label: "Ídolo" },
   { name: "how_found", label: "Como conheceu a escola" },
-  { name: "sogni_id", label: "Código no Sogni" },
+  { name: "sogni_id", label: `Código no ${BRAND.financeSystem}` },
   { name: "photo_url", label: "Foto (link)", wide: true },
   { name: "notes", label: "Observação interna", type: "textarea" },
 ];
@@ -431,7 +432,7 @@ function TasksPanel({ enrollment, onChange, disabled }) {
       ))}
 
       <p className="border-t border-line px-4 py-3 text-sm text-muted">
-        Mensalidade, vencimento e cadastro oficial ficam no Sogni. Aqui só se marca o que já foi feito.
+        Mensalidade, vencimento e cadastro oficial ficam no {BRAND.financeSystem}. Aqui só se marca o que já foi feito.
       </p>
     </Panel>
   );
@@ -660,7 +661,7 @@ function StudentPanel({ student, onEdit }) {
           ["Jogador preferido", student.favorite_player],
           ["Ídolo", student.idol],
           ["Como conheceu", student.how_found],
-          ["Código no Sogni", student.sogni_id],
+          [`Código no ${BRAND.financeSystem}`, student.sogni_id],
           [
             "Foto",
             student.photo_url ? (
@@ -837,7 +838,7 @@ function LeaveDialog({ open, onClose, student, onSaved }) {
     try {
       setSaving(true);
       await updateStudent(student.id, { status: "left", left_at: date || getTodayISO(), left_reason: reason.trim() || null });
-      toast("Saída registrada. Lembre de cancelar também no Sogni.", { type: "success" });
+      toast(`Saída registrada. Lembre de cancelar também no ${BRAND.financeSystem}.`, { type: "success" });
       onClose();
       onSaved();
     } catch (err) {

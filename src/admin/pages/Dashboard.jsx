@@ -9,6 +9,7 @@ import { Button, Panel, urgencyRail, urgencyText } from "../ui";
 import { getDashboardData } from "../../services/dashboard";
 import { EXPERIMENTAL_STATUS_LABEL } from "../../constants/experimentalStatus";
 import { createWhatsAppUrl } from "../../helpers/contactPresentation";
+import { BRAND } from "../../constants/brand";
 
 // Colunas da grade de pendências: sem item sozinho numa linha
 const PENDING_COLUMNS = {
@@ -225,7 +226,7 @@ export default function Dashboard() {
       urgency: "alert",
       value: pending.studentsOverdue,
       title: "Matrículas atrasadas",
-      text: "Contrato, pagamento, uniforme ou Sogni atrasados",
+      text: `Contrato, pagamento, uniforme ou ${BRAND.financeSystem} atrasados`,
       to: "/admin/students?aba=atrasadas",
     },
     {

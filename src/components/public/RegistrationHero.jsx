@@ -1,4 +1,5 @@
 import { CalendarCheck, MessageCircle, ShieldCheck } from "lucide-react";
+import { BRAND, BRAND_KEY } from "../../constants/brand";
 
 /*
  * Topo da página de agendamento.
@@ -11,11 +12,12 @@ export default function RegistrationHero() {
   return (
     <header className="px-4 pb-6 pt-6 text-center sm:pb-10 sm:pt-10">
       <img
-        src="/logo-vermelho.png"
-        alt="Escola do Inter Viamão"
+        src={BRAND.publicLogo}
+        alt={BRAND.logoAlt}
         width={176}
         height={64}
-        className="mx-auto h-16 w-44 object-cover sm:h-20 sm:w-56"
+        // O PNG do Inter é quadrado com margem (por isso o corte); o logo da demo neutra já vem recortado
+        className={BRAND_KEY === "inter" ? "mx-auto h-16 w-44 object-cover sm:h-20 sm:w-56" : "mx-auto h-16 w-auto sm:h-20"}
       />
 
       <h1 className="mt-4 text-3xl font-bold leading-tight text-neutral-900 sm:text-4xl">
@@ -27,7 +29,7 @@ export default function RegistrationHero() {
       </p>
 
       <ul className="mt-5 flex flex-wrap justify-center gap-2 text-xs font-semibold text-neutral-700 sm:text-sm">
-        <Chip icon={ShieldCheck}>Escola Oficial do Inter</Chip>
+        <Chip icon={ShieldCheck}>{BRAND.badge}</Chip>
         <Chip icon={CalendarCheck}>Turmas por idade</Chip>
         <Chip icon={MessageCircle}>Confirmação pelo WhatsApp</Chip>
       </ul>

@@ -8,6 +8,7 @@ import { createEnrollmentInvite, inviteStatus, markInviteReviewed } from "../../
 import { LINK_DAYS } from "../../../constants/enrollmentForm";
 import { createWhatsAppUrl } from "../../../helpers/contactPresentation";
 import { errorMessage } from "../../../helpers/errorMessage";
+import { BRAND } from "../../../constants/brand";
 
 const formatDate = (iso) => (iso ? new Date(iso).toLocaleDateString("pt-BR") : "");
 const firstName = (name) => String(name ?? "").trim().split(/\s+/)[0] ?? "";
@@ -101,7 +102,7 @@ export default function EnrollmentFormPanel({ student, guardian, onChange }) {
 
 function LinkDialog({ link, student, guardian, onClose }) {
   const message = link
-    ? `Olá, ${firstName(guardian?.name)}! Para concluir a matrícula de ${firstName(student.name)} na Escola Oficial do Inter Viamão, preencha a ficha neste link:\n\n${link.url}\n\nO link vale por ${LINK_DAYS} dias.`
+    ? `Olá, ${firstName(guardian?.name)}! Para concluir a matrícula de ${firstName(student.name)} na ${BRAND.name}, preencha a ficha neste link:\n\n${link.url}\n\nO link vale por ${LINK_DAYS} dias.`
     : "";
   const whatsappUrl = guardian?.phone ? createWhatsAppUrl(guardian.phone) : null;
 

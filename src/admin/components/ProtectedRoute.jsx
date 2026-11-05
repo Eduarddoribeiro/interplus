@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { BRAND } from "../../constants/brand";
 
 export default function ProtectedRoute({ children }) {
   const [session, setSession] = useState(null);
@@ -36,8 +37,8 @@ export default function ProtectedRoute({ children }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas">
         <img
-          src="/logo-recorte-vermelho.svg"
-          alt="Escola Oficial do Inter, Viamão"
+          src={BRAND.logo}
+          alt={BRAND.logoAlt}
           width={160}
           height={65}
           className="h-auto w-40"

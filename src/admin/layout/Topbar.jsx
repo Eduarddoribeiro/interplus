@@ -1,4 +1,5 @@
 import { Menu } from "lucide-react";
+import { BRAND } from "../../constants/brand";
 
 /*
  * Barra do topo só no celular: abre o menu (com um ponto quando
@@ -27,8 +28,8 @@ export default function Topbar({ onOpenMenu, alert }) {
       </button>
 
       <img
-        src="/logo-recorte-vermelho.svg"
-        alt="Escola Oficial do Inter"
+        src={BRAND.logo}
+        alt={BRAND.logoAlt}
         width={92}
         height={37}
         className="h-auto w-[92px]"

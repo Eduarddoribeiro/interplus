@@ -77,6 +77,8 @@ src/demo/                # modo demonstração: cliente falso do Supabase + dado
 - Na demo, a raiz `/` abre direto o painel (`App.jsx`), e o `vite.config.js` troca o título, a descrição e as tags `og:` do `index.html` por textos do CRM, para o cartão do link no LinkedIn. A imagem do cartão é `public/og-demo.png` (1200×630); se o endereço da demo mudar, atualizar `DEMO_URL` no `vite.config.js`.
 - Deploy da demo: um projeto **separado** na Vercel, a partir do mesmo repositório, com só `VITE_DEMO=1` nas variáveis (sem as do Supabase).
 - Se o painel passar a usar uma consulta nova (filtro, relação ou rpc), conferir se `src/demo/client.js` a cobre e se `seed.js` tem os campos.
+- Demo sem a marca do Inter, para apresentar o CRM a outras escolas: outro projeto na Vercel com `VITE_DEMO=1` e `VITE_BRAND=exemplo`. Vira "Escola de Futebol Exemplo", com logo e favicon próprios (`public/exemplo/`), azul no lugar do vermelho (`tailwind.config.js`), sem o WhatsApp da escola, "sistema financeiro" no lugar do Sogni, cidade e campeonato fictícios e título do cartão "CRM para escolas de futebol" (sem imagem). Sem `VITE_BRAND`, tudo continua com a marca do Inter (site real e demo do LinkedIn). Textos da marca em `src/constants/brand.js`: texto novo com o nome da escola, Sogni ou cidade deve usar `BRAND`, nunca o nome fixo.
+- Rodar a demo neutra: `VITE_DEMO=1 VITE_BRAND=exemplo npx vite --port 5174` (a variável precisa estar no terminal, não no `.env`, porque o Tailwind lê a cor dela).
 
 ## Dados (Supabase)
 
@@ -213,3 +215,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-03: fichas da família na Visão geral (para conferir, link vencido, aguardando) e na tela Fichas da família, com "Marcar como conferida" na ficha do aluno. SQL aplicado e conferido.
 - 2026-11-03: tarefas da equipe (`/admin/tarefas`): quadro A fazer / Fazendo / Feito com responsável, prazo, área e repetição, item "Tarefas" no menu com as atrasadas e cartões na Visão geral. SQL `20261104120000_tarefas_equipe.sql`.
 - 2026-11-03: tabela de medidas do uniforme no formulário da família (tamanhos 4 a GG, lista com largura × altura e "Ver tabela de medidas") e lista de tamanhos na edição da matrícula, que perdeu "Forma de pagamento" e "Próxima ação". Fichas para conferir com contador amarelo em Alunos no menu e no botão "Fichas da família", e ponto no botão do menu no celular. Sem SQL.
+- 2026-11-05: demo sem a marca do Inter (`VITE_BRAND=exemplo`), para apresentar o CRM a outras escolas. A marca do Inter continua igual no site e na demo do LinkedIn (index.html da demo conferido igual ao de antes).

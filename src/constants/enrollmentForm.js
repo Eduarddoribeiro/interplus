@@ -1,3 +1,5 @@
+import { BRAND } from "./brand";
+
 /*
  * Formulário de matrícula que a família preenche pelo link.
  * Mesmas perguntas e opções do Google Forms antigo.
@@ -9,7 +11,7 @@
 export const CONSENT_VERSION = "2026-11-02";
 
 export const PURPOSE_TEXT =
-  "Os dados deste formulário são usados pela Escola Oficial do Inter, Unidade Viamão, para fazer e manter a matrícula do aluno: cadastro no sistema da escola, contrato, mensalidades, uniforme, contato com a família e inscrição em jogos e eventos. Eles ficam guardados com acesso restrito à coordenação e só são compartilhados quando for necessário para essas finalidades. A qualquer momento você pode pedir à coordenação para ver, corrigir ou apagar os dados.";
+  `Os dados deste formulário são usados pela ${BRAND.formalName}, para fazer e manter a matrícula do aluno: cadastro no sistema da escola, contrato, mensalidades, uniforme, contato com a família e inscrição em jogos e eventos. Eles ficam guardados com acesso restrito à coordenação e só são compartilhados quando for necessário para essas finalidades. A qualquer momento você pode pedir à coordenação para ver, corrigir ou apagar os dados.`;
 
 export const HEALTH_TEXT =
   "As informações de saúde são obrigatórias: a escola precisa delas para cuidar do aluno nos treinos, jogos e viagens, por exemplo em caso de alergia ou emergência. O acesso é restrito à coordenação, que repassa aos professores apenas o necessário para a segurança do aluno.";
