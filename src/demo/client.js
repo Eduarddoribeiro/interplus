@@ -595,7 +595,6 @@ function coachSessionList({ p_token: token }) {
       const schedule = byId("training_group_schedules", session.training_group_schedule_id);
       const group = schedule && byId("training_groups", schedule.training_group_id);
       const location = group && byId("locations", group.location_id);
-      const [firstName = "", secondName = ""] = (contact.child_name ?? "").trim().split(/\s+/);
 
       return {
         contact,
@@ -604,7 +603,7 @@ function coachSessionList({ p_token: token }) {
           session_id: session.id,
           session_date: session.experimental_date,
           experimental_time: session.experimental_time ?? schedule?.start_time ?? null,
-          child_label: `${firstName}${secondName ? ` ${secondName[0]}.` : ""}`,
+          child_label: (contact.child_name ?? "").trim().replace(/\s+/g, " "),
           age: ageOn(contact.birth_date, session.experimental_date),
           category_name: byId("categories", session.category_id)?.name ?? null,
           group_name: group?.name ?? null,
