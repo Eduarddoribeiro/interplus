@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import { WEEKDAY_LABELS } from "../../../constants/weekdays";
 import { SCHOOL } from "../../../constants/school";
 import { downloadIcs, googleCalendarUrl, mapsUrl } from "../../../utils/calendar";
+import { BRAND } from "../../../constants/brand";
 
 const formatTime = (time) => time?.slice(0, 5);
 
@@ -46,7 +47,7 @@ export default function SuccessScreen({ type = "scheduled", form, onRestart }) {
   const location = form?.location;
 
   const event = schedule && {
-    title: `Aula experimental — ${firstName ?? "Escola do Inter"}`,
+    title: `Aula experimental — ${firstName ?? BRAND.shortName}`,
     date: form.experimental_date,
     start: schedule.start_time,
     end: schedule.end_time,

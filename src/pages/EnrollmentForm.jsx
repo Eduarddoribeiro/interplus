@@ -20,6 +20,7 @@ import {
 } from "../constants/enrollmentForm";
 import { getTodayISO } from "../helpers/contactPresentation";
 import { errorMessage } from "../helpers/errorMessage";
+import { BRAND } from "../constants/brand";
 
 const STEPS = [
   { value: "student", label: "Aluno" },
@@ -160,8 +161,8 @@ export default function EnrollmentForm() {
       <header ref={topRef} className="scroll-mt-0 border-b border-line bg-white">
         <div className="mx-auto max-w-lg px-4 pb-4 pt-5">
           <img
-            src="/logo-recorte-vermelho.svg"
-            alt="Escola Oficial do Inter, Viamão"
+            src={BRAND.logo}
+            alt={BRAND.logoAlt}
             width={112}
             height={46}
             className="h-auto w-28"

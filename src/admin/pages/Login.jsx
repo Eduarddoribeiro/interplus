@@ -6,6 +6,7 @@ import { signIn } from "../../services/auth";
 import { isDemo, supabase } from "../../lib/supabase";
 import { Button, inputClass } from "../ui";
 import { errorMessage } from "../../helpers/errorMessage";
+import { BRAND } from "../../constants/brand";
 
 /*
  * Login da equipe.
@@ -128,8 +129,8 @@ export default function Login() {
         )}
 
         <img
-          src="/logo-recorte-branco.svg"
-          alt="Escola Oficial do Inter, Viamão"
+          src={BRAND.logoWhite}
+          alt={BRAND.logoAlt}
           width={220}
           height={89}
           className="relative h-auto w-[220px]"
@@ -141,7 +142,7 @@ export default function Login() {
           </p>
 
           <p className="mt-4 max-w-sm">
-            Contatos, aulas experimentais e retornos da Escola Oficial do Inter em Viamão/RS.
+            {BRAND.tagline}
           </p>
         </div>
       </aside>
@@ -152,8 +153,8 @@ export default function Login() {
           {/* Celular e tablet: marca centralizada no topo */}
           <div className="mb-8 text-center lg:hidden">
             <img
-              src="/logo-recorte-vermelho.svg"
-              alt="Escola Oficial do Inter, Viamão"
+              src={BRAND.logo}
+              alt={BRAND.logoAlt}
               width={192}
               height={78}
               className="mx-auto h-auto w-48"

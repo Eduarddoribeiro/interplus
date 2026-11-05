@@ -21,6 +21,7 @@ import { signOut } from "../../services/auth";
 import { toast } from "../components/common/Toaster";
 import { Count } from "../ui";
 import { isDemo } from "../../lib/supabase";
+import { BRAND } from "../../constants/brand";
 
 // Na demonstração o painel não mostra o nome de ninguém real
 const USER = isDemo
@@ -157,8 +158,8 @@ export default function Sidebar({ open = false, onClose, pending }) {
         {/* Logo */}
         <div className={`flex items-center justify-between px-5 py-5 ${collapsed ? "lg:justify-center lg:px-0" : ""}`}>
           <img
-            src="/logo-recorte-vermelho.svg"
-            alt="Escola Oficial do Inter"
+            src={BRAND.logo}
+            alt={BRAND.logoAlt}
             width={120}
             height={49}
             className={`h-auto w-[120px] ${collapsed ? "lg:hidden" : ""}`}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 246 100" width="246" height="100" role="img" aria-label="Escola de Futebol Exemplo">
+  <path d="M50 4 88 18v30c0 24-16 40-38 48C28 88 12 72 12 48V18Z" fill="#fff"/>
+  <circle cx="50" cy="47" r="22" fill="#1D4ED8"/>
+  <path d="m50 34 12.4 9-4.7 14.6H42.3L37.6 43Z" fill="#fff"/>
+  <path d="M50 34v-9M62.4 43l8.4-3M57.7 57.6l5.3 7.4M42.3 57.6 37 65M37.6 43l-8.4-3" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <text x="100" y="42" textLength="96" lengthAdjust="spacingAndGlyphs" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" letter-spacing="1" fill="#fff">ESCOLA</text>
+  <text x="98" y="80" textLength="140" lengthAdjust="spacingAndGlyphs" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="34" font-weight="900" fill="#fff">Exemplo</text>
+</svg>

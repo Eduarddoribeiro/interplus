@@ -1,3 +1,5 @@
+import { BRAND } from "./brand";
+
 /*
  * Pendências criadas junto com cada matrícula.
  *
@@ -8,7 +10,7 @@
  * essa pendência, e o painel a ignora (só conta o que está aqui).
  */
 export const STUDENT_TASKS = [
-  { kind: "sogni", label: "Cadastrado no Sogni", group: "Cadastro", days: 3 },
+  { kind: "sogni", label: `Cadastrado no ${BRAND.financeSystem}`, group: "Cadastro", days: 3 },
   { kind: "community", label: "Entrou na comunidade", group: "Cadastro", days: 3 },
   // O contrato vai por e-mail no momento da matrícula: só falta a assinatura
   { kind: "contract_signed", label: "Contrato assinado", group: "Cadastro", days: 7 },

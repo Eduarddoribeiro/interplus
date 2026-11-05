@@ -1,11 +1,13 @@
+import { BRAND } from "./brand";
+
 /**
  * Dados de contato da escola exibidos no site público.
  * Deixe vazio o que ainda não estiver definido: o botão some.
  */
 export const SCHOOL = {
-  name: "Escola Oficial do Inter Viamão",
+  name: BRAND.name,
   // Somente números, com DDI e DDD (ex.: 5551999999999)
-  whatsapp: "5551996476999",
+  whatsapp: BRAND.whatsapp,
   instagram: "",
 };
 

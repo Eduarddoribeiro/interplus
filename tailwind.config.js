@@ -1,3 +1,12 @@
+/*
+ * VITE_BRAND=exemplo: demo sem a marca do Inter (ver src/constants/brand.js).
+ * O nome do token continua inter-red para não mudar as telas.
+ */
+const brandColors =
+  process.env.VITE_BRAND === 'exemplo'
+    ? { red: '#1D4ED8', 'red-dark': '#1E40AF', 'red-light': '#E8EEFC' }
+    : { red: '#C8102E', 'red-dark': '#9e0d23', 'red-light': '#f5e6e9' }
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
@@ -8,11 +17,7 @@ export default {
   display: ["Teko", "sans-serif"],
 },
       colors: {
-        inter: {
-          red: '#C8102E',
-          'red-dark': '#9e0d23',
-          'red-light': '#f5e6e9',
-        },
+        inter: brandColors,
         // Painel: neutros e cores com significado (ver src/admin/ui)
         ink: '#1C1F24',
         muted: '#5B616B',

@@ -10,6 +10,7 @@
  */
 
 import { STUDENT_TASKS } from "../constants/studentTasks";
+import { BRAND, BRAND_KEY } from "../constants/brand";
 
 const STUDENT_TASK_DAYS = STUDENT_TASKS.map((task) => [task.kind, task.days]);
 
@@ -76,7 +77,7 @@ export function buildSeed() {
 
   /* -------------------- cadastros -------------------- */
 
-  const units = [{ id: 1, name: "Viamão", city: "Viamão", active: true }];
+  const units = [{ id: 1, name: BRAND.city, city: BRAND.city, active: true }];
 
   const locations = [
     { id: 1, name: "Ginásio Municipal", address: "Rua das Acácias, 120, Centro", unit_id: 1, active: true },
@@ -483,7 +484,7 @@ export function buildSeed() {
       school: pick(["Escola Estadual Centro", "Colégio Bela Vista", "Escola Municipal Parque Alegre"]),
       school_type: pick(["Pública", "Privada"]),
       field_position: pick(["Atacante", "Meio-campo", "Zagueiro", "Goleiro", "Lateral"]),
-      club_team: "Internacional",
+      club_team: BRAND_KEY === "inter" ? "Internacional" : "Brasil",
       favorite_player: null,
       idol: null,
       how_found: pick(["Instagram", "Indicação de amigo", "Passou em frente"]),
@@ -513,7 +514,7 @@ export function buildSeed() {
       address: null,
       complement: null,
       neighborhood: pick(NEIGHBORHOODS),
-      city: "Viamão",
+      city: BRAND.city,
       state: "RS",
       created_at: stamp(startDays),
       updated_at: stamp(startDays),
@@ -591,7 +592,7 @@ export function buildSeed() {
   const events = [];
   const event_participants = [];
   const tacaId = crypto.randomUUID();
-  events.push({ id: tacaId, parent_id: null, name: "Taça Gaúcha", season, event_date: null, fee: 80, position: 0, created_at: stamp(-120) });
+  events.push({ id: tacaId, parent_id: null, name: BRAND.championship, season, event_date: null, fee: 80, position: 0, created_at: stamp(-120) });
 
   const rounds = [1, 2, 3, 4].map((round) => {
     const id = crypto.randomUUID();
@@ -704,12 +705,12 @@ export function buildSeed() {
     ...fields,
   });
   const staff_tasks = [
-    task("Conferir mensalidades no Sogni", { area: "Financeiro", due_date: iso(daysFromToday(-2)), assigned_to: "demo-secretaria", repeat: "monthly" }),
+    task(`Conferir mensalidades no ${BRAND.financeSystem}`, { area: "Financeiro", due_date: iso(daysFromToday(-2)), assigned_to: "demo-secretaria", repeat: "monthly" }),
     task("Mandar a lista da rodada para o grupo", { area: "Eventos", due_date: iso(daysFromToday(0)), assigned_to: "demo-user" }),
     task("Postar o treino da semana no Instagram", { area: "Comunicação", due_date: iso(daysFromToday(0)), assigned_to: "demo-secretaria", repeat: "weekly" }),
     task("Fazer o pedido de uniformes ao fornecedor", { area: "Uniforme", due_date: iso(daysFromToday(4)), assigned_to: "demo-user", notes: "Juntar os tamanhos pendentes das matrículas novas." }),
     task("Repor coletes e cones", { area: "Estrutura", due_date: iso(daysFromToday(9)) }),
-    task("Reservar a van para a Taça", { area: "Eventos", status: "doing", due_date: iso(daysFromToday(2)), assigned_to: "demo-user" }),
+    task(`Reservar a van para a ${BRAND_KEY === "inter" ? "Taça" : "Copa"}`, { area: "Eventos", status: "doing", due_date: iso(daysFromToday(2)), assigned_to: "demo-user" }),
     task("Renovar o seguro atleta", { area: "Secretaria", status: "doing", assigned_to: "demo-secretaria" }),
     task("Pagar o aluguel da quadra", { area: "Financeiro", status: "done", due_date: iso(daysFromToday(-3)), assigned_to: "demo-user", repeat: "monthly", next_created: true, done_at: stamp(-3, 15) }),
     task("Pagar o aluguel da quadra", { area: "Financeiro", due_date: iso(daysFromToday(27)), assigned_to: "demo-user", repeat: "monthly", created_at: stamp(-3, 15) }),
