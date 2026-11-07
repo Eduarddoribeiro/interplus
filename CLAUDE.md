@@ -9,7 +9,7 @@ O painel é usado pela equipe cadastrada em `staff_users`.
 
 - React 18, Vite 5, Tailwind 3, React Router 7, Framer Motion, Lucide.
 - Supabase (Postgres + Auth). O cliente fica em `src/lib/supabase.js`.
-- Deploy na Vercel (`interplus-dun.vercel.app`). Todo merge na `main` publica sozinho. `vercel.json` reescreve todas as rotas para `index.html` (SPA).
+- Deploy na Vercel (`interplus-dun.vercel.app`). Todo merge na `main` publica sozinho. `vercel.json` reescreve todas as rotas para `index.html` (SPA) e define os cabeçalhos de segurança; imagem, fonte ou API de outro domínio precisa ser liberada na CSP de lá, senão o navegador bloqueia.
 - Toda tela nova entra no `App.jsx` com `lazyPage(() => import(...))` (de `helpers/lazyPage.js`), nunca com `import` direto nem com o `lazy` puro. Assim ela não pesa no site público, e a página recarrega sozinha se a tela sumir depois de um deploy.
 - Repositório: `Eduarddoribeiro/interplus`.
 - Variáveis em `.env` (fora do git): `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`. **Nunca** colocar a chave `service_role` em `VITE_*` nem na Vercel.
@@ -217,3 +217,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-03: tabela de medidas do uniforme no formulário da família (tamanhos 4 a GG, lista com largura × altura e "Ver tabela de medidas") e lista de tamanhos na edição da matrícula, que perdeu "Forma de pagamento" e "Próxima ação". Fichas para conferir com contador amarelo em Alunos no menu e no botão "Fichas da família", e ponto no botão do menu no celular. Sem SQL.
 - 2026-11-05: demo sem a marca do Inter (`VITE_BRAND=exemplo`), para apresentar o CRM a outras escolas. A marca do Inter continua igual no site e na demo do LinkedIn (index.html da demo conferido igual ao de antes).
 - 2026-11-05: lista do professor (`/aula/:token`) passa a mostrar o nome completo da criança (antes "Miguel E."). Na demo já vale; em produção depende do SQL que muda o `child_label` de `coach_session_list` (o corpo da função não está no repositório).
+- 2026-11-07: cabeçalhos de segurança na Vercel (CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy), react-router 7.18.1 sem o alerta do `npm audit` e `.env.*` no `.gitignore`. Uma imagem ou serviço externo novo precisa entrar na CSP do `vercel.json`.

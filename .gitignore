@@ -19,3 +19,6 @@ dist-ssr/
 # sistema
 .DS_Store
 Thumbs.db
+# outros arquivos de ambiente (o .env.example pode ir para o git)
+.env.*
+!.env.example
