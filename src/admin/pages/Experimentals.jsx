@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
-import { Button, Panel, Tabs } from "../ui";
+import { Button, Panel, Tabs, inputClass } from "../ui";
 import { toast } from "../components/common/Toaster";
 import { isAwaitingResult } from "../../helpers/experimentalRules";
 import { CONFIRM_DAYS } from "../../helpers/dashboardSummary";
@@ -900,7 +900,8 @@ export default function Experimentals() {
     <div className="space-y-8">
       <SectionTitle
         title="Experimentais"
-        summary={`${stats.week} nesta semana, ${stats.pending} a confirmar.${
+        // "delas": o número é desta semana; a aba "A confirmar" olha as próximas 48 horas
+        summary={`${stats.week} nesta semana, ${stats.pending} delas a confirmar.${
           stats.attendanceBase ? ` Comparecimento da semana: ${stats.attendanceRate}%.` : ""
         }`}
         actions={
@@ -962,7 +963,8 @@ export default function Experimentals() {
 
       {/* FILTROS */}
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      {/* Situação em abas; local numa lista à parte, para as abas não ficarem cortadas */}
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <Tabs
           label="Filtrar experimentais"
           value={activeFilter}
@@ -980,14 +982,20 @@ export default function Experimentals() {
         />
 
         {locationOptions.length > 0 && (
-          <Tabs
-            label="Filtrar por local"
-            value={locationFilter}
-            onChange={setLocationFilter}
-            items={[{ id: "all", name: "Todos os locais" }, ...locationOptions].map(
-              (location) => ({ value: location.id, label: location.name }),
-            )}
-          />
+          <label className="flex shrink-0 items-center gap-2 text-sm text-muted">
+            Local
+            <select
+              value={locationFilter}
+              onChange={(event) => setLocationFilter(event.target.value)}
+              className={`${inputClass} w-auto min-w-[12rem] py-2`}
+            >
+              {[{ id: "all", name: "Todos os locais" }, ...locationOptions].map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </select>
+          </label>
         )}
       </div>
 

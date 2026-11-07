@@ -89,17 +89,18 @@ const isReschedule =
           onClick={() => setOpen((current) => !current)}
           aria-expanded={open}
           aria-controls={detailsId}
-          className="grid min-w-0 flex-1 grid-cols-[3.25rem_1fr] items-center gap-x-3 text-left sm:grid-cols-[3.25rem_minmax(0,1fr)_4.5rem_11rem]"
+          className="grid min-w-0 flex-1 basis-full grid-cols-[3.25rem_1fr] items-center gap-x-3 text-left sm:basis-auto sm:grid-cols-[3.25rem_minmax(0,1fr)_4.5rem_11rem]"
         >
           <span className="font-semibold tabular-nums">
             {displayTime ? formatTime(displayTime) : "—"}
           </span>
 
+          {/* No celular o nome vem inteiro: duas crianças com o mesmo primeiro nome na mesma aula são comuns */}
           <span className="min-w-0">
-            <span className="block truncate font-medium">
+            <span className="block break-words font-medium sm:truncate">
               {contact.child_name || "Aluno não informado"}
             </span>
-            <span className="block truncate text-sm text-muted">
+            <span className="block break-words text-sm text-muted sm:truncate">
               {contact.responsible_name || "Responsável não informado"}
             </span>
           </span>
@@ -113,10 +114,12 @@ const isReschedule =
           </span>
         </button>
 
-        <div className="flex items-center gap-2">
+        {/* No celular as ações ficam numa linha própria, com botões largos */}
+        <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
           {isPending && (
             <Button
               size="sm"
+              className="flex-1 sm:flex-none"
               disabled={updating}
               onClick={() => onStatusChange(item.id, "confirmed")}
             >
@@ -129,6 +132,7 @@ const isReschedule =
             <>
               <Button
                 size="sm"
+                className="flex-1 sm:flex-none"
                 disabled={updating}
                 onClick={() => onStatusChange(item.id, "attended")}
               >
@@ -138,6 +142,7 @@ const isReschedule =
 
               <Button
                 size="sm"
+                className="flex-1 sm:flex-none"
                 disabled={updating}
                 onClick={() => onStatusChange(item.id, "no_show")}
               >
@@ -239,7 +244,7 @@ const isReschedule =
             {isReschedule && (
               <Button size="sm" onClick={onReschedule}>
                 <CalendarPlus size={16} aria-hidden="true" />
-                Remarcar
+                Reagendar
               </Button>
             )}
 
