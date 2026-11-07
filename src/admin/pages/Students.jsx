@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import { ChevronRight, ClipboardCheck, FileUp, MessageCircle, Plus, Search, Shirt } from "lucide-react";
+import { ChevronLeft, ChevronRight, ClipboardCheck, FileUp, MessageCircle, Plus, Search, Shirt } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
 import { Button, Count, Dialog, DialogActions, Panel, Tabs, inputClass, urgencyRail } from "../ui";
@@ -15,7 +15,7 @@ import {
   studentTaskSummary,
 } from "../../services/students";
 import { getActiveCategories } from "../../services/categories";
-import { STUDENT_TASK_LABEL } from "../../constants/studentTasks";
+import { missingTasksText } from "../../constants/studentTasks";
 import { createWhatsAppUrl, getTodayISO } from "../../helpers/contactPresentation";
 import { getAge } from "../../helpers/dateHelpers";
 import { errorMessage } from "../../helpers/errorMessage";
@@ -25,6 +25,9 @@ const TABS = [
   { value: "ativos", label: "Ativos" },
   { value: "sairam", label: "Saíram" },
 ];
+
+// Mesmo tamanho de página de Contatos
+const ITEMS_PER_PAGE = 20;
 
 const fieldClass =
   "h-10 rounded-lg border border-line bg-white px-3 text-sm outline-none placeholder:text-neutral-500 focus:border-ink";
@@ -52,14 +55,27 @@ export default function Students() {
   );
   const [search, setSearch] = useState(searchParams.get("busca") ?? "");
   const [category, setCategory] = useState(searchParams.get("categoria") ?? "all");
+  const [page, setPage] = useState(() => Math.max(Number(searchParams.get("pagina")) || 1, 1));
+  const listTopRef = useRef(null);
+  const firstFilterRun = useRef(true);
+
+  // Mudou aba, busca ou categoria: volta para a primeira página
+  useEffect(() => {
+    if (firstFilterRun.current) {
+      firstFilterRun.current = false;
+      return;
+    }
+    setPage(1);
+  }, [tab, search, category]);
 
   useEffect(() => {
     const params = {};
     if (tab !== "ativos") params.aba = tab;
     if (search) params.busca = search;
     if (category !== "all") params.categoria = category;
+    if (page > 1) params.pagina = String(page);
     setSearchParams(params, { replace: true });
-  }, [tab, search, category, setSearchParams]);
+  }, [tab, search, category, page, setSearchParams]);
 
   useEffect(() => {
     loadStudents();
@@ -148,6 +164,19 @@ export default function Students() {
       );
   }, [rows, tab, category, search]);
 
+  const totalPages = Math.max(Math.ceil(filtered.length / ITEMS_PER_PAGE), 1);
+  useEffect(() => {
+    if (!loading && page > totalPages) setPage(totalPages);
+  }, [loading, page, totalPages]);
+  const pageItems = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  // Troca de página e leva a tela para o começo da lista
+  function goToPage(next) {
+    setPage(next);
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    listTopRef.current?.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+  }
+
   return (
     <div className="space-y-5">
       <SectionTitle
@@ -155,9 +184,11 @@ export default function Students() {
         summary={`${counts.ativos} ativos, ${counts.atrasadas} com pendência atrasada.`}
         actions={
           <>
-            <Button to="/admin/students/fichas">
+            {/* No celular os nomes encurtam para as três caberem numa linha */}
+            <Button to="/admin/students/fichas" size="sm" className="sm:h-10 sm:px-4">
               <ClipboardCheck size={18} aria-hidden="true" />
-              Fichas da família
+              <span className="sm:hidden">Fichas</span>
+              <span className="hidden sm:inline">Fichas da família</span>
               {formsToReview > 0 && (
                 <>
                   <Count value={formsToReview} urgency="attention" />
@@ -165,13 +196,15 @@ export default function Students() {
                 </>
               )}
             </Button>
-            <Button to="/admin/students/camisas">
+            <Button to="/admin/students/camisas" size="sm" className="sm:h-10 sm:px-4">
               <Shirt size={18} aria-hidden="true" />
-              Números de camisa
+              <span className="sm:hidden">Camisas</span>
+              <span className="hidden sm:inline">Números de camisa</span>
             </Button>
-            <Button to="/admin/students/import">
+            <Button to="/admin/students/import" size="sm" className="sm:h-10 sm:px-4">
               <FileUp size={18} aria-hidden="true" />
-              Importar planilha
+              <span className="sm:hidden">Importar</span>
+              <span className="hidden sm:inline">Importar planilha</span>
             </Button>
             <Button variant="primary" onClick={() => setCreating(true)}>
               <Plus size={18} aria-hidden="true" />
@@ -249,11 +282,37 @@ export default function Students() {
           )}
         </Panel>
       ) : (
-        <Panel as="ul" className="overflow-hidden">
-          {filtered.map((row) => (
-            <StudentRow key={row.student.id} row={row} />
-          ))}
-        </Panel>
+        <>
+          <div ref={listTopRef} className="flex scroll-mt-4 items-center justify-between gap-3 text-sm text-muted">
+            <span className="tabular-nums">
+              {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, filtered.length)} de {filtered.length}
+            </span>
+          </div>
+
+          <Panel as="ul" className="overflow-hidden">
+            {pageItems.map((row) => (
+              <StudentRow key={row.student.id} row={row} emphasizeLate={tab === "atrasadas"} />
+            ))}
+          </Panel>
+
+          {totalPages > 1 && (
+            <nav aria-label="Páginas" className="flex items-center justify-between">
+              <Button disabled={page === 1} onClick={() => goToPage(page - 1)}>
+                <ChevronLeft size={16} aria-hidden="true" />
+                Anterior
+              </Button>
+
+              <span className="text-sm text-muted">
+                Página {page} de {totalPages}
+              </span>
+
+              <Button disabled={page === totalPages} onClick={() => goToPage(page + 1)}>
+                Próxima
+                <ChevronRight size={16} aria-hidden="true" />
+              </Button>
+            </nav>
+          )}
+        </>
       )}
 
       <NewStudentDialog open={creating} onClose={() => setCreating(false)} />
@@ -261,25 +320,24 @@ export default function Students() {
   );
 }
 
+// O que falta, não o nome do passo: "Falta contrato e uniforme"
 function pendingText({ open, overdue }) {
-  if (overdue.length) {
-    const names = overdue.map((task) => STUDENT_TASK_LABEL[task.kind]).join(", ");
-    return `${overdue.length} atrasada${overdue.length === 1 ? "" : "s"}: ${names}`;
-  }
-
-  if (open.length) return `${open.length} em aberto, no prazo`;
-
+  if (overdue.length) return `Atrasado: falta ${missingTasksText(overdue)}`;
+  if (open.length) return `Falta ${missingTasksText(open)}, no prazo`;
   return "Matrícula em dia";
 }
 
-function StudentRow({ row }) {
+// Vermelho só na aba Atrasadas, onde a lista é o que fazer hoje;
+// em Ativos o atraso aparece em texto, sem faixa
+function StudentRow({ row, emphasizeLate }) {
   const { student, guardian, categoryName, overdue } = row;
   const age = getAge(student.birth_date);
   const whatsappUrl = guardian?.phone ? createWhatsAppUrl(guardian.phone) : null;
   const left = student.status === "left";
+  const late = !left && overdue.length > 0;
 
   return (
-    <li className={`flex items-center gap-3 border-t border-line first:border-t-0 ${urgencyRail(!left && overdue.length ? "alert" : null)}`}>
+    <li className={`flex items-center gap-3 border-t border-line first:border-t-0 ${urgencyRail(late && emphasizeLate ? "alert" : null)}`}>
       <Link
         to={`/admin/students/${student.id}`}
         className="grid min-w-0 flex-1 gap-x-4 gap-y-0.5 px-4 py-3 hover:bg-canvas lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.6fr)]"
@@ -302,7 +360,7 @@ function StudentRow({ row }) {
         </span>
 
         <span
-          className={`text-sm lg:self-center ${!left && overdue.length ? "font-medium text-alert-text" : "text-muted"}`}
+          className={`text-sm lg:self-center ${late ? (emphasizeLate ? "font-medium text-alert-text" : "text-ink") : "text-muted"}`}
         >
           {left ? "Saiu" : pendingText(row)}
         </span>
