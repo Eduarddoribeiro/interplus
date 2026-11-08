@@ -16,7 +16,7 @@ import {
 
 import { supabase } from "../lib/supabase";
 import { SCHOOL } from "../constants/school";
-import { FAQ, faqJsonLd } from "../constants/faq";
+import { FAQ } from "../constants/faq";
 import { birthYearsOf, currentYear } from "../helpers/categoryAge";
 import { mapsUrl } from "../utils/calendar";
 
@@ -31,7 +31,9 @@ import { mapsUrl } from "../utils/calendar";
 
 const CTA_TO = "/experimental";
 
-// Modalidade de cada local (usado só para o texto do card)
+// Modalidade de cada local (usado só para o texto do card).
+// A resposta "O que levar" do FAQ (constants/faq.js) repete os
+// locais e o calçado: mudou aqui, mude lá.
 const LOCATION_DETAILS = {
   "Ginásio do Krahe": {
     modality: "Futsal",
@@ -447,13 +449,6 @@ export default function Landing() {
         <section id="duvidas" className="scroll-mt-20 border-t border-neutral-100 py-20">
           <div className="mx-auto max-w-3xl px-4 sm:px-6">
             <SectionHeading center eyebrow="Dúvidas" title="Perguntas frequentes" />
-
-            {/* Dados para o Google (não executa: a CSP não bloqueia) */}
-            <script
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{ __html: faqJsonLd() }}
-            />
-
             <div className="mt-10 divide-y divide-neutral-200 border-y border-neutral-200">
               {FAQ.map((item) => (
                 <details key={item.q} className="group py-5">

@@ -7,23 +7,27 @@ import { BRAND } from "./brand";
  *
  * Só fatos confirmados pela escola: sem preço, sem nome de
  * professor, sem número inventado. Tom de professor conversando
- * com a família, nunca resposta de uma palavra.
+ * com a família, nunca resposta de uma palavra. Títulos falam da
+ * "criança", não só do "filho": meninas também treinam.
+ *
+ * Os locais e o calçado da resposta "O que levar" repetem o
+ * LOCATION_DETAILS do Landing.jsx: mudou um, mude o outro.
  */
 export const FAQ = [
   {
-    q: "Com que idade meu filho pode começar?",
+    q: "Com que idade a criança pode começar?",
     a: "As turmas começam no Sub-05. Quem define a turma é o ano de nascimento, então a criança treina com quem tem a mesma idade e está na mesma fase. No campo “Qual é a turma do meu filho?”, aqui em cima, você escolhe o ano e já vê a turma, o local e os horários.",
   },
   {
-    q: "Ele precisa já saber jogar?",
+    q: "A criança precisa já saber jogar?",
     a: "Não precisa. Tem criança que chega sem nunca ter jogado e criança que já joga no time do colégio, e as duas têm lugar aqui. O professor acompanha cada uma no seu ritmo. No começo, o que importa é se divertir, ganhar confiança e fazer amigos; a evolução vem com o tempo.",
   },
   {
     q: "A aula experimental é gratuita?",
-    a: "É, sim, sem custo e sem compromisso. Você agenda aqui pelo site em uns 2 minutos, e a gente confirma pelo WhatsApp. No dia, seu filho treina 1 hora com a turma da idade dele, como se já fosse aluno. Depois, a gente conversa com calma e tira as suas dúvidas.",
+    a: "É, sim, sem custo e sem compromisso. Você agenda aqui pelo site em uns 2 minutos, e a gente confirma pelo WhatsApp. No dia, a criança treina 1 hora com a turma da idade dela, como se já fosse aluna da escola. Depois, a gente conversa com calma e tira as suas dúvidas.",
   },
   {
-    q: "O que ele precisa levar na aula experimental?",
+    q: "O que levar na aula experimental?",
     a: "Roupa confortável, uma garrafinha de água e o calçado certo para o local: tênis de futsal (ou tênis comum) no Ginásio do Krahe, que é quadra coberta, e chuteira society (ou tênis) na Arena Biguá, que é gramado sintético. Chegar uns 10 minutos antes ajuda a conhecer o professor e os colegas sem pressa.",
   },
   {
@@ -35,8 +39,8 @@ export const FAQ = [
     a: "Claro que podem, e são muito bem-vindas! Futebol é para meninas também. O treino é pensado para a idade e o ritmo de cada criança, e o agendamento da aula experimental é o mesmo para todo mundo.",
   },
   {
-    q: "Meu filho não torce para o Inter. Tem problema?",
-    a: "Nenhum! Colorado, gremista ou ainda sem time, aqui ele vai aprender a jogar, fazer amigos e crescer com o esporte. O que a escola traz do Inter é a metodologia de treino, a Celeiro de Ases, e o cuidado com a formação da criança. O time do coração continua sendo escolha dele.",
+    q: "Meu filho ou minha filha não torce para o Inter. Tem problema?",
+    a: "Nenhum! Colorado, gremista ou ainda sem time, aqui a criança vai aprender a jogar, fazer amigos e crescer com o esporte. O que a escola traz do Inter é a metodologia de treino, a Celeiro de Ases, e o cuidado com a formação de cada aluno. O time do coração continua sendo escolha de cada um.",
   },
   {
     q: "Quantas vezes por semana são os treinos?",
@@ -55,21 +59,3 @@ export const FAQ = [
     a: "Os valores da mensalidade, da matrícula e do uniforme a gente passa pelo WhatsApp ou pessoalmente, depois da aula experimental. Assim dá para explicar tudo com calma, ver a turma e o horário que fazem sentido para vocês e responder o que você quiser saber.",
   },
 ];
-
-/*
- * Dados estruturados para o Google mostrar as perguntas na busca.
- * O "<" é escapado para o JSON não fechar a tag <script>.
- */
-export function faqJsonLd(items = FAQ) {
-  const data = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: items.map((item) => ({
-      "@type": "Question",
-      name: item.q,
-      acceptedAnswer: { "@type": "Answer", text: item.a },
-    })),
-  };
-
-  return JSON.stringify(data).replace(/</g, "\\u003c");
-}
