@@ -9,7 +9,7 @@ O painel é usado pela equipe cadastrada em `staff_users`.
 
 - React 18, Vite 5, Tailwind 3, React Router 7, Framer Motion, Lucide.
 - Supabase (Postgres + Auth). O cliente fica em `src/lib/supabase.js`.
-- Deploy na Vercel (`interplus-dun.vercel.app`). Todo merge na `main` publica sozinho. `vercel.json` reescreve todas as rotas para `index.html` (SPA) e define os cabeçalhos de segurança; imagem, fonte ou API de outro domínio precisa ser liberada na CSP de lá, senão o navegador bloqueia.
+- Deploy na Vercel (`interplus-dun.vercel.app`). Todo merge na `main` publica sozinho. Antes disso, a CI do GitHub (`.github/workflows/ci.yml`) roda lint, testes e build em todo PR; só mesclar com a CI verde. `vercel.json` reescreve todas as rotas para `index.html` (SPA) e define os cabeçalhos de segurança; imagem, fonte ou API de outro domínio precisa ser liberada na CSP de lá, senão o navegador bloqueia.
 - Toda tela nova entra no `App.jsx` com `lazyPage(() => import(...))` (de `helpers/lazyPage.js`), nunca com `import` direto nem com o `lazy` puro. Assim ela não pesa no site público, e a página recarrega sozinha se a tela sumir depois de um deploy.
 - Repositório: `Eduarddoribeiro/interplus`.
 - Variáveis em `.env` (fora do git): `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`. **Nunca** colocar a chave `service_role` em `VITE_*` nem na Vercel.
@@ -19,7 +19,8 @@ O painel é usado pela equipe cadastrada em `staff_users`.
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm run build    # verificação obrigatória antes de commitar (não há ESLint configurado)
+npm run build    # verificação obrigatória antes de commitar
+npm run lint     # ESLint mínimo (nome indefinido, import faltando, hooks); erro quebra a CI
 npm test         # testes (Vitest), ex.: leitura da planilha de matrículas
 VITE_DEMO=1 npx vite --port 5174   # demonstração com dados fictícios, sem Supabase
 ```
@@ -155,7 +156,10 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Em telas de toque, todo campo (`input`, `select`, `textarea`) com `text-sm` ou `text-xs` sobe para 16px por uma regra em `src/index.css`; abaixo disso o iPhone dá zoom ao tocar. Não é preciso tratar campo por campo; no computador continua 14px.
 - Urgência é indicada por uma faixa lateral de 3px (`urgencyRail`), em vermelho ou amarelo, **só onde há algo a fazer hoje** (atrasado, a confirmar, possível duplicado). Estado que não pede ação ("parado", tempo na lista de interesse) vai em texto cinza, sem faixa.
 - Menu lateral recolhível no computador (botão ao lado do logo): fica só com os ícones (64px), o contador vira um ponto colorido no ícone e o nome aparece ao passar o mouse. A escolha fica no `localStorage` (`admin-sidebar-collapsed`). No celular a gaveta abre sempre inteira.
-- O menu só mostra contadores vermelhos ou amarelos. Na Visão geral, o número grande também é só para pendências; os números informativos (lista de interesse com vaga, triagem) ficam numa linha discreta embaixo.
+- O menu só mostra contadores vermelhos ou amarelos. Na Visão geral, o número grande é só para o que a captação faz hoje (presenças sem baixa, retornos, aulas para confirmar, resultado da aula). Matrícula, fichas e tarefas ficam na seção "Escola", abaixo da agenda, em lista compacta. Os números informativos (lista de interesse com vaga, triagem) ficam numa linha discreta.
+- Em Alunos, faixa e texto vermelhos só na aba Atrasadas; em Ativos o atraso aparece em texto, sem faixa. A pendência diz o que falta ("Atrasado: falta contrato e uniforme", de `missingTasksText`), não o nome do passo. Alunos tem páginas de 20, como Contatos.
+- No celular, nome de criança nunca é cortado (`break-words`, `sm:truncate`): duas crianças com o mesmo primeiro nome na mesma aula são comuns.
+- Teko só no título da página (`h1`); títulos de painel e de seção em Inter `text-lg font-semibold`.
 - Alunos no menu pode ter dois contadores: vermelho (matrículas atrasadas) e amarelo (fichas da família para conferir). O botão "Fichas da família" em Alunos repete o número. No celular, o botão do menu ganha um ponto (vermelho ou amarelo) quando algum item tem contador.
 - Queda em relação ao mês anterior aparece em cinza, não em vermelho.
 - Títulos em Teko, em formato de frase. Números com `tabular-nums`.
@@ -217,4 +221,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-03: tabela de medidas do uniforme no formulário da família (tamanhos 4 a GG, lista com largura × altura e "Ver tabela de medidas") e lista de tamanhos na edição da matrícula, que perdeu "Forma de pagamento" e "Próxima ação". Fichas para conferir com contador amarelo em Alunos no menu e no botão "Fichas da família", e ponto no botão do menu no celular. Sem SQL.
 - 2026-11-05: demo sem a marca do Inter (`VITE_BRAND=exemplo`), para apresentar o CRM a outras escolas. A marca do Inter continua igual no site e na demo do LinkedIn (index.html da demo conferido igual ao de antes).
 - 2026-11-05: lista do professor (`/aula/:token`) passa a mostrar o nome completo da criança (antes "Miguel E."). Na demo já vale; em produção depende do SQL que muda o `child_label` de `coach_session_list` (o corpo da função não está no repositório).
+- 2026-11-07: `Experimentals.jsx` dividido (de 3.381 para cerca de 1.180 linhas): cartão, ações, janelas e campos foram para `admin/components/experimentals/`, e datas e texto da lista do professor para `helpers/experimentalDates.js` e `helpers/coachListText.js`. Só mudança de lugar, sem mudar o comportamento.
+- 2026-11-07: CI no GitHub (lint, testes e build em todo PR e na `main`) e ESLint mínimo no projeto (`npm run lint`).
+- 2026-11-07: terceira crítica Impeccable do painel inteiro: 27/40 (`.impeccable/critique/`). Correções: nomes inteiros no celular (Experimentais e agenda, com as ações numa linha própria), Visão geral com só a captação no topo e a seção "Escola" embaixo, Alunos com vermelho só em Atrasadas, texto "falta ..." e páginas de 20, evento no celular em cartões com filtros recolhidos, local de Experimentais numa lista, "Reagendar" no botão e na janela, caixas de tentativa anterior neutras, títulos dos painéis da ficha em Inter, métrica repetida dos Relatórios renomeada e texto do login atualizado.
 - 2026-11-07: cabeçalhos de segurança na Vercel (CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy), react-router 7.18.1 sem o alerta do `npm audit` e `.env.*` no `.gitignore`. Uma imagem ou serviço externo novo precisa entrar na CSP do `vercel.json`.

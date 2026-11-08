@@ -17,7 +17,7 @@ const INTER = {
   // Logo quadrado do formulário de experimental
   publicLogo: "/logo-vermelho.png",
   badge: "Escola Oficial do Inter",
-  tagline: "Contatos, aulas experimentais e retornos da Escola Oficial do Inter em Viamão/RS.",
+  tagline: "Contatos, experimentais, alunos e eventos da Escola Oficial do Inter em Viamão/RS.",
   city: "Viamão",
   whatsapp: "5551996476999",
   // Sistema oficial de cadastro e mensalidade, fora do CRM
@@ -34,7 +34,7 @@ const EXEMPLO = {
   logoWhite: "/exemplo/logo-branco.svg",
   publicLogo: "/exemplo/logo.svg",
   badge: "Escola de futebol infantil",
-  tagline: "Contatos, aulas experimentais, retornos e matrículas da escola, num painel só.",
+  tagline: "Contatos, experimentais, alunos e eventos da escola, num painel só.",
   city: "Cidade Exemplo",
   whatsapp: "",
   financeSystem: "sistema financeiro",

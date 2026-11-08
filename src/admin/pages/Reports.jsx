@@ -431,7 +431,7 @@ export default function Reports() {
 
         <SmallMetric
           icon={Clock3}
-          label="Em acompanhamento"
+          label="Retornos e lista de interesse"
           value={
             report.followUps +
             report.waitingList
