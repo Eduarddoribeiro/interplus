@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { resetHealthAccess } from "./students";
 
 export async function signIn(email, password) {
   const { data, error } =

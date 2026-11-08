@@ -869,6 +869,7 @@ const DEMO_STAFF = [
 
 const RPC = {
   staff_members: () => DEMO_STAFF,
+  my_staff_access: () => [{ can_view_health: true }],
   create_student_enrollment: createStudentEnrollment,
   public_enrollment_form: publicEnrollmentForm,
   public_enrollment_submit: publicEnrollmentSubmit,

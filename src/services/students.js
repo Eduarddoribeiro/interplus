@@ -172,6 +172,33 @@ export async function setTaskStatus(taskId, status) {
  * SAÚDE (só ao abrir o bloco)
  * =======================================================*/
 
+/**
+ * A pessoa logada pode ver a saúde? Quem decide de verdade é o banco
+ * (RLS de student_health); isto só esconde o botão de quem não pode.
+ * Se a função ainda não existir no banco, vale o comportamento antigo
+ * (mostrar o botão), e o banco continua decidindo.
+ */
+let healthAccess = null;
+
+export async function canViewHealth() {
+  if (healthAccess === null) {
+    healthAccess = supabase
+      .rpc("my_staff_access")
+      .then(({ data, error }) => {
+        if (error) return true;
+        const row = Array.isArray(data) ? data[0] : data;
+        return Boolean(row?.can_view_health);
+      })
+      .catch(() => true);
+  }
+
+  return healthAccess;
+}
+
+export function resetHealthAccess() {
+  healthAccess = null;
+}
+
 export async function getStudentHealth(studentId) {
   const { data, error } = await supabase
     .from("student_health")

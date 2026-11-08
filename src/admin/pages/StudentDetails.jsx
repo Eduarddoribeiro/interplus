@@ -10,6 +10,7 @@ import EnrollmentFormPanel from "../components/students/EnrollmentFormPanel";
 import {
   addGuardian,
   currentEnrollment,
+  canViewHealth,
   getStudent,
   getStudentHealth,
   guardiansOf,
@@ -687,11 +688,23 @@ function HealthPanel({ studentId }) {
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
+  // null enquanto confere; false = a pessoa não foi liberada pela coordenação
+  const [allowed, setAllowed] = useState(null);
 
   useEffect(() => {
     setVisible(false);
     setHealth(null);
   }, [studentId]);
+
+  useEffect(() => {
+    let active = true;
+    canViewHealth().then((value) => {
+      if (active) setAllowed(value);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function show() {
     try {
@@ -723,8 +736,8 @@ function HealthPanel({ studentId }) {
                 Esconder
               </Button>
             </div>
-          ) : (
-            <Button size="sm" onClick={show} disabled={loading}>
+          ) : allowed === false ? null : (
+            <Button size="sm" onClick={show} disabled={loading || allowed === null}>
               <Eye size={15} aria-hidden="true" />
               {loading ? "Abrindo…" : "Mostrar"}
             </Button>
@@ -737,7 +750,9 @@ function HealthPanel({ studentId }) {
       ) : (
         <p className="flex items-start gap-2 px-4 py-3 text-sm text-muted">
           <Lock size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
-          Dado sensível. Abra só quando precisar, como num atendimento ou numa viagem.
+          {allowed === false
+            ? "Só quem a coordenação liberou vê os dados de saúde."
+            : "Dado sensível. Abra só quando precisar, como num atendimento ou numa viagem."}
         </p>
       )}
 

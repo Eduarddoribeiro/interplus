@@ -85,6 +85,8 @@ src/demo/                # modo demonstração: cliente falso do Supabase + dado
 
 Tabelas principais: `students`, `guardians`, `student_guardians`, `enrollments`, `enrollment_tasks`, `student_health`, `events`, `event_participants` (pós-matrícula, ver abaixo), `contacts`, `experimental_sessions`, `training_groups`, `training_group_schedules`, `training_group_categories`, `training_group_schedule_coaches`, `categories`, `locations`, `units`, `modalities`, `coaches`, `coach_links`, `staff_users`, `staff_tasks` (tarefas da equipe, ver abaixo).
 
+RPCs da equipe (`SECURITY DEFINER`): `staff_members`, `my_staff_access`, `can_view_health`.
+
 RPCs públicas (`SECURITY DEFINER`): `public_trial_options`, `public_category_locations`, `public_register`, `coach_session_list`, `coach_mark_attendance`, `public_enrollment_form`, `public_enrollment_submit`.
 
 RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálogo ativo e cadastra pela RPC. O anon não tem acesso a contatos nem a sessões.
@@ -105,7 +107,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Pendências e prazos (dias depois do início): `constants/studentTasks.js`, iguais aos da função no banco. Mudar um exige mudar o outro.
 - Responsável é tabela própria, ligada ao aluno por `student_guardians` (irmãos dividem o responsável; o parentesco fica na ligação).
 - Uma matrícula por aluno e temporada (`enrollments`); rematrícula = linha nova.
-- Saúde em `student_health`, separada para, quando houver outros perfis, liberar só para a coordenação. Na ficha só carrega ao clicar em "Mostrar".
+- Saúde em `student_health`. Na ficha só carrega ao clicar em "Mostrar". Ler, editar e apagar só para quem tem `staff_users.can_view_health` (RLS com `can_view_health()`); gravar continua para toda a equipe, porque a matrícula e a importação gravam a saúde junto. O painel pergunta a `my_staff_access()` e, para quem não foi liberado, troca o botão por "Só quem a coordenação liberou vê os dados de saúde." Se a função não existir no banco, o botão aparece e o RLS decide. Liberar alguém: `update staff_users set can_view_health = true` (SQL `20261107120000_saude_coordenacao.sql`).
 - Eventos: rodada = evento filho (`parent_id`) do campeonato. A situação de cada aluno (`event_participants.status`): interessado, confirmado, pagamento pendente, pago, isento, não participou, devolver.
 - Tela do evento: abre só na rodada atual (a última com alguém marcado), com "Todas as rodadas" para o histórico. Busca por nome, filtros de categoria e de situação ("Vão jogar" = confirmado, pagamento pendente, pago ou isento), ordem por categoria, nome ou situação. "Copiar lista da Rodada N" copia quem vai jogar, por categoria, para colar no WhatsApp. Quem saiu da escola fica escondido (botão "Mostrar quem saiu da escola", `?saiu=1`) e não conta em "vão jogar", na lista copiada, no total de alunos nem em "para cobrar ou devolver" (também na lista de Eventos).
 - Dono de cada dado: o Sogni é a base oficial de cadastro e mensalidade. O CRM guarda o que o Sogni não controla: contrato, taxas, rodadas, uniforme, comunidade. O CPF e os documentos ficam nos dois, porque são passados ao Sogni.
@@ -188,7 +190,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 ## Pendências
 
 - Pós-matrícula: aplicar `20261030120000_pos_matricula.sql` no SQL Editor (verificação e reversão no scratchpad), publicar e importar a planilha.
-- Pós-matrícula, próximas fases: formulário de matrícula por link individual no WhatsApp (com aviso de finalidade e consentimento para a saúde), envio ao Sogni (depende das respostas do fornecedor) e perfis de acesso.
+- Pós-matrícula, próximas fases: envio ao Sogni (depende das respostas do fornecedor). Saúde só para a coordenação: aplicar `20261107120000_saude_coordenacao.sql` com os e-mails certos.
 - Migração do funil (ver acima).
 - Filtro de local nos Relatórios: poucos contatos têm `location_id`. O local precisa ser derivado da experimental (horário → turma → local).
 - Limpeza técnica:
@@ -225,3 +227,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-07: CI no GitHub (lint, testes e build em todo PR e na `main`) e ESLint mínimo no projeto (`npm run lint`).
 - 2026-11-07: terceira crítica Impeccable do painel inteiro: 27/40 (`.impeccable/critique/`). Correções: nomes inteiros no celular (Experimentais e agenda, com as ações numa linha própria), Visão geral com só a captação no topo e a seção "Escola" embaixo, Alunos com vermelho só em Atrasadas, texto "falta ..." e páginas de 20, evento no celular em cartões com filtros recolhidos, local de Experimentais numa lista, "Reagendar" no botão e na janela, caixas de tentativa anterior neutras, títulos dos painéis da ficha em Inter, métrica repetida dos Relatórios renomeada e texto do login atualizado.
 - 2026-11-07: cabeçalhos de segurança na Vercel (CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy), react-router 7.18.1 sem o alerta do `npm audit` e `.env.*` no `.gitignore`. Uma imagem ou serviço externo novo precisa entrar na CSP do `vercel.json`.
+- 2026-11-07: saúde só para quem a coordenação liberar (`staff_users.can_view_health`, RLS separado por leitura e gravação, `my_staff_access()` para o painel esconder o botão). Sem o SQL aplicado, nada muda.
