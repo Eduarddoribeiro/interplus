@@ -296,7 +296,8 @@ function BackToList() {
 function PanelHeader({ title, action }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-      <h2 className="font-display text-2xl font-semibold leading-none">{title}</h2>
+      {/* Teko fica só no título da página; títulos de painel em Inter, como no resto do painel */}
+      <h2 className="text-lg font-semibold">{title}</h2>
       {action}
     </div>
   );
