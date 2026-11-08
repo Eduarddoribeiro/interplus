@@ -53,7 +53,7 @@ export default function NoShowFollowUpModal({
 
       <form onSubmit={handleSubmit}>
         {isNoShow ? (
-  <div className="rounded-lg border border-alert/30 bg-alert-soft p-4">
+  <div className="rounded-lg border border-line bg-canvas p-4">
     <p className="text-sm font-medium text-muted">
       Tentativa anterior
     </p>
@@ -65,7 +65,7 @@ export default function NoShowFollowUpModal({
         : ""}
     </p>
 
-    <p className="mt-1 text-sm text-alert-text">
+    <p className="mt-1 text-sm text-muted">
       Não compareceu
     </p>
   </div>

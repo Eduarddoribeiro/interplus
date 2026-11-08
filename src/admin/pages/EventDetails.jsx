@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Copy, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, Pencil, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 
 import { Button, Dialog, DialogActions, Panel, inputClass } from "../ui";
 import { toast } from "../components/common/Toaster";
@@ -74,6 +74,8 @@ export default function EventDetails() {
     SORTS.some((item) => item.value === searchParams.get("ordem")) ? searchParams.get("ordem") : "categoria",
   );
   const [showLeft, setShowLeft] = useState(searchParams.get("saiu") === "1");
+  // No celular os filtros ficam recolhidos atrás de um botão
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     const params = {};
@@ -287,6 +289,7 @@ export default function EventDetails() {
 
         <div className="flex flex-wrap gap-2">
           <Button variant="quiet" onClick={() => setDialog("edit")}>
+            <Pencil size={16} aria-hidden="true" />
             Editar
           </Button>
           <Button onClick={addRound}>
@@ -303,7 +306,8 @@ export default function EventDetails() {
       {allRows.length > 0 && (
         <div className="space-y-3">
           <div className="flex flex-col gap-2 lg:flex-row">
-            <label className="relative lg:w-64">
+            <div className="flex gap-2">
+            <label className="relative flex-1 lg:w-64 lg:flex-none">
               <span className="sr-only">Buscar aluno</span>
               <Search size={16} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
@@ -315,7 +319,21 @@ export default function EventDetails() {
               />
             </label>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex">
+              <Button
+                className="shrink-0 sm:hidden"
+                aria-expanded={filtersOpen}
+                aria-controls="filtros-evento"
+                onClick={() => setFiltersOpen((value) => !value)}
+              >
+                <SlidersHorizontal size={16} aria-hidden="true" />
+                Filtros
+              </Button>
+            </div>
+
+            <div
+              id="filtros-evento"
+              className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-2 sm:grid sm:grid-cols-4 lg:flex`}
+            >
               {rounds.length > 0 && (
                 <select
                   aria-label="Rodada"
@@ -395,7 +413,7 @@ export default function EventDetails() {
               )}
               <Button size="sm" onClick={copyList} disabled={playing.length === 0}>
                 <Copy size={15} aria-hidden="true" />
-                Copiar lista da {focusName}
+                Copiar lista da {focus.id === event.id ? "inscrição" : focusName}
               </Button>
             </div>
           </div>
@@ -424,7 +442,57 @@ export default function EventDetails() {
           </Button>
         </Panel>
       ) : (
-        <Panel className="overflow-x-auto">
+        <>
+        {/* Celular: um cartão por aluno, com a situação de cada coluna em linha própria */}
+        <Panel as="ul" className="overflow-hidden sm:hidden">
+          {rows.map(({ student, statuses, category }) => (
+            <li key={student.id} className="border-t border-line px-4 py-3 first:border-t-0">
+              <Link to={`/admin/students/${student.id}`} className="font-medium hover:underline">
+                {student.shirt_number && (
+                  <span className="mr-1.5 tabular-nums text-muted">
+                    <span className="sr-only">camisa </span>
+                    {student.shirt_number}
+                  </span>
+                )}
+                {student.name}
+              </Link>
+              {(category || student.status === "left") && (
+                <span className="block text-sm text-muted">
+                  {[category, student.status === "left" ? "saiu da escola" : null].filter(Boolean).join(", ")}
+                </span>
+              )}
+
+              <div className="mt-2 space-y-2">
+                {columns.map((column) => {
+                  const status = statuses[column.id] ?? "";
+                  const columnName = column.id === event.id ? "Inscrição" : column.name;
+                  return (
+                    <label key={column.id} className="flex items-center gap-3 text-sm">
+                      <span className="w-24 shrink-0 text-muted">{columnName}</span>
+                      <select
+                        aria-label={`${student.name}, ${columnName.toLowerCase()}`}
+                        value={status}
+                        onChange={(changeEvent) => change(column.id, student.id, changeEvent.target.value, student.name)}
+                        className={`h-11 min-w-0 flex-1 rounded-lg border border-line bg-white px-2 ${
+                          status ? EVENT_STATUS_TONE[status] ?? "" : "text-neutral-400"
+                        }`}
+                      >
+                        <option value="">—</option>
+                        {EVENT_STATUS_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  );
+                })}
+              </div>
+            </li>
+          ))}
+        </Panel>
+
+        <Panel className="hidden overflow-x-auto sm:block">
           <table className="w-full min-w-max text-sm">
             <thead className="bg-canvas text-left text-muted">
               <tr>
@@ -443,7 +511,12 @@ export default function EventDetails() {
                 <tr key={student.id} className="border-t border-line">
                   <th scope="row" className="sticky left-0 bg-white px-4 py-2 text-left font-normal">
                     <Link to={`/admin/students/${student.id}`} className="font-medium hover:underline">
-                      {student.shirt_number && <span className="mr-1.5 tabular-nums text-muted">{student.shirt_number}</span>}
+                      {student.shirt_number && (
+                        <span className="mr-1.5 tabular-nums text-muted">
+                          <span className="sr-only">camisa </span>
+                          {student.shirt_number}
+                        </span>
+                      )}
                       {student.name}
                     </Link>
                     {(category || student.status === "left") && (
@@ -479,6 +552,7 @@ export default function EventDetails() {
             </tbody>
           </table>
         </Panel>
+        </>
       )}
 
       <p className="text-sm text-muted">

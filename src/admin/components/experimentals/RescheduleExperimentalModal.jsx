@@ -57,11 +57,16 @@ export default function RescheduleExperimentalModal({
       onClose={onClose}
       busy={saving}
       title="Reagendar experimental"
-      description={`${contact.child_name}. A ausência anterior continuará registrada no histórico.`}
+      description={
+        session.status === "no_show"
+          ? `${contact.child_name}. A falta continua registrada no histórico.`
+          : `${contact.child_name}. A aula marcada passa para a nova data.`
+      }
     >
 
       <form onSubmit={handleSubmit}>
-        <div className="rounded-lg border border-alert/30 bg-alert-soft p-4">
+        {/* Caixa neutra: é contexto, não erro */}
+        <div className="rounded-lg border border-line bg-canvas p-4">
           <p className="text-sm font-medium text-muted">
             Tentativa anterior
           </p>
@@ -77,7 +82,7 @@ export default function RescheduleExperimentalModal({
               : ""}
           </p>
 
-          <p className="mt-1 text-sm text-alert-text">
+          <p className="mt-1 text-sm text-muted">
             {session.status === "no_show"
               ? "Não compareceu"
               : "Será substituída pela nova data"}

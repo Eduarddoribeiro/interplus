@@ -24,6 +24,10 @@ const PENDING_COLUMNS = {
   9: "xl:grid-cols-3",
 };
 
+// Pendências da escola (matrícula e equipe): ficam numa lista compacta,
+// abaixo da agenda, para o topo mostrar só o que é da captação de hoje
+const SCHOOL_KEYS = ["studentsOverdue", "formsToReview", "formsExpired", "tasksOverdue", "tasksToday"];
+
 // Texto da linha informativa (depois do número)
 const INFO_TEXT = {
   waitingNow: "famílias da lista de interesse podem agendar agora",
@@ -284,8 +288,11 @@ export default function Dashboard() {
     },
   ].filter((item) => item.value > 0);
 
-  // Número grande só para o que pede ação; o resto vira uma linha discreta
-  const actionItems = pendingItems.filter((item) => item.urgency);
+  // Número grande só para o que a captação precisa fazer hoje; o que é da
+  // escola (matrícula, fichas, tarefas) vira uma lista compacta mais abaixo,
+  // e o informativo vira uma linha discreta
+  const actionItems = pendingItems.filter((item) => item.urgency && !SCHOOL_KEYS.includes(item.key));
+  const schoolItems = pendingItems.filter((item) => SCHOOL_KEYS.includes(item.key));
   const infoItems = pendingItems.filter((item) => !item.urgency);
 
   return (
@@ -296,7 +303,7 @@ export default function Dashboard() {
       {actionItems.length === 0 ? (
         <Panel className="flex items-center gap-3 px-5 py-4">
           <CheckCircle2 size={20} aria-hidden="true" className="text-ok" />
-          <p className="font-medium">Tudo em dia. Nenhuma pendência agora.</p>
+          <p className="font-medium">Captação em dia. Nada para confirmar, dar baixa ou retornar agora.</p>
         </Panel>
       ) : (
         <section aria-labelledby="pendencias">
@@ -393,9 +400,10 @@ export default function Dashboard() {
                               {formatTime(session.experimental_time || session.schedule?.start_time)}
                             </span>
 
+                            {/* Nome inteiro: no celular, cortar confunde crianças com o mesmo primeiro nome */}
                             <Link
                               to={`/admin/contacts/${session.contact_id}`}
-                              className="min-w-0 truncate font-medium hover:underline"
+                              className="min-w-0 break-words font-medium hover:underline sm:truncate"
                             >
                               {session.contact?.child_name || "Sem nome"}
                             </Link>
@@ -451,7 +459,7 @@ export default function Dashboard() {
                       <div className="min-w-0 flex-1">
                         <Link
                           to={`/admin/contacts/${contact.id}`}
-                          className="block truncate font-medium hover:underline"
+                          className="block break-words font-medium hover:underline sm:truncate"
                         >
                           {name}
                         </Link>
@@ -495,6 +503,41 @@ export default function Dashboard() {
           </Panel>
         </section>
       </div>
+
+      {/* ESCOLA: matrícula, fichas e tarefas, em lista compacta */}
+      {schoolItems.length > 0 && (
+        <section aria-labelledby="escola" className="space-y-3">
+          <h2 id="escola" className="text-lg font-semibold">
+            Escola
+          </h2>
+
+          <Panel as="ul" className="grid gap-px overflow-hidden bg-line sm:grid-cols-2 xl:grid-cols-3">
+            {schoolItems.map((item) => (
+              <li key={item.key} className="bg-white">
+                <Link
+                  to={item.to}
+                  className="group flex h-full items-center gap-3 px-4 py-3 transition-colors hover:bg-canvas"
+                >
+                  <span className={`w-8 shrink-0 text-right text-lg font-semibold tabular-nums ${urgencyText(item.urgency)}`}>
+                    {item.value}
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">{item.title}</span>
+                    <span className="block text-sm text-muted">{item.text}</span>
+                  </span>
+
+                  <ChevronRight
+                    size={16}
+                    aria-hidden="true"
+                    className="shrink-0 text-neutral-300 group-hover:text-ink"
+                  />
+                </Link>
+              </li>
+            ))}
+          </Panel>
+        </section>
+      )}
 
       {/* RESULTADO DO MÊS */}
       <MonthResult month={data.month} previous={data.previousMonth} />
@@ -546,7 +589,7 @@ function MonthResult({ month, previous }) {
                 <dd className="font-display text-4xl font-semibold leading-tight tabular-nums">
                   {month[step.key]}
                 </dd>
-                <dd>
+                <dd className="pr-4 leading-snug">
                   <Delta current={month[step.key]} previous={previous[step.key]} />
                 </dd>
               </div>

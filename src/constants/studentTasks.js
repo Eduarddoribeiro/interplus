@@ -9,14 +9,26 @@ import { BRAND } from "./brand";
  * 1ª mensalidade: ela é paga direto no Sogni. A função ainda cria
  * essa pendência, e o painel a ignora (só conta o que está aqui).
  */
+// missing = como a pendência aparece na lista de alunos ("Falta contrato e uniforme")
 export const STUDENT_TASKS = [
-  { kind: "sogni", label: `Cadastrado no ${BRAND.financeSystem}`, group: "Cadastro", days: 3 },
-  { kind: "community", label: "Entrou na comunidade", group: "Cadastro", days: 3 },
+  { kind: "sogni", label: `Cadastrado no ${BRAND.financeSystem}`, missing: `cadastro no ${BRAND.financeSystem}`, group: "Cadastro", days: 3 },
+  { kind: "community", label: "Entrou na comunidade", missing: "comunidade", group: "Cadastro", days: 3 },
   // O contrato vai por e-mail no momento da matrícula: só falta a assinatura
-  { kind: "contract_signed", label: "Contrato assinado", group: "Cadastro", days: 7 },
-  { kind: "enrollment_fee", label: "Taxa de matrícula paga", group: "Pagamentos", days: 7 },
-  { kind: "uniform", label: "Uniforme pago", group: "Pagamentos", days: 15 },
+  { kind: "contract_signed", label: "Contrato assinado", missing: "contrato", group: "Cadastro", days: 7 },
+  { kind: "enrollment_fee", label: "Taxa de matrícula paga", missing: "taxa de matrícula", group: "Pagamentos", days: 7 },
+  { kind: "uniform", label: "Uniforme pago", missing: "uniforme", group: "Pagamentos", days: 15 },
 ];
+
+export const STUDENT_TASK_MISSING = Object.fromEntries(
+  STUDENT_TASKS.map((task) => [task.kind, task.missing]),
+);
+
+// "contrato", "contrato e uniforme", "contrato, comunidade e uniforme"
+export function missingTasksText(tasks) {
+  const names = tasks.map((task) => STUDENT_TASK_MISSING[task.kind]).filter(Boolean);
+  if (names.length <= 1) return names.join("");
+  return `${names.slice(0, -1).join(", ")} e ${names.at(-1)}`;
+}
 
 export const STUDENT_TASK_LABEL = Object.fromEntries(
   STUDENT_TASKS.map((task) => [task.kind, task.label]),
