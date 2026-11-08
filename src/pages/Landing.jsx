@@ -16,6 +16,7 @@ import {
 
 import { supabase } from "../lib/supabase";
 import { SCHOOL } from "../constants/school";
+import { FAQ, faqJsonLd } from "../constants/faq";
 import { birthYearsOf, currentYear } from "../helpers/categoryAge";
 import { mapsUrl } from "../utils/calendar";
 
@@ -94,25 +95,6 @@ const TESTIMONIALS = [
   {
     quote: "[Depoimento sobre a experiência de jogar pelo Inter]",
     author: "[Nome], pai do [Nome], Sub-13",
-  },
-];
-
-const FAQ = [
-  {
-    q: "Com que idade a criança pode começar?",
-    a: "A partir do Sub-05. As turmas são definidas pelo ano de nascimento; use o campo “Qual é a turma do meu filho?” acima para descobrir.",
-  },
-  {
-    q: "Precisa já saber jogar?",
-    a: "Não. Cada turma recebe iniciantes e quem já joga; o professor adapta o treino ao nível de cada um.",
-  },
-  {
-    q: "O que levar na aula experimental?",
-    a: "Roupa confortável, garrafinha de água e tênis de futsal (Krahe) ou chuteira society (Biguá). Chegue uns 10 minutos antes.",
-  },
-  {
-    q: "E os valores e o uniforme?",
-    a: "Explicamos planos, uniforme e horários com calma depois da aula experimental, pessoalmente ou pelo WhatsApp.",
   },
 ];
 
@@ -465,6 +447,12 @@ export default function Landing() {
         <section id="duvidas" className="scroll-mt-20 border-t border-neutral-100 py-20">
           <div className="mx-auto max-w-3xl px-4 sm:px-6">
             <SectionHeading center eyebrow="Dúvidas" title="Perguntas frequentes" />
+
+            {/* Dados para o Google (não executa: a CSP não bloqueia) */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: faqJsonLd() }}
+            />
 
             <div className="mt-10 divide-y divide-neutral-200 border-y border-neutral-200">
               {FAQ.map((item) => (
