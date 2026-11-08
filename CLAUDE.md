@@ -9,7 +9,7 @@ O painel é usado pela equipe cadastrada em `staff_users`.
 
 - React 18, Vite 5, Tailwind 3, React Router 7, Framer Motion, Lucide.
 - Supabase (Postgres + Auth). O cliente fica em `src/lib/supabase.js`.
-- Deploy na Vercel (`interplus-dun.vercel.app`). Todo merge na `main` publica sozinho. `vercel.json` reescreve todas as rotas para `index.html` (SPA).
+- Deploy na Vercel (`interplus-dun.vercel.app`). Todo merge na `main` publica sozinho. Antes disso, a CI do GitHub (`.github/workflows/ci.yml`) roda lint, testes e build em todo PR; só mesclar com a CI verde. `vercel.json` reescreve todas as rotas para `index.html` (SPA).
 - Toda tela nova entra no `App.jsx` com `lazyPage(() => import(...))` (de `helpers/lazyPage.js`), nunca com `import` direto nem com o `lazy` puro. Assim ela não pesa no site público, e a página recarrega sozinha se a tela sumir depois de um deploy.
 - Repositório: `Eduarddoribeiro/interplus`.
 - Variáveis em `.env` (fora do git): `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`. **Nunca** colocar a chave `service_role` em `VITE_*` nem na Vercel.
@@ -19,7 +19,8 @@ O painel é usado pela equipe cadastrada em `staff_users`.
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm run build    # verificação obrigatória antes de commitar (não há ESLint configurado)
+npm run build    # verificação obrigatória antes de commitar
+npm run lint     # ESLint mínimo (nome indefinido, import faltando, hooks); erro quebra a CI
 npm test         # testes (Vitest), ex.: leitura da planilha de matrículas
 VITE_DEMO=1 npx vite --port 5174   # demonstração com dados fictícios, sem Supabase
 ```
@@ -221,4 +222,5 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-05: demo sem a marca do Inter (`VITE_BRAND=exemplo`), para apresentar o CRM a outras escolas. A marca do Inter continua igual no site e na demo do LinkedIn (index.html da demo conferido igual ao de antes).
 - 2026-11-05: lista do professor (`/aula/:token`) passa a mostrar o nome completo da criança (antes "Miguel E."). Na demo já vale; em produção depende do SQL que muda o `child_label` de `coach_session_list` (o corpo da função não está no repositório).
 - 2026-11-07: `Experimentals.jsx` dividido (de 3.381 para cerca de 1.180 linhas): cartão, ações, janelas e campos foram para `admin/components/experimentals/`, e datas e texto da lista do professor para `helpers/experimentalDates.js` e `helpers/coachListText.js`. Só mudança de lugar, sem mudar o comportamento.
+- 2026-11-07: CI no GitHub (lint, testes e build em todo PR e na `main`) e ESLint mínimo no projeto (`npm run lint`).
 - 2026-11-07: terceira crítica Impeccable do painel inteiro: 27/40 (`.impeccable/critique/`). Correções: nomes inteiros no celular (Experimentais e agenda, com as ações numa linha própria), Visão geral com só a captação no topo e a seção "Escola" embaixo, Alunos com vermelho só em Atrasadas, texto "falta ..." e páginas de 20, evento no celular em cartões com filtros recolhidos, local de Experimentais numa lista, "Reagendar" no botão e na janela, caixas de tentativa anterior neutras, títulos dos painéis da ficha em Inter, métrica repetida dos Relatórios renomeada e texto do login atualizado.
