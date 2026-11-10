@@ -36,6 +36,7 @@ import { WAITING_LIST_REASONS } from "../../constants/waitingListReasons";
 import { WEEKDAY_LABELS } from "../../constants/weekdays";
 import { supabase } from "../../lib/supabase";
 import TrialSlotPicker from "../components/experimentals/TrialSlotPicker";
+import ContactTimeline from "../components/contacts/ContactTimeline";
 import { Button, Dialog, Panel, buttonClass, inputClass } from "../ui";
 import { formatPhone } from "../../helpers/phoneHelpers";
 import { getSourceLabel } from "../../constants/school";
@@ -967,6 +968,8 @@ const [waitingForm, setWaitingForm] = useState({
               </dl>
             ) : null}
           </Panel>
+
+          <ContactTimeline contact={contact} sessions={sessions} />
 
           {/* HISTÓRICO DE EXPERIMENTAIS */}
 
