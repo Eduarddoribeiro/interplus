@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import SectionTitle from "../components/common/SectionTitle";
 import { Button, Panel, inputClass, urgencyRail } from "../ui";
@@ -19,8 +19,21 @@ export default function Journey() {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
+  // Busca e categoria ficam na URL: ao voltar de um contato, a tela reabre igual
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get("busca") ?? "";
+  const category = searchParams.get("categoria") ?? "all";
+
+  function setParam(key, value, empty) {
+    const next = new URLSearchParams(searchParams);
+    if (!value || value === empty) next.delete(key);
+    else next.set(key, value);
+    setSearchParams(next, { replace: true });
+  }
+
+  const setSearch = (value) => setParam("busca", value, "");
+  const setCategory = (value) => setParam("categoria", value, "all");
+  const backTo = `/admin/jornada${searchParams.toString() ? `?${searchParams}` : ""}`;
 
   async function load() {
     try {
@@ -124,7 +137,7 @@ export default function Journey() {
         <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
           <ol className="flex snap-x snap-mandatory gap-3 sm:snap-none">
             {columns.map((column) => (
-              <JourneyColumn key={column.key} column={column} loading={loading} />
+              <JourneyColumn key={column.key} column={column} loading={loading} backTo={backTo} />
             ))}
           </ol>
         </div>
@@ -133,7 +146,7 @@ export default function Journey() {
   );
 }
 
-function JourneyColumn({ column, loading }) {
+function JourneyColumn({ column, loading, backTo }) {
   const titleId = `jornada-${column.key}`;
 
   return (
@@ -157,7 +170,7 @@ function JourneyColumn({ column, loading }) {
         )}
 
         {column.items.map((item) => (
-          <JourneyCard key={item.contact.id} item={item} />
+          <JourneyCard key={item.contact.id} item={item} backTo={backTo} />
         ))}
       </ul>
 
@@ -173,7 +186,7 @@ function JourneyColumn({ column, loading }) {
   );
 }
 
-function JourneyCard({ item }) {
+function JourneyCard({ item, backTo }) {
   const { contact, waiting } = item;
   const days = getDaysSince(getLastActivity(contact));
 
@@ -181,6 +194,7 @@ function JourneyCard({ item }) {
     <li>
       <Link
         to={`/admin/contacts/${contact.id}`}
+        state={{ back: { to: backTo, label: "Voltar para a jornada" } }}
         className={`block rounded-lg border border-line bg-white px-3 py-2.5 transition-colors hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink ${urgencyRail(waiting ? "attention" : undefined)}`}
       >
         <span className="block truncate font-semibold text-ink">{contact.child_name || "Sem nome"}</span>
