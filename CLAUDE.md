@@ -193,7 +193,6 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Pós-matrícula: aplicar `20261030120000_pos_matricula.sql` no SQL Editor (verificação e reversão no scratchpad), publicar e importar a planilha.
 - Pós-matrícula, próximas fases: envio ao Sogni (depende das respostas do fornecedor). Saúde só para a coordenação: aplicar `20261107120000_saude_coordenacao.sql` com os e-mails certos.
 - Migração do funil (ver acima).
-- Filtro de local nos Relatórios: poucos contatos têm `location_id`. O local precisa ser derivado da experimental (horário → turma → local).
 - Limpeza técnica:
   - remover da Vercel as variáveis antigas da integração de WhatsApp;
   - SQL para remover os contatos de TESTE.
@@ -233,3 +232,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-10: Retornos ganham "Reagendar experimental" (ou "Agendar", se a criança nunca fez aula) no menu Registrar: a família volta para a agenda e sai de Retornos. Ao marcar "Faltou", abre "Qual o próximo passo?" (reagendar, programar retorno, encerrar ou decidir depois). A falta já remarcada não mostra mais a mensagem pronta "Remarcar (faltou)".
 - 2026-11-10: Jornada das famílias (`/admin/jornada`, "Jornada" no menu): quadro com Novo contato, Aula marcada, Fez a aula, Faltou, Em retorno, Lista de interesse, Matriculado e Encerrado (esses dois só dos últimos 30 dias), montado dos status atuais, sem mudar o banco. Faixa amarela só quando há algo a fazer (marcar ou confirmar a aula, resultado, falta sem decisão, retorno vencido). Não tem arrastar: o cartão abre o contato, onde ficam as ações.
 - 2026-11-10: linha do tempo na página do contato (`helpers/contactTimeline.js`): primeiro contato, experimentais marcadas, veio/faltou, entrada em Retornos e na lista de interesse, matrícula, encerramento e as linhas datadas das observações internas, com o próximo passo em cima. Montada do que já está salvo (não há tabela de eventos); o encerramento usa a última atualização do contato.
+- 2026-11-10: filtro de local dos Relatórios passa a usar o local da experimental mais recente (horário → turma → local) quando o contato não tem `location_id` (`helpers/reportLocation.js`). Sai das pendências.
