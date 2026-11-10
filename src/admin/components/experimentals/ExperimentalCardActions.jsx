@@ -11,15 +11,50 @@ import {
 } from "lucide-react";
 
 import { getLostReasonLabel } from "../../../constants/lostReasons";
-import { formatShortDate } from "../../../helpers/experimentalDates";
+import { formatShortDate, formatTime } from "../../../helpers/experimentalDates";
 
 export function NoShowActions({
   contact,
+  rescheduledTo,
   whatsappUrl,
   onReschedule,
   onScheduleFollowUp,
   onCloseOpportunity,
 }) {
+  // Já remarcada: o próximo passo é a aula nova, sem botões aqui
+  if (rescheduledTo) {
+    return (
+      <div className="w-full">
+        <div className="flex items-center gap-2 text-sm font-semibold text-red-600">
+          <UserX size={17} />
+          Ausência registrada.
+        </div>
+
+        <div className="mt-4 rounded-lg border border-line bg-canvas p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <CalendarClock size={20} className="mt-0.5 shrink-0 text-ink" />
+
+            <div>
+              <p className="font-semibold text-ink">
+                Remarcada para{" "}
+                <span className="tabular-nums">
+                  {formatShortDate(rescheduledTo.experimental_date)}
+                  {rescheduledTo.experimental_time
+                    ? ` às ${formatTime(rescheduledTo.experimental_time)}`
+                    : ""}
+                </span>
+              </p>
+
+              <p className="mt-1 text-sm text-muted">
+                Para mudar a data, use a aula nova.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (contact.status === "lost") {
     return (
       <div className="w-full">

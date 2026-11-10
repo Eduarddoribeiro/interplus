@@ -156,6 +156,24 @@ export default function Experimentals() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [experimentals]);
 
+  // Falta que já foi remarcada: aponta para a aula nova da mesma criança
+  const rescheduledTo = useMemo(() => {
+    const result = new Map();
+    const key = (item) => `${item.experimental_date}T${item.experimental_time || ""}${item.created_at || ""}`;
+
+    experimentals.forEach((item) => {
+      if (item.status !== "no_show" || !item.contact?.id) return;
+
+      const next = experimentals
+        .filter((other) => other.contact?.id === item.contact.id && key(other) > key(item))
+        .sort((a, b) => key(a).localeCompare(key(b)))[0];
+
+      if (next) result.set(item.id, next);
+    });
+
+    return result;
+  }, [experimentals]);
+
   const scopedExperimentals = useMemo(() => {
     if (locationFilter === "all") {
       return experimentals;
@@ -230,9 +248,13 @@ export default function Experimentals() {
       const data =
         await getExperimentals();
 
-      // Contatos arquivados ficam fora (mesma conta da Visão geral e do menu)
+      // Contatos arquivados ficam fora (mesma conta da Visão geral e do menu).
+      // Canceladas também: só existem por remarcação e ficam no histórico
+      // do contato; na agenda pareciam a mesma criança marcada duas vezes.
       setExperimentals(
-        (data || []).filter((item) => !item.contact?.archived_at),
+        (data || []).filter(
+          (item) => !item.contact?.archived_at && item.status !== "cancelled",
+        ),
       );
     } catch (err) {
       console.error(
@@ -1064,6 +1086,7 @@ export default function Experimentals() {
 
                         <ExperimentalCard
                           item={item}
+                          rescheduledTo={rescheduledTo.get(item.id)}
                           today={today}
                           updating={updatingId === item.id}
                           onStatusChange={handleStatusChange}
