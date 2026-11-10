@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
@@ -247,6 +247,10 @@ function ActionButton({
 export default function ContactDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // Quem abriu o contato pela Jornada volta para a Jornada (com os filtros)
+  const { state: routeState } = useLocation();
+  const back = routeState?.back ?? { to: "/admin/contacts", label: "Voltar para contatos" };
 
   const [contact, setContact] = useState(null);
   // Ficha de aluno do contato matriculado (undefined = não buscou)
@@ -770,10 +774,10 @@ const [waitingForm, setWaitingForm] = useState({
 
         <button
           type="button"
-          onClick={() => navigate("/admin/contacts")}
+          onClick={() => navigate(back.to)}
           className={`mt-4 ${buttonClass("secondary")}`}
         >
-          Voltar para contatos
+          {back.label}
         </button>
       </div>
     );
@@ -795,8 +799,8 @@ const [waitingForm, setWaitingForm] = useState({
         <div className="flex items-start gap-3">
           <Button
             variant="quiet"
-            onClick={() => navigate("/admin/contacts")}
-            aria-label="Voltar para contatos"
+            onClick={() => navigate(back.to)}
+            aria-label={back.label}
             className="mt-1"
           >
             <ArrowLeft size={19} aria-hidden="true" />
