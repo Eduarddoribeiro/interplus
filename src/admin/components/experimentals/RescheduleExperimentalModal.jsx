@@ -56,17 +56,20 @@ export default function RescheduleExperimentalModal({
       open
       onClose={onClose}
       busy={saving}
-      title="Reagendar experimental"
+      title={session.experimental_date ? "Reagendar experimental" : "Agendar experimental"}
       description={
         session.status === "no_show"
           ? `${contact.child_name}. A falta continua registrada no histórico.`
-          : `${contact.child_name}. A aula marcada passa para a nova data.`
+          : session.status === "follow_up"
+            ? `${contact.child_name}. A família sai de Retornos e volta para a agenda.`
+            : `${contact.child_name}. A aula marcada passa para a nova data.`
       }
     >
 
       <form onSubmit={handleSubmit}>
         {/* Caixa neutra: é contexto, não erro */}
-        <div className="rounded-lg border border-line bg-canvas p-4">
+        {session.experimental_date && (
+        <div className="mb-6 rounded-lg border border-line bg-canvas p-4">
           <p className="text-sm font-medium text-muted">
             Tentativa anterior
           </p>
@@ -85,11 +88,14 @@ export default function RescheduleExperimentalModal({
           <p className="mt-1 text-sm text-muted">
             {session.status === "no_show"
               ? "Não compareceu"
-              : "Será substituída pela nova data"}
+              : session.status === "follow_up"
+                ? "Última experimental"
+                : "Será substituída pela nova data"}
           </p>
         </div>
+        )}
 
-        <div className="mt-6">
+        <div>
           <label className="text-sm font-medium text-ink">
             Categoria
           </label>

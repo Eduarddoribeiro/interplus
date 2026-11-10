@@ -25,6 +25,7 @@ import ExperimentalResultModal from "../components/experimentals/ExperimentalRes
 import RescheduleExperimentalModal from "../components/experimentals/RescheduleExperimentalModal";
 import NoShowFollowUpModal from "../components/experimentals/NoShowFollowUpModal";
 import CloseNoShowOpportunityModal from "../components/experimentals/CloseNoShowOpportunityModal";
+import NoShowNextStepDialog from "../components/experimentals/NoShowNextStepDialog";
 import WeekDayCard from "../components/experimentals/WeekDayCard";
 import EmptyState from "../components/experimentals/EmptyState";
 import {
@@ -103,6 +104,9 @@ export default function Experimentals() {
 
   const [rescheduleSession, setRescheduleSession] =
     useState(null);
+
+  // Logo depois do "Faltou": pergunta o próximo passo
+  const [nextStepSession, setNextStepSession] = useState(null);
 
   const [followUpSession, setFollowUpSession] =
     useState(null);
@@ -296,6 +300,10 @@ export default function Experimentals() {
 
       replaceSession(updated);
 
+      if (undo && newStatus === "no_show" && previous?.status !== "no_show") {
+        setNextStepSession(updated);
+      }
+
       if (undo && previous && previous.status !== newStatus) {
         toast(
           `${previous.contact?.child_name || "Experimental"}: ${STATUS_DONE_LABEL[newStatus] ?? "atualizado"}.`,
@@ -337,6 +345,8 @@ export default function Experimentals() {
    * O status do contato só muda se a troca também o tinha mudado.
    */
   async function undoStatusChange(previous) {
+    setNextStepSession(null);
+
     try {
       await updateExperimentalSessionStatus(
         previous.id,
@@ -1138,6 +1148,25 @@ export default function Experimentals() {
           onSave={
             handleExperimentalResult
           }
+        />
+      )}
+
+      {nextStepSession && (
+        <NoShowNextStepDialog
+          session={nextStepSession}
+          onClose={() => setNextStepSession(null)}
+          onReschedule={() => {
+            setRescheduleSession(nextStepSession);
+            setNextStepSession(null);
+          }}
+          onScheduleFollowUp={() => {
+            setFollowUpSession(nextStepSession);
+            setNextStepSession(null);
+          }}
+          onCloseOpportunity={() => {
+            setCloseOpportunitySession(nextStepSession);
+            setNextStepSession(null);
+          }}
         />
       )}
 

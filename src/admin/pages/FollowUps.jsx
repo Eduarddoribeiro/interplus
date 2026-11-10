@@ -8,6 +8,8 @@ import { Button, Panel, Tabs } from "../ui";
 
 import FollowUpCard from "../components/followUps/FollowUpCard";
 import FollowUpActionModal from "../components/followUps/ContactActionModal";
+import RescheduleExperimentalModal from "../components/experimentals/RescheduleExperimentalModal";
+import { toast } from "../components/common/Toaster";
 import { getTodayISO } from "../../helpers/contactPresentation";
 import { FOLLOW_UP_FILTER } from "../../constants/followUpFilters";
 import { FOLLOW_UP_ACTION } from "../../constants/followUpActions";
@@ -18,8 +20,10 @@ import {
   scheduleFollowUp,
   enrollFromFollowUp,
   loseFromFollowUp,
+  rescheduleExperimental,
 } from "../../services/contacts";
 import { errorMessage } from "../../helpers/errorMessage";
+import { formatShortDate } from "../../helpers/experimentalDates";
 
 /*
  * Retornos: famílias que precisam de novo contato.
@@ -171,6 +175,41 @@ export default function FollowUps() {
     }
   }
 
+  // Remarcou a aula: a família volta para a agenda e sai de Retornos
+  async function handleScheduleExperimental({ slot, notes, coachNotes }) {
+    const category = actionContact?.category ?? actionContact?.interest_category;
+    if (!category?.id) {
+      toast("Defina a categoria no contato antes de agendar.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await rescheduleExperimental(actionContact.id, {
+        categoryId: category.id,
+        trainingGroupScheduleId: slot.scheduleId,
+        experimentalDate: slot.date,
+        notes,
+        coachNotes,
+      });
+
+      setFollowUps((current) => current.filter((item) => item.id !== actionContact.id));
+      toast(
+        `Experimental marcada para ${formatShortDate(slot.date)}. ${actionContact.child_name} saiu de Retornos.`,
+        { type: "success" },
+      );
+
+      setActionContact(null);
+      setActionType(null);
+    } catch (err) {
+      console.error("Erro ao agendar experimental:", err);
+      toast(errorMessage(err, "Não foi possível agendar a experimental."));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   /*
    * INDICADORES
    */
@@ -310,7 +349,22 @@ export default function FollowUps() {
 
       {/* MODAL */}
 
-      {actionContact && (
+      {actionContact && actionType === FOLLOW_UP_ACTION.SCHEDULE_EXPERIMENTAL && (
+        <RescheduleExperimentalModal
+          session={{
+            contact: actionContact,
+            category: actionContact.category ?? actionContact.interest_category,
+            experimental_date: actionContact.experimental_date,
+            experimental_time: actionContact.experimental_time,
+            status: "follow_up",
+          }}
+          saving={saving}
+          onClose={closeAction}
+          onSave={handleScheduleExperimental}
+        />
+      )}
+
+      {actionContact && actionType !== FOLLOW_UP_ACTION.SCHEDULE_EXPERIMENTAL && (
         <FollowUpActionModal
           contact={actionContact}
           type={actionType}
