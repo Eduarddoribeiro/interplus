@@ -4,6 +4,7 @@ import {
   CalendarDays,
   PhoneCall,
   ListChecks,
+  Route as RouteIcon,
   ClipboardCheck,
   BarChart3,
   ShieldCheck,
@@ -80,6 +81,7 @@ function readCollapsed() {
 const menu = [
   { key: "dashboard", label: "Visão geral", icon: LayoutDashboard, to: "/admin" },
   { key: "contacts", label: "Contatos", icon: Users, to: "/admin/contacts" },
+  { key: "journey", label: "Jornada", icon: RouteIcon, to: "/admin/jornada" },
   { key: "experimentals", label: "Experimentais", icon: CalendarDays, to: "/admin/experimentals" },
   { key: "followUps", label: "Retornos", icon: PhoneCall, to: "/admin/follow-ups" },
   { key: "waitingList", label: "Lista de interesse", icon: ListChecks, to: "/admin/waiting-list" },

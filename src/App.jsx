@@ -23,6 +23,7 @@ const Layout = lazyPage(() => import("./admin/layout/Layout"));
 const Login = lazyPage(() => import("./admin/pages/Login"));
 const Dashboard = lazyPage(() => import("./admin/pages/Dashboard"));
 const Contacts = lazyPage(() => import("./admin/pages/Contacts"));
+const Journey = lazyPage(() => import("./admin/pages/Journey"));
 const Experimentals = lazyPage(() => import("./admin/pages/Experimentals"));
 const FollowUps = lazyPage(() => import("./admin/pages/FollowUps"));
 const Reports = lazyPage(() => import("./admin/pages/Reports"));
@@ -103,6 +104,11 @@ export default function App() {
             <Route
               path="contacts"
               element={<Contacts />}
+            />
+
+            <Route
+              path="jornada"
+              element={<Journey />}
             />
 
             <Route

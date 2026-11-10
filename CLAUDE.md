@@ -39,6 +39,7 @@ Mudanças no `tailwind.config.js` exigem reiniciar o servidor de desenvolvimento
 | `/admin/login` | Login do painel |
 | `/admin` | Visão geral (pendências, agenda, retornos, resultado do mês) |
 | `/admin/contacts`, `/admin/contacts/:id` | Contatos e detalhes do contato |
+| `/admin/jornada` | Jornada das famílias: quadro com uma coluna por etapa (`helpers/journey.js`), só leitura |
 | `/admin/experimentals` | Aulas experimentais (semana, confirmar, veio/faltou) |
 | `/admin/follow-ups` | Retornos (atrasados, hoje, próximos) |
 | `/admin/waiting-list` | Lista de interesse e quadro de demanda |
@@ -230,3 +231,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-07: saúde só para quem a coordenação liberar (`staff_users.can_view_health`, RLS separado por leitura e gravação, `my_staff_access()` para o painel esconder o botão). Sem o SQL aplicado, nada muda.
 - 2026-11-10: reagendamento de experimental. A falta já remarcada mostra "Remarcada para dd/mm às hh:mm" e não oferece mais Reagendar, Programar retorno nem Encerrar (antes parecia pendente, e remarcar de novo deixava a criança duas vezes no mesmo dia). Experimentais canceladas (só existem por remarcação) saem da agenda e ficam no histórico do contato. Reagendar cancela todas as aulas ativas da criança, não só a mais recente. Programar retorno é recusado quando já há experimental marcada, o que tirava a família de Retornos.
 - 2026-11-10: Retornos ganham "Reagendar experimental" (ou "Agendar", se a criança nunca fez aula) no menu Registrar: a família volta para a agenda e sai de Retornos. Ao marcar "Faltou", abre "Qual o próximo passo?" (reagendar, programar retorno, encerrar ou decidir depois). A falta já remarcada não mostra mais a mensagem pronta "Remarcar (faltou)".
+- 2026-11-10: Jornada das famílias (`/admin/jornada`, "Jornada" no menu): quadro com Novo contato, Aula marcada, Fez a aula, Faltou, Em retorno, Lista de interesse, Matriculado e Encerrado (esses dois só dos últimos 30 dias), montado dos status atuais, sem mudar o banco. Faixa amarela só quando há algo a fazer (marcar ou confirmar a aula, resultado, falta sem decisão, retorno vencido). Não tem arrastar: o cartão abre o contato, onde ficam as ações.
