@@ -33,6 +33,7 @@ export default function ExperimentalCard({
   onReschedule,
   onScheduleFollowUp,
   onCloseOpportunity,
+  rescheduledTo,
 }) {
 const contact = item.contact || {};
 
@@ -266,6 +267,7 @@ const isReschedule =
             {isNoShow && (
               <NoShowActions
                 contact={contact}
+                rescheduledTo={rescheduledTo}
                 whatsappUrl={whatsappUrl}
                 onReschedule={onReschedule}
                 onScheduleFollowUp={onScheduleFollowUp}

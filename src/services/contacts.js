@@ -31,6 +31,7 @@ import {
 } from "../builders/contactBuilders";
 
 import { getFollowUpState } from "../helpers/followUpRules";
+import { getTodayISO, formatShortDate } from "../helpers/experimentalDates";
 /* =========================================================
  * SELECTS
  * =======================================================*/
@@ -372,6 +373,26 @@ async function getLatestExperimentalSession(contactId) {
 
   return data || null;
 }
+
+// Experimentais ainda marcadas (a confirmar ou confirmadas) do contato
+async function getOpenExperimentalSessions(contactId) {
+  const { data, error } = await supabase
+    .from("experimental_sessions")
+    .select("id, experimental_date, experimental_time, status, notes")
+    .eq("contact_id", contactId)
+    .in("status", [
+      EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
+      EXPERIMENTAL_STATUS.CONFIRMED,
+    ])
+    .order("experimental_date", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
 /* =========================================================
  * CONSULTAS
  * =======================================================*/
@@ -1230,6 +1251,17 @@ export async function scheduleFollowUp(contactId, followUpDate, notes = "") {
 
   const current = await getContactById(contactId);
 
+  // Já tem experimental marcada: o próximo passo é a aula, não um retorno
+  const upcoming = (await getOpenExperimentalSessions(contactId)).find(
+    (session) => session.experimental_date >= getTodayISO(),
+  );
+
+  if (upcoming) {
+    throw new Error(
+      `Essa família já tem experimental marcada para ${formatShortDate(upcoming.experimental_date)}. Não é preciso programar retorno.`,
+    );
+  }
+
   const isAlreadyInFollowUp =
     current.status === CONTACT_STATUS.FOLLOW_UP &&
     Boolean(current.follow_up_started_at);
@@ -1418,14 +1450,9 @@ export async function rescheduleExperimental(
     throw new Error("Escolha a turma, o horário e a data da experimental.");
   }
 
-  const active = await getLatestExperimentalSession(contactId);
-
-  const hasActiveExperimental =
-    active &&
-    [
-      EXPERIMENTAL_STATUS.PENDING_CONFIRMATION,
-      EXPERIMENTAL_STATUS.CONFIRMED,
-    ].includes(active.status);
+  // Todas as aulas ainda marcadas (não só a mais recente): assim um
+  // reagendamento nunca deixa duas experimentais ativas para a criança.
+  const activeSessions = await getOpenExperimentalSessions(contactId);
 
   const schedule = await ensureExperimentalAvailability(
     trainingGroupScheduleId,
@@ -1438,20 +1465,34 @@ export async function rescheduleExperimental(
    * Remarcar uma aula ainda ativa: a antiga vira "cancelada"
    * (fica no histórico) e libera a vaga daquela data.
    */
-  if (hasActiveExperimental) {
+  const restoreActiveSessions = () =>
+    Promise.all(
+      activeSessions.map((active) =>
+        supabase
+          .from("experimental_sessions")
+          .update({ status: active.status, notes: active.notes })
+          .eq("id", active.id),
+      ),
+    );
+
+  if (activeSessions.length) {
     const { error: cancelError } = await supabase
       .from("experimental_sessions")
       .update({
         status: EXPERIMENTAL_STATUS.CANCELLED,
         notes: appendInternalNote(
-          active.notes,
+          activeSessions[0].notes,
           `Remarcada para ${experimentalDate.split("-").reverse().join("/")}.`,
         ),
         ...withUpdatedAt(),
       })
-      .eq("id", active.id);
+      .in(
+        "id",
+        activeSessions.map((active) => active.id),
+      );
 
     if (cancelError) {
+      await restoreActiveSessions();
       throw cancelError;
     }
   }
@@ -1473,13 +1514,8 @@ export async function rescheduleExperimental(
       coachNotes,
     });
   } catch (err) {
-    // Não conseguiu criar a nova: devolve a antiga como estava
-    if (hasActiveExperimental) {
-      await supabase
-        .from("experimental_sessions")
-        .update({ status: active.status, notes: active.notes })
-        .eq("id", active.id);
-    }
+    // Não conseguiu criar a nova: devolve as antigas como estavam
+    await restoreActiveSessions();
 
     throw err;
   }
@@ -1520,12 +1556,7 @@ export async function rescheduleExperimental(
       console.error("Erro ao desfazer criação da experimental:", rollbackError);
     }
 
-    if (hasActiveExperimental) {
-      await supabase
-        .from("experimental_sessions")
-        .update({ status: active.status, notes: active.notes })
-        .eq("id", active.id);
-    }
+    await restoreActiveSessions();
 
     throw error;
   }
