@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, GraduationCap, MessageCircle, RotateCcw, XCircle } from "lucide-react";
+import { CalendarPlus, ChevronDown, GraduationCap, MessageCircle, RotateCcw, XCircle } from "lucide-react";
 
 import { Button, urgencyRail, urgencyText } from "../../ui";
 
@@ -16,7 +16,7 @@ import { FOLLOW_UP_ACTION } from "../../../constants/followUpActions";
 /*
  * Um retorno = uma linha com o essencial para ligar: quem é, a turma
  * e há quanto tempo está atrasado. Data da experimental, tentativas e
- * observação abrem ao clicar no nome. As 3 ações ficam em "Registrar".
+ * observação abrem ao clicar no nome. As ações ficam em "Registrar".
  * Faixa vermelha = atrasado ou limite atingido; âmbar = para hoje.
  */
 export default function FollowUpCard({ item, today, onAction }) {
@@ -98,6 +98,7 @@ export default function FollowUpCard({ item, today, onAction }) {
           <ActionMenu
             canReschedule={state.canReschedule}
             limitReached={state.limitReached}
+            hadExperimental={Boolean(item.experimental_date)}
             onAction={(type) => onAction(item, type)}
           />
         </div>
@@ -138,7 +139,7 @@ export default function FollowUpCard({ item, today, onAction }) {
 /*
  * "Registrar": as 3 saídas de um retorno num botão só.
  */
-function ActionMenu({ canReschedule, limitReached, onAction }) {
+function ActionMenu({ canReschedule, limitReached, hadExperimental, onAction }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -168,6 +169,11 @@ function ActionMenu({ canReschedule, limitReached, onAction }) {
   }
 
   const options = [
+    {
+      type: FOLLOW_UP_ACTION.SCHEDULE_EXPERIMENTAL,
+      label: hadExperimental ? "Reagendar experimental" : "Agendar experimental",
+      icon: CalendarPlus,
+    },
     { type: FOLLOW_UP_ACTION.ENROLL, label: "Matriculou", icon: GraduationCap },
     canReschedule && { type: FOLLOW_UP_ACTION.RESCHEDULE, label: "Reagendar retorno", icon: RotateCcw },
     {

@@ -71,8 +71,8 @@ const isReschedule =
   const trainingGroup =
     item.schedule?.training_group;
 
-  const messages =
-    getSessionMessages(item);
+  // Falta já remarcada: a mensagem "Remarcar (faltou)" não faz mais sentido
+  const messages = rescheduledTo ? [] : getSessionMessages(item);
 
   const commercialResult =
     contact.experimental_result;
