@@ -110,6 +110,17 @@ export async function ensureStudentForContact(contact) {
   });
 }
 
+// Ficha completa do aluno de um contato; cria a ficha se ainda não existir
+export async function getStudentForContact(contactId) {
+  const existing = await getStudentByContact(contactId);
+  if (existing) return getStudent(existing.id);
+
+  const { data: contact, error } = await supabase.from("contacts").select("*").eq("id", contactId).single();
+  if (error) throw error;
+
+  return getStudent(await ensureStudentForContact(contact));
+}
+
 export async function updateStudent(id, values) {
   const { error } = await supabase
     .from("students")

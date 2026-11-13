@@ -26,6 +26,7 @@ import RescheduleExperimentalModal from "../components/experimentals/RescheduleE
 import NoShowFollowUpModal from "../components/experimentals/NoShowFollowUpModal";
 import CloseNoShowOpportunityModal from "../components/experimentals/CloseNoShowOpportunityModal";
 import NoShowNextStepDialog from "../components/experimentals/NoShowNextStepDialog";
+import ContactEnrollmentFormDialog from "../components/students/ContactEnrollmentFormDialog";
 import WeekDayCard from "../components/experimentals/WeekDayCard";
 import EmptyState from "../components/experimentals/EmptyState";
 import {
@@ -107,6 +108,9 @@ export default function Experimentals() {
 
   // Logo depois do "Faltou": pergunta o próximo passo
   const [nextStepSession, setNextStepSession] = useState(null);
+
+  // Ficha de matrícula (link para a família) sem sair desta tela
+  const [enrollmentFormContactId, setEnrollmentFormContactId] = useState(null);
 
   const [followUpSession, setFollowUpSession] =
     useState(null);
@@ -444,6 +448,9 @@ export default function Experimentals() {
       );
 
       await loadExperimentals();
+
+      // Matriculou: já abre o link da ficha para mandar à família
+      if (result === "enrolled") setEnrollmentFormContactId(resultSession.contact.id);
 
       setResultSession(null);
     } catch (err) {
@@ -1105,6 +1112,7 @@ export default function Experimentals() {
                           onReschedule={() => setRescheduleSession(item)}
                           onScheduleFollowUp={() => setFollowUpSession(item)}
                           onCloseOpportunity={() => setCloseOpportunitySession(item)}
+                          onSendEnrollmentForm={() => setEnrollmentFormContactId(item.contact?.id)}
                         />
                       </div>
                     ))}
@@ -1148,6 +1156,13 @@ export default function Experimentals() {
           onSave={
             handleExperimentalResult
           }
+        />
+      )}
+
+      {enrollmentFormContactId && (
+        <ContactEnrollmentFormDialog
+          contactId={enrollmentFormContactId}
+          onClose={() => setEnrollmentFormContactId(null)}
         />
       )}
 

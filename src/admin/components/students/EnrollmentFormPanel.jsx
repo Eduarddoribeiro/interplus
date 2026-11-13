@@ -95,12 +95,13 @@ export default function EnrollmentFormPanel({ student, guardian, onChange }) {
         )}
       </div>
 
-      <LinkDialog link={link} student={student} guardian={guardian} onClose={() => setLink(null)} />
+      <EnrollmentLinkDialog link={link} student={student} guardian={guardian} onClose={() => setLink(null)} />
     </Panel>
   );
 }
 
-function LinkDialog({ link, student, guardian, onClose }) {
+// Mensagem pronta com o link recém-criado (também usada fora da ficha do aluno)
+export function EnrollmentLinkDialog({ link, student, guardian, onClose }) {
   const message = link
     ? `Olá, ${firstName(guardian?.name)}! Para concluir a matrícula de ${firstName(student.name)} na ${BRAND.name}, preencha a ficha neste link:\n\n${link.url}\n\nO link vale por ${LINK_DAYS} dias.`
     : "";
