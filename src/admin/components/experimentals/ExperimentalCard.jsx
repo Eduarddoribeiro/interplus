@@ -33,6 +33,7 @@ export default function ExperimentalCard({
   onReschedule,
   onScheduleFollowUp,
   onCloseOpportunity,
+  onSendEnrollmentForm,
   rescheduledTo,
 }) {
 const contact = item.contact || {};
@@ -261,6 +262,7 @@ const isReschedule =
                 commercialResult={commercialResult}
                 contact={contact}
                 onOpenResult={onOpenResult}
+                onSendEnrollmentForm={onSendEnrollmentForm}
               />
             )}
 

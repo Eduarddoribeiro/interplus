@@ -8,7 +8,9 @@ import {
   CalendarPlus,
   CalendarClock,
   ArchiveX,
+  Send,
 } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
 import { getLostReasonLabel } from "../../../constants/lostReasons";
 import { formatShortDate, formatTime } from "../../../helpers/experimentalDates";
@@ -241,15 +243,39 @@ export function AttendedActions({
   commercialResult,
   contact,
   onOpenResult,
+  onSendEnrollmentForm,
 }) {
+  // Voltar do contato reabre Experimentais com o mesmo filtro
+  const location = useLocation();
+
   if (
     commercialResult === "enrolled" ||
     contact.status === "enrolled"
   ) {
     return (
-      <div className="flex items-center gap-2 text-sm font-semibold text-ok">
-        <GraduationCap size={17} />
-        Compareceu e matriculou.
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 text-sm font-semibold text-ok">
+          <GraduationCap size={17} />
+          Compareceu e matriculou.
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to={`/admin/contacts/${contact.id}`}
+            state={{ back: { to: `${location.pathname}${location.search}`, label: "Voltar para experimentais" } }}
+            className="inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-semibold text-ink underline-offset-2 hover:underline touch:h-11"
+          >
+            Abrir contato
+          </Link>
+          <button
+            type="button"
+            onClick={onSendEnrollmentForm}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-ink px-3 text-sm font-semibold text-white transition hover:bg-neutral-800 touch:h-11"
+          >
+            <Send size={15} aria-hidden="true" />
+            Enviar ficha de matrícula
+          </button>
+        </div>
       </div>
     );
   }
