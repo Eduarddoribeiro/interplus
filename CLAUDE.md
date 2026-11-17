@@ -96,9 +96,9 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 
 - Status do contato (`src/constants/contactStatus.js`): `new_contact`, `pending_confirmation`, `confirmed`, `attended`, `no_show`, `cancelled`, `follow_up`, `waiting_list`, `enrolled`, `lost`.
 - Status da experimental: `pending_confirmation`, `confirmed`, `attended`, `no_show`, `cancelled`.
-- Retornos: no máximo 3 tentativas em 14 dias (`followUpRules.js`). Cada "Reagendar retorno" conta como uma tentativa.
+- Retornos: no máximo 3 tentativas em 14 dias (`followUpRules.js`). Cada "Reagendar retorno" conta como uma tentativa. No menu Registrar, "Tentar de novo" tem os atalhos Em 2 dias, Em 3 dias e Em 1 semana (um toque, com Desfazer, que volta data e tentativas por `restoreFollowUp`); "Retorno em outra data" abre a janela com calendário.
 - Nomes dos status: sempre `CONTACT_STATUS_LABEL` (ex.: `follow_up` = "Em retorno", `lost` = "Encerrado"), nunca uma lista própria na tela.
-- Motivos de encerramento: sempre `LOST_REASON_OPTIONS` e `getLostReasonLabel()` de `constants/lostReasons.js`. Os códigos antigos que já estão no banco (`financial`, `location`, `no_interest`, `chose_competitor`) só são traduzidos na exibição.
+- Motivos de encerramento: sempre `LOST_REASON_OPTIONS` e `getLostReasonLabel()` de `constants/lostReasons.js`. Na tela, o motivo é escolhido em botões (`common/LostReasonPicker`), nunca em lista suspensa, e nada vem marcado de antemão. Os códigos antigos que já estão no banco (`financial`, `location`, `no_interest`, `chose_competitor`) só são traduzidos na exibição.
 - Irmãos ficam como contatos separados. O aviso de duplicado só aparece quando o telefone e o primeiro nome da criança são iguais.
 
 ### Pós-matrícula (alunos)
@@ -117,6 +117,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Importação da planilha (`helpers/studentImport.js`, com testes): lê o CSV no navegador, reconhece as colunas pelo cabeçalho e avisa quem já existe como contato (mesmo telefone e primeiro nome, ou mesmo nome e nascimento) ou já foi importado. Pagamento com "—" vira "Não se aplica"; "Ativo: Não" entra como aluno que saiu.
 - Número da camisa (`students.shirt_number`, único na escola toda, inclusive com quem saiu) e goleiro (`students.goalkeeper`). Linha recebe o próximo número depois do maior da linha; goleiro usa 1, 12, 23, 34... (de 11 em 11), e esses números nunca vão para a linha. A regra fica em `helpers/shirtNumbers.js` (com testes). O número aparece na ficha, na lista de alunos, na tabela do evento (com ordem por número) e na lista copiada.
 - Visão geral e menu: "Matrículas atrasadas" = alunos ativos com alguma pendência vencida (aba "Atrasadas" em Alunos).
+- Na aba Atrasadas, cada pendência vencida é um botão na própria linha: tocar dá baixa (com Desfazer) e tocar de novo desmarca. A ordem da aba é fixada ao carregar, e o aluno que ficou em dia continua na lista até recarregar, para nada pular debaixo do dedo.
 
 ### Tarefas da equipe
 
@@ -176,7 +177,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Telas de toque: a variante `touch:` do Tailwind (`(hover: none) and (pointer: coarse)`) deixa botões, abas e ícones de WhatsApp com 44px no celular e no tablet, sem mudar o computador. Use `touch:h-11` em alvos pequenos novos.
 - Campos de formulário: `inputClass`. Seleção (chips, cartões de opção) em tinta, nunca em vermelho, com `aria-pressed`.
 - Avisos: `toast(mensagem, { type, action })` de `common/Toaster`. Sucesso usa `role="status"`; com `action` (ex.: "Desfazer") o aviso fica 10 s e para enquanto o mouse está em cima.
-- Desfazer: depois de Confirmar/Veio/Faltou e depois de arquivar (um ou em lote). Encerrar e Mover para lista em lote não têm desfazer exato, então pedem confirmação com a quantidade ("Encerrar 23 contatos?").
+- Desfazer: depois de Confirmar/Veio/Faltou (também no "Confirmar as N" do dia em Experimentais, que aparece com 2 ou mais aulas a confirmar), depois de arquivar (um ou em lote), dos atalhos de retorno e da baixa de pendência em Alunos. Encerrar e Mover para lista em lote não têm desfazer exato, então pedem confirmação com a quantidade ("Encerrar 23 contatos?").
 - Erros na tela: `errorMessage(err, "texto de reserva")` de `helpers/errorMessage.js`. Mensagens nossas (em português) aparecem; erros técnicos do Supabase viram o texto de reserva.
 - Estado das listas na URL: Contatos guarda `aba`, `busca`, `categoria`, `origem`, `parados` e `pagina`; Experimentais e Retornos guardam `filtro`; Alunos guarda `aba`, `busca` e `categoria`; o evento guarda `rodada`, `busca`, `categoria`, `situacao`, `ordem` e `saiu`. A busca de Alunos, de Números de camisa e do evento também acha pelo número da camisa. Cada card da Visão geral abre uma aba com exatamente o número que mostra (ex.: "Retornos atrasados" → `?filtro=overdue`, "Aulas para confirmar" → aba "A confirmar", mesma regra de 48h via `CONFIRM_DAYS`). Ao voltar de um contato, a lista reabre no mesmo lugar.
 - Cadastros (Administração): `CrudPage`, `CrudTable` (rola para o lado no celular), `CrudModal`, `ConfirmDialog` (o botão repete o verbo do título). Situação é texto colorido, sem pílula. As ações de cada linha são `Button` `quiet` `sm`.
@@ -238,3 +239,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-10: contato aberto pela Jornada volta para a Jornada (e não para Contatos), com a busca e a categoria mantidas na URL (`busca`, `categoria`). A página do contato aceita `state.back` ({ to, label }) para isso.
 - 2026-11-17: revisão visual do painel com prints de antes e depois. Demo: os dados iniciais são gravados na hora, e a ficha do aluno e o evento não quebram mais ao recarregar ou abrir por link. Cabeçalho de Contatos alinhado às colunas, colunas de Experimentais fixas qualquer que seja o botão, nome inteiro em Retornos no celular (ações numa linha própria), cartões da Visão geral com o número em cima, Jornada com a ação em amarelo e o tempo parado em cinza, e data das pendências da matrícula embaixo do nome no celular.
 - 2026-11-17: Tarefas viram lista por prazo no lugar do quadro de três colunas: criação rápida com Enter (prazo Hoje, Amanhã ou Sem prazo), concluir num toque com Desfazer, "Em andamento" marcado na edição e concluídas recolhidas. Sem arrastar e sem SQL.
+- 2026-11-17: menos cliques: atalhos "Tentar de novo" em Retornos (2 dias, 3 dias, 1 semana, com Desfazer), "Confirmar as N" por dia em Experimentais, motivo de encerramento em botões nas três janelas de Encerrar (sem motivo pré-marcado) e baixa das pendências direto na aba Atrasadas de Alunos. Sem SQL.
