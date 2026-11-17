@@ -28,7 +28,15 @@ function loadDb() {
     // sem storage: segue com os dados iniciais
   }
 
-  return buildSeed();
+  // Grava já os dados iniciais: os ids são sorteados, e sem isso
+  // recarregar a página (F5 ou link direto) não acha mais o aluno
+  const seed = buildSeed();
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+  } catch {
+    // sem storage: segue só na memória
+  }
+  return seed;
 }
 
 // Carregado só quando o cliente de demonstração é criado, para o
