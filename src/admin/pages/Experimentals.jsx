@@ -76,6 +76,7 @@ export default function Experimentals() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
+  const [confirmingDay, setConfirmingDay] = useState(false);
 
   // O filtro fica na URL (?filtro=history): a Visão geral abre direto
   // nele e, ao voltar de um contato, a tela reabre no mesmo filtro
@@ -330,6 +331,51 @@ export default function Experimentals() {
     }
   }
 
+  /*
+   * Confirma de uma vez as aulas do dia que ainda esperam confirmação
+   * (depois de mandar as mensagens). Desfazer volta todas.
+   */
+  async function confirmDay(items) {
+    const pending = items.filter((item) => item.status === "pending_confirmation");
+    if (!pending.length || confirmingDay) return;
+
+    setConfirmingDay(true);
+    const done = [];
+
+    try {
+      for (const item of pending) {
+        replaceSession(await updateExperimentalSessionStatus(item.id, "confirmed"));
+        done.push(item);
+      }
+    } catch (err) {
+      console.error("Erro ao confirmar em lote:", err);
+    } finally {
+      setConfirmingDay(false);
+    }
+
+    if (!done.length) {
+      toast("Não foi possível confirmar as aulas. Tente de novo.");
+      return;
+    }
+
+    const missing = pending.length - done.length;
+    toast(
+      missing
+        ? `${done.length} confirmadas. ${missing} não foram salvas; confira na lista.`
+        : `${done.length} ${done.length === 1 ? "aula confirmada" : "aulas confirmadas"}.`,
+      {
+        type: missing ? "error" : "success",
+        action: {
+          label: "Desfazer",
+          onClick: async () => {
+            for (const item of done) await undoStatusChange(item, { quiet: true });
+            toast("Desfeito.", { type: "success" });
+          },
+        },
+      },
+    );
+  }
+
   function replaceSession(updated) {
     setExperimentals((current) =>
       current.map((item) =>
@@ -344,7 +390,7 @@ export default function Experimentals() {
    * Volta a aula e o contato para como estavam antes do clique.
    * O status do contato só muda se a troca também o tinha mudado.
    */
-  async function undoStatusChange(previous) {
+  async function undoStatusChange(previous, { quiet = false } = {}) {
     setNextStepSession(null);
 
     try {
@@ -369,7 +415,7 @@ export default function Experimentals() {
 
       replaceSession(fresh);
 
-      toast("Desfeito.", { type: "success" });
+      if (!quiet) toast("Desfeito.", { type: "success" });
     } catch (err) {
       console.error("Erro ao desfazer:", err);
       toast(
@@ -1072,17 +1118,28 @@ export default function Experimentals() {
           <div className="space-y-6">
             {groupedDates.map((date) => {
               const items = groupedExperimentals[date];
+              const toConfirm =
+                date >= today
+                  ? items.filter((item) => item.status === "pending_confirmation").length
+                  : 0;
 
               return (
                 <section key={date} aria-label={formatFullDate(date)}>
-                  <div className="mb-2 flex items-baseline justify-between gap-3">
-                    <h2 className="font-semibold">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                    <h2 className="min-w-0 font-semibold">
                       {dayHeading(date, today, tomorrow)}
                     </h2>
 
-                    <p className="text-sm text-muted">
-                      {items.length} {items.length === 1 ? "aula" : "aulas"}
-                    </p>
+                    <div className="flex items-center gap-3 max-sm:w-full max-sm:justify-between">
+                      <p className="whitespace-nowrap text-sm text-muted">
+                        {items.length} {items.length === 1 ? "aula" : "aulas"}
+                      </p>
+                      {toConfirm >= 2 && (
+                        <Button size="sm" disabled={confirmingDay} onClick={() => confirmDay(items)}>
+                          {confirmingDay ? "Confirmando…" : `Confirmar as ${toConfirm}`}
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   <Panel className="overflow-hidden">
