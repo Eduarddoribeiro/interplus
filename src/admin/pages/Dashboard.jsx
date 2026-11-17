@@ -319,10 +319,10 @@ export default function Dashboard() {
               <li key={item.key} className="bg-white">
                 <Link
                   to={item.to}
-                  className={`group flex h-full items-center gap-4 px-4 py-4 transition-colors hover:bg-canvas ${urgencyRail(item.urgency)}`}
+                  className={`group relative flex h-full items-center gap-4 px-4 py-4 transition-colors hover:bg-canvas sm:flex-col sm:items-start sm:gap-2 sm:px-5 sm:py-5 ${urgencyRail(item.urgency)}`}
                 >
                   <span
-                    className={`w-14 shrink-0 text-right font-display text-4xl font-semibold leading-none tabular-nums ${urgencyText(item.urgency)}`}
+                    className={`w-9 shrink-0 text-right font-display text-4xl font-semibold leading-none tabular-nums sm:w-auto sm:text-left sm:text-5xl ${urgencyText(item.urgency)}`}
                   >
                     {item.value}
                   </span>
@@ -335,7 +335,7 @@ export default function Dashboard() {
                   <ChevronRight
                     size={18}
                     aria-hidden="true"
-                    className="shrink-0 text-neutral-300 group-hover:text-ink"
+                    className="shrink-0 text-neutral-300 group-hover:text-ink sm:absolute sm:right-4 sm:top-5"
                   />
                 </Link>
               </li>
