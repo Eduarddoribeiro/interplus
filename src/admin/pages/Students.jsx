@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, ClipboardCheck, FileUp, MessageCircle, Plus, Search, Shirt } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ClipboardCheck, FileUp, MessageCircle, Plus, Search, Shirt } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
 import { Button, Count, Dialog, DialogActions, Panel, Tabs, inputClass, urgencyRail } from "../ui";
@@ -12,10 +12,11 @@ import {
   currentEnrollment,
   getStudents,
   guardiansOf,
+  setTaskStatus,
   studentTaskSummary,
 } from "../../services/students";
 import { getActiveCategories } from "../../services/categories";
-import { missingTasksText } from "../../constants/studentTasks";
+import { STUDENT_TASKS, STUDENT_TASK_LABEL, STUDENT_TASK_MISSING, missingTasksText } from "../../constants/studentTasks";
 import { createWhatsAppUrl, getTodayISO } from "../../helpers/contactPresentation";
 import { getAge } from "../../helpers/dateHelpers";
 import { errorMessage } from "../../helpers/errorMessage";
@@ -46,6 +47,11 @@ const normalize = (text = "") =>
 export default function Students() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [students, setStudents] = useState([]);
+  // Ordem de Atrasadas fixada ao carregar: dar baixa numa pendência não
+  // faz a linha pular nem sumir debaixo do dedo (só ao recarregar)
+  const [lateOrder, setLateOrder] = useState(new Map());
+  // Pendências marcadas nesta visita (id → status anterior)
+  const [marked, setMarked] = useState(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
@@ -92,7 +98,10 @@ export default function Students() {
     try {
       setLoading(true);
       setError("");
-      setStudents(await getStudents());
+      const data = await getStudents();
+      setStudents(data);
+      setLateOrder(lateOrderOf(data, getTodayISO()));
+      setMarked(new Map());
     } catch (err) {
       console.error("Erro ao carregar alunos:", err);
       setError(errorMessage(err, "Não foi possível carregar os alunos."));
@@ -102,6 +111,56 @@ export default function Students() {
   }
 
   const today = getTodayISO();
+
+  // Troca o status de uma pendência na tela (a lista recalcula sozinha)
+  function patchTask(taskId, status) {
+    setStudents((current) =>
+      current.map((student) => ({
+        ...student,
+        enrollments: (student.enrollments ?? []).map((enrollment) => ({
+          ...enrollment,
+          enrollment_tasks: (enrollment.enrollment_tasks ?? []).map((task) =>
+            task.id === taskId ? { ...task, status } : task,
+          ),
+        })),
+      })),
+    );
+  }
+
+  // Aba Atrasadas: dar baixa na pendência sem abrir a ficha, com Desfazer.
+  // A pendência marcada continua no lugar (em verde); tocar de novo desmarca.
+  async function toggleLateTask(student, task) {
+    const undoing = task.status === "done";
+    const next = undoing ? (marked.get(task.id) ?? "pending") : "done";
+    const previous = task.status;
+
+    setMarked((current) => {
+      const copy = new Map(current);
+      if (!undoing) copy.set(task.id, previous);
+      return copy;
+    });
+    patchTask(task.id, next);
+
+    try {
+      await setTaskStatus(task.id, next);
+      if (undoing) return;
+
+      const label = STUDENT_TASK_LABEL[task.kind];
+      toast(`${student.name}: ${label.charAt(0).toLowerCase()}${label.slice(1)}.`, {
+        type: "success",
+        action: {
+          label: "Desfazer",
+          onClick: async () => {
+            await setTaskStatus(task.id, previous);
+            patchTask(task.id, previous);
+          },
+        },
+      });
+    } catch (err) {
+      patchTask(task.id, previous);
+      toast(errorMessage(err, "Não foi possível salvar a pendência."));
+    }
+  }
 
   // Fichas preenchidas pela família esperando conferência (contador do menu)
   const formsToReview = useOutletContext()?.pending?.formsToReview ?? 0;
@@ -146,7 +205,7 @@ export default function Students() {
       .filter((row) => {
         if (tab === "sairam") return row.student.status === "left";
         if (row.student.status !== "active") return false;
-        return tab === "atrasadas" ? row.overdue.length > 0 : true;
+        return tab === "atrasadas" ? row.overdue.length > 0 || lateOrder.has(row.student.id) : true;
       })
       .filter((row) => category === "all" || row.categoryName === category)
       .filter((row) => {
@@ -159,10 +218,11 @@ export default function Students() {
       })
       .sort((a, b) =>
         tab === "atrasadas"
-          ? b.overdue.length - a.overdue.length || b.open.length - a.open.length || a.student.name.localeCompare(b.student.name, "pt-BR")
+          ? (lateOrder.get(a.student.id) ?? Infinity) - (lateOrder.get(b.student.id) ?? Infinity) ||
+            a.student.name.localeCompare(b.student.name, "pt-BR")
           : a.student.name.localeCompare(b.student.name, "pt-BR"),
       );
-  }, [rows, tab, category, search]);
+  }, [rows, tab, category, search, lateOrder]);
 
   const totalPages = Math.max(Math.ceil(filtered.length / ITEMS_PER_PAGE), 1);
   useEffect(() => {
@@ -291,7 +351,13 @@ export default function Students() {
 
           <Panel as="ul" className="overflow-hidden">
             {pageItems.map((row) => (
-              <StudentRow key={row.student.id} row={row} emphasizeLate={tab === "atrasadas"} />
+              <StudentRow
+                key={row.student.id}
+                row={row}
+                emphasizeLate={tab === "atrasadas"}
+                marked={marked}
+                onToggleTask={tab === "atrasadas" ? toggleLateTask : undefined}
+              />
             ))}
           </Panel>
 
@@ -320,6 +386,22 @@ export default function Students() {
   );
 }
 
+// Atrasadas primeiro quem tem mais pendência vencida, depois mais em aberto
+function lateOrderOf(students, today) {
+  const late = students
+    .filter((student) => student.status === "active")
+    .map((student) => ({ student, ...studentTaskSummary(student, today) }))
+    .filter((row) => row.overdue.length > 0)
+    .sort(
+      (a, b) =>
+        b.overdue.length - a.overdue.length ||
+        b.open.length - a.open.length ||
+        a.student.name.localeCompare(b.student.name, "pt-BR"),
+    );
+
+  return new Map(late.map((row, index) => [row.student.id, index]));
+}
+
 // O que falta, não o nome do passo: "Falta contrato e uniforme"
 function pendingText({ open, overdue }) {
   if (overdue.length) return `Atrasado: falta ${missingTasksText(overdue)}`;
@@ -329,21 +411,34 @@ function pendingText({ open, overdue }) {
 
 // Vermelho só na aba Atrasadas, onde a lista é o que fazer hoje;
 // em Ativos o atraso aparece em texto, sem faixa
-function StudentRow({ row, emphasizeLate }) {
-  const { student, guardian, categoryName, overdue } = row;
+function StudentRow({ row, emphasizeLate, marked, onToggleTask }) {
+  const { student, guardian, categoryName, overdue, enrollment } = row;
   const age = getAge(student.birth_date);
   const whatsappUrl = guardian?.phone ? createWhatsAppUrl(guardian.phone) : null;
   const left = student.status === "left";
   const late = !left && overdue.length > 0;
 
+  // Atrasadas: as vencidas e as que já foram marcadas aqui, na ordem das pendências
+  const overdueIds = new Set(overdue.map((task) => task.id));
+  const chips = onToggleTask
+    ? STUDENT_TASKS.map((definition) =>
+        (enrollment?.enrollment_tasks ?? []).find(
+          (task) => task.kind === definition.kind && (overdueIds.has(task.id) || marked?.has(task.id)),
+        ),
+      ).filter(Boolean)
+    : [];
+  const showChips = !left && chips.length > 0;
+
   return (
-    <li className={`flex items-center gap-3 border-t border-line first:border-t-0 ${urgencyRail(late && emphasizeLate ? "alert" : null)}`}>
+    <li className={`flex flex-wrap items-center gap-x-3 border-t border-line first:border-t-0 lg:flex-nowrap ${urgencyRail(late && emphasizeLate ? "alert" : null)}`}>
       <Link
         to={`/admin/students/${student.id}`}
-        className="grid min-w-0 flex-1 gap-x-4 gap-y-0.5 px-4 py-3 hover:bg-canvas lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.6fr)]"
+        className={`grid min-w-0 flex-1 gap-x-4 gap-y-0.5 px-4 py-3 hover:bg-canvas ${
+          showChips ? "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.6fr)]"
+        }`}
       >
         <span className="min-w-0">
-          <span className="block truncate font-semibold">{student.name}</span>
+          <span className="block break-words font-semibold sm:truncate">{student.name}</span>
           <span className="block text-sm text-muted">
             {[
               student.shirt_number ? `camisa ${student.shirt_number}` : null,
@@ -359,12 +454,46 @@ function StudentRow({ row, emphasizeLate }) {
           {guardian ? guardian.name : "Sem responsável"}
         </span>
 
-        <span
-          className={`text-sm lg:self-center ${late ? (emphasizeLate ? "font-medium text-alert-text" : "text-ink") : "text-muted"}`}
-        >
-          {left ? "Saiu" : pendingText(row)}
-        </span>
+        {!showChips && (
+          <span
+            className={`text-sm lg:self-center ${late ? (emphasizeLate ? "font-medium text-alert-text" : "text-ink") : "text-muted"}`}
+          >
+            {left ? "Saiu" : pendingText(row)}
+          </span>
+        )}
       </Link>
+
+      {/* Atrasadas: cada pendência vira um botão de dar baixa */}
+      {showChips && (
+        <div className="order-last flex w-full flex-wrap items-center gap-1.5 px-4 pb-3 lg:order-none lg:w-[40%] lg:shrink-0 lg:px-0 lg:pb-0">
+          <span className={`text-sm font-medium ${late ? "text-alert-text" : "text-ok"}`}>{late ? "Falta" : "Em dia"}</span>
+          {chips.map((task) => {
+            const done = task.status === "done";
+
+            return (
+              <button
+                key={task.id}
+                type="button"
+                aria-pressed={done}
+                onClick={() => onToggleTask(student, task)}
+                aria-label={`${STUDENT_TASK_LABEL[task.kind]} de ${student.name}`}
+                className={`group inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-sm transition-colors touch:h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                  done ? "border-ok bg-ok-soft text-ok" : "border-line bg-white text-ink hover:border-ok"
+                }`}
+              >
+                <span
+                  className={`flex h-4 w-4 items-center justify-center rounded border ${
+                    done ? "border-ok bg-ok text-white" : "border-neutral-300 text-transparent group-hover:border-ok group-hover:text-ok"
+                  }`}
+                >
+                  <Check size={12} strokeWidth={3} aria-hidden="true" />
+                </span>
+                {STUDENT_TASK_MISSING[task.kind]}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="flex shrink-0 items-center gap-1 pr-3">
         {whatsappUrl && (

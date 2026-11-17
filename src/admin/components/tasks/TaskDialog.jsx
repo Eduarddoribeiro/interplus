@@ -32,6 +32,7 @@ export default function TaskDialog({ open, task, members, defaultAssignee, onClo
             area: task.area ?? "",
             repeat: task.repeat,
             notes: task.notes ?? "",
+            status: task.status,
           }
         : { ...EMPTY, assigned_to: defaultAssignee ?? "" },
     );
@@ -155,6 +156,18 @@ export default function TaskDialog({ open, task, members, defaultAssignee, onClo
             <p className="text-sm text-muted">
               Ao concluir, a próxima nasce sozinha em A fazer{values.due_date ? ", com o prazo seguinte" : ""}.
             </p>
+          )}
+
+          {task && task.status !== "done" && (
+            <label className="flex items-center gap-2 text-sm font-medium text-ink">
+              <input
+                type="checkbox"
+                checked={values.status === "doing"}
+                onChange={(event) => setValues((current) => ({ ...current, status: event.target.checked ? "doing" : "todo" }))}
+                className="h-4 w-4 accent-ink"
+              />
+              Em andamento
+            </label>
           )}
 
           <Field label="Observação" htmlFor="task-notes">

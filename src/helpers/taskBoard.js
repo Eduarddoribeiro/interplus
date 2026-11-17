@@ -79,3 +79,36 @@ export function taskCounts(tasks, today) {
     today: open.filter((task) => task.due_date === today).length,
   };
 }
+
+/*
+ * Lista por prazo (tela de Tarefas): atrasadas, hoje, próximos 7 dias,
+ * mais adiante e sem prazo. Dentro de cada grupo, as já começadas
+ * vêm primeiro, depois pelo prazo. Feitas ficam fora (ver recentDone).
+ */
+export const TASK_GROUPS = [
+  { key: "overdue", label: "Atrasadas", urgency: "alert" },
+  { key: "today", label: "Hoje", urgency: "attention" },
+  { key: "week", label: "Próximos 7 dias" },
+  { key: "later", label: "Mais adiante" },
+  { key: "none", label: "Sem prazo" },
+];
+
+export function taskGroup(task, today) {
+  if (!task.due_date) return "none";
+  if (task.due_date < today) return "overdue";
+  if (task.due_date === today) return "today";
+  if (task.due_date <= addDays(today, 7)) return "week";
+  return "later";
+}
+
+const startedFirst = (a, b) => (a.status === "doing" ? 0 : 1) - (b.status === "doing" ? 0 : 1) || byDueDate(a, b);
+
+export function taskGroups(tasks, today) {
+  const groups = Object.fromEntries(TASK_GROUPS.map((group) => [group.key, []]));
+  tasks.filter((task) => task.status !== "done").forEach((task) => groups[taskGroup(task, today)].push(task));
+  Object.values(groups).forEach((list) => list.sort(startedFirst));
+
+  return groups;
+}
+
+export const recentDone = (tasks, today) => boardColumns(tasks, today).done;

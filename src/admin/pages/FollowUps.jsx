@@ -21,7 +21,9 @@ import {
   enrollFromFollowUp,
   loseFromFollowUp,
   rescheduleExperimental,
+  restoreFollowUp,
 } from "../../services/contacts";
+import { addDaysISO } from "../../helpers/dashboardSummary";
 import { errorMessage } from "../../helpers/errorMessage";
 import { formatShortDate } from "../../helpers/experimentalDates";
 
@@ -112,6 +114,42 @@ export default function FollowUps() {
 
     setActionContact(null);
     setActionType(null);
+  }
+
+  function replaceItem(updated) {
+    setFollowUps((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+  }
+
+  // Atalho "tentar de novo em N dias": conta uma tentativa, com Desfazer
+  async function quickReschedule(contact, days) {
+    const date = addDaysISO(getTodayISO(), days);
+    const previous = {
+      follow_up_date: contact.follow_up_date,
+      follow_up_attempts: contact.follow_up_attempts,
+      last_follow_up_at: contact.last_follow_up_at,
+    };
+
+    try {
+      const updated = await scheduleFollowUp(contact.id, date);
+      replaceItem(updated);
+      toast(`Próxima tentativa em ${formatShortDate(date)}.`, {
+        type: "success",
+        action: {
+          label: "Desfazer",
+          onClick: async () => {
+            try {
+              replaceItem(await restoreFollowUp(contact.id, previous));
+            } catch (err) {
+              console.error("Erro ao desfazer o retorno:", err);
+              toast(errorMessage(err, "Não foi possível desfazer. Confira o retorno."));
+            }
+          },
+        },
+      });
+    } catch (err) {
+      console.error("Erro ao reagendar retorno:", err);
+      toast(errorMessage(err, "Não foi possível reagendar o retorno."));
+    }
   }
 
   /*
@@ -341,6 +379,7 @@ export default function FollowUps() {
                 item={item}
                 today={today}
                 onAction={openAction}
+                onQuickReschedule={quickReschedule}
               />
             ))}
           </Panel>

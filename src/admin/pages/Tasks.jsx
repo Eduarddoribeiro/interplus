@@ -1,18 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Plus, X } from "lucide-react";
+import { ChevronDown, Plus, X } from "lucide-react";
 
 import SectionTitle from "../components/common/SectionTitle";
-import TaskCard from "../components/tasks/TaskCard";
+import TaskRow from "../components/tasks/TaskRow";
 import TaskDialog from "../components/tasks/TaskDialog";
 import { toast } from "../components/common/Toaster";
-import { Button, Count, Panel, Tabs } from "../ui";
+import { Button, Count, Panel, inputClass } from "../ui";
 
 import { createTask, deleteTask, getStaffMembers, getTasks, moveTask, updateTask } from "../../services/tasks";
 import { getCurrentUser } from "../../services/auth";
-import { TASK_COLUMNS, TASK_STATUS_LABEL } from "../../constants/tasks";
-import { boardColumns, nextDueDate, taskCounts, taskUrgency } from "../../helpers/taskBoard";
-import { toLocalISO } from "../../helpers/dashboardSummary";
+import { DONE_VISIBLE_DAYS } from "../../constants/tasks";
+import { TASK_GROUPS, nextDueDate, recentDone, taskCounts, taskGroups, taskUrgency } from "../../helpers/taskBoard";
+import { addDaysISO, toLocalISO } from "../../helpers/dashboardSummary";
 import { errorMessage } from "../../helpers/errorMessage";
 
 const DUE_FILTER = {
@@ -20,16 +20,21 @@ const DUE_FILTER = {
   hoje: { label: "Só as de hoje", urgency: "attention" },
 };
 
+// Prazos da criação rápida; outra data, área ou repetição ficam em "Nova tarefa"
+const QUICK_DUE = [
+  { value: "today", label: "Hoje" },
+  { value: "tomorrow", label: "Amanhã" },
+  { value: "none", label: "Sem prazo" },
+];
+
 const formatDay = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 
-// Arrastar só com mouse; no toque ficam os botões do cartão
-const canDrag = () => typeof window !== "undefined" && window.matchMedia?.("(hover: hover) and (pointer: fine)").matches;
-
 /*
- * Tarefas da equipe: quadro A fazer / Fazendo / Feito.
- * No computador, três colunas e arrastar; no celular, uma coluna por
- * aba. "Minhas tarefas" e o filtro de prazo (vindo da Visão geral)
- * ficam na URL.
+ * Tarefas da equipe: lista por prazo (atrasadas, hoje, próximos 7 dias,
+ * mais adiante, sem prazo). Escrever e Enter cria; o círculo conclui
+ * com Desfazer. "Em andamento" é marcado na edição. As concluídas dos
+ * últimos dias ficam recolhidas no fim. "Minhas tarefas" e o filtro
+ * de prazo (vindo da Visão geral) ficam na URL.
  */
 export default function Tasks() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -40,14 +45,15 @@ export default function Tasks() {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [dialog, setDialog] = useState(null); // { task } | { task: null }
-  const [dragging, setDragging] = useState(null);
-  const [dropTarget, setDropTarget] = useState(null);
-  const [mobileColumn, setMobileColumn] = useState("todo");
+  const [quickTitle, setQuickTitle] = useState("");
+  const [quickDue, setQuickDue] = useState("today");
+  const [adding, setAdding] = useState(false);
+  const [showDone, setShowDone] = useState(false);
+  const quickRef = useRef(null);
 
   const mine = searchParams.get("quem") === "minhas";
   const dueFilter = DUE_FILTER[searchParams.get("prazo")] ? searchParams.get("prazo") : null;
   const today = toLocalISO();
-  const draggable = useMemo(canDrag, []);
 
   function setParam(key, value) {
     const params = Object.fromEntries(searchParams);
@@ -95,11 +101,13 @@ export default function Tasks() {
     [tasks, mine, userId, dueFilter, today],
   );
 
-  const columns = useMemo(() => boardColumns(visible, today), [visible, today]);
+  const groups = useMemo(() => taskGroups(visible, today), [visible, today]);
+  const done = useMemo(() => (dueFilter ? [] : recentDone(visible, today)), [visible, today, dueFilter]);
   const counts = useMemo(() => taskCounts(tasks, today), [tasks, today]);
+  const openCount = TASK_GROUPS.reduce((total, group) => total + groups[group.key].length, 0);
 
-  // Move já na tela; se o banco recusar, volta como estava
-  async function move(task, status) {
+  // Muda já na tela; se o banco recusar, volta como estava
+  async function setStatus(task, status, { undo = true } = {}) {
     if (task.status === status) return;
 
     const previous = tasks;
@@ -112,26 +120,64 @@ export default function Tasks() {
 
     try {
       await moveTask(task.id, status);
-      const repeats = status === "done" && task.repeat !== "none" && !task.next_created;
-      if (repeats) {
-        const next = nextDueDate(task.due_date, task.repeat, today);
-        toast(`Concluída. A próxima ficou para ${formatDay(next)}.`, { type: "success" });
-      } else {
-        toast(`Movida para ${TASK_STATUS_LABEL[status]}.`, { type: "success" });
+
+      if (status === "done") {
+        const repeats = task.repeat !== "none" && !task.next_created;
+        const message = repeats
+          ? `Concluída. A próxima ficou para ${formatDay(nextDueDate(task.due_date, task.repeat, today))}.`
+          : "Tarefa concluída.";
+        toast(message, {
+          type: "success",
+          action: undo ? { label: "Desfazer", onClick: () => setStatus({ ...task, status: "done" }, task.status, { undo: false }) } : undefined,
+        });
+      } else if (undo) {
+        toast("Tarefa reaberta.", { type: "success" });
       }
+
       await load();
     } catch (err) {
-      console.error("Erro ao mover tarefa:", err);
+      console.error("Erro ao mudar a tarefa:", err);
       setTasks(previous);
-      toast(errorMessage(err, "Não foi possível mover a tarefa. Tente de novo."));
+      toast(errorMessage(err, "Não foi possível salvar. Tente de novo."));
     } finally {
       setBusyId(null);
     }
   }
 
+  async function quickAdd(event) {
+    event.preventDefault();
+    const title = quickTitle.trim();
+    if (!title || adding) return;
+
+    try {
+      setAdding(true);
+      await createTask({
+        title,
+        due_date: quickDue === "today" ? today : quickDue === "tomorrow" ? addDaysISO(today, 1) : null,
+        assigned_to: userId,
+        repeat: "none",
+      });
+      setQuickTitle("");
+      toast("Tarefa criada.", { type: "success" });
+      await load();
+      quickRef.current?.focus();
+    } catch (err) {
+      console.error("Erro ao criar tarefa:", err);
+      toast(errorMessage(err, "Não foi possível criar a tarefa. Tente de novo."));
+    } finally {
+      setAdding(false);
+    }
+  }
+
   async function save(values) {
-    if (dialog.task) await updateTask(dialog.task.id, values);
-    else await createTask(values);
+    const { status, ...fields } = values;
+
+    if (dialog.task) {
+      await updateTask(dialog.task.id, fields);
+      if (status && status !== dialog.task.status) await moveTask(dialog.task.id, status);
+    } else {
+      await createTask(fields);
+    }
 
     toast(dialog.task ? "Tarefa salva." : "Tarefa criada.", { type: "success" });
     setDialog(null);
@@ -145,13 +191,6 @@ export default function Tasks() {
     await load();
   }
 
-  function drop(event, status) {
-    event.preventDefault();
-    setDropTarget(null);
-    const task = tasks.find((item) => item.id === event.dataTransfer.getData("text/plain"));
-    if (task) move(task, status);
-  }
-
   const summary = loading
     ? ""
     : counts.overdue || counts.today
@@ -163,19 +202,70 @@ export default function Tasks() {
           .join(", ") + "."
       : "Nenhuma tarefa atrasada nem para hoje.";
 
+  const row = (task) => (
+    <TaskRow
+      key={task.id}
+      task={task}
+      today={today}
+      ownerName={memberName[task.assigned_to]}
+      busy={busyId === task.id}
+      onOpen={(item) => setDialog({ task: item })}
+      onToggle={(item) => setStatus(item, item.status === "done" ? "todo" : "done")}
+    />
+  );
+
   return (
-    <div className="space-y-5">
+    <div className="max-w-3xl space-y-5">
       <SectionTitle
         title="Tarefas"
         summary={summary}
         actions={
-          <Button variant="primary" onClick={() => setDialog({ task: null })}>
+          <Button onClick={() => setDialog({ task: null })}>
             <Plus size={18} aria-hidden="true" />
-            Nova tarefa
+            Com detalhes
           </Button>
         }
       />
 
+      {/* CRIAÇÃO RÁPIDA */}
+      <Panel as="form" onSubmit={quickAdd} className="space-y-3 p-3 sm:p-4">
+        <label htmlFor="quick-task" className="sr-only">
+          Nova tarefa
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="quick-task"
+            ref={quickRef}
+            value={quickTitle}
+            onChange={(event) => setQuickTitle(event.target.value)}
+            maxLength={200}
+            placeholder="O que precisa ser feito?"
+            className={inputClass}
+          />
+          <Button type="submit" variant="primary" disabled={!quickTitle.trim() || adding}>
+            {adding ? "Criando…" : "Criar"}
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Prazo da nova tarefa">
+          <span className="mr-1 text-sm text-muted">Prazo</span>
+          {QUICK_DUE.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={quickDue === option.value}
+              onClick={() => setQuickDue(option.value)}
+              className={`h-8 rounded-lg px-3 text-sm font-medium transition-colors touch:h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                quickDue === option.value ? "bg-ink text-white" : "border border-line bg-white text-ink hover:border-neutral-400"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+          <span className="ml-auto hidden text-sm text-muted sm:inline">Fica com você. Enter cria.</span>
+        </div>
+      </Panel>
+
+      {/* FILTROS */}
       <div className="flex flex-wrap items-center gap-2">
         <div role="group" aria-label="De quem" className="flex gap-1">
           {[
@@ -217,75 +307,56 @@ export default function Tasks() {
           </Button>
         </Panel>
       ) : (
-        <>
-          <div className="lg:hidden">
-            <Tabs
-              label="Colunas do quadro"
-              value={mobileColumn}
-              onChange={setMobileColumn}
-              items={TASK_COLUMNS.map((column) => ({ ...column, count: columns[column.value].length }))}
-            />
-          </div>
+        <div className="space-y-5">
+          {openCount === 0 && (
+            <Panel className="px-5 py-6 text-center text-muted">
+              {dueFilter ? "Nada com esse prazo." : "Nenhuma tarefa aberta."}
+            </Panel>
+          )}
 
-          <div className="grid gap-4 lg:grid-cols-3">
-            {TASK_COLUMNS.map((column) => (
-              <section
-                key={column.value}
-                aria-labelledby={`coluna-${column.value}`}
-                onDragOver={(event) => {
-                  if (!dragging) return;
-                  event.preventDefault();
-                  setDropTarget(column.value);
-                }}
-                onDragLeave={(event) => {
-                  if (!event.currentTarget.contains(event.relatedTarget)) setDropTarget(null);
-                }}
-                onDrop={(event) => drop(event, column.value)}
-                className={`${column.value === mobileColumn ? "" : "hidden"} rounded-xl border bg-canvas p-2 transition-colors lg:block ${
-                  dropTarget === column.value && dragging?.status !== column.value ? "border-ink" : "border-line"
-                }`}
+          {TASK_GROUPS.filter((group) => groups[group.key].length > 0).map((group) => (
+            <section key={group.key} aria-labelledby={`grupo-${group.key}`}>
+              <h2 id={`grupo-${group.key}`} className="mb-2 flex items-center gap-2 text-lg font-semibold">
+                {group.label}
+                <Count value={groups[group.key].length} urgency={group.urgency} />
+              </h2>
+              <Panel as="ul" className="overflow-hidden">
+                {groups[group.key].map(row)}
+              </Panel>
+            </section>
+          ))}
+
+          {done.length > 0 && (
+            <section>
+              <button
+                type="button"
+                onClick={() => setShowDone((current) => !current)}
+                aria-expanded={showDone}
+                aria-controls="tarefas-concluidas"
+                className="flex items-center gap-2 rounded-md text-sm font-medium text-muted hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink"
               >
-                <h2 id={`coluna-${column.value}`} className="flex items-center gap-2 px-2 pb-2 pt-1 font-semibold max-lg:sr-only">
-                  {column.label}
-                  <Count value={columns[column.value].length} />
-                </h2>
-
-                {columns[column.value].length === 0 ? (
-                  <p className="px-2 py-6 text-center text-sm text-muted">
-                    {column.value === "done" ? "Nada concluído nos últimos 14 dias." : "Nenhuma tarefa aqui."}
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {columns[column.value].map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        today={today}
-                        ownerName={memberName[task.assigned_to]}
-                        draggable={draggable && busyId !== task.id}
-                        busy={busyId === task.id}
-                        onOpen={(item) => setDialog({ task: item })}
-                        onMove={move}
-                        onDragStart={setDragging}
-                        onDragEnd={() => {
-                          setDragging(null);
-                          setDropTarget(null);
-                        }}
-                      />
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ))}
-          </div>
-        </>
+                <ChevronDown
+                  size={16}
+                  aria-hidden="true"
+                  className={`transition-transform motion-reduce:transition-none ${showDone ? "rotate-180" : ""}`}
+                />
+                Concluídas nos últimos {DONE_VISIBLE_DAYS} dias ({done.length})
+              </button>
+              {showDone && (
+                <Panel as="ul" id="tarefas-concluidas" className="mt-2 overflow-hidden">
+                  {done.map(row)}
+                </Panel>
+              )}
+            </section>
+          )}
+        </div>
       )}
 
       <TaskDialog
         open={Boolean(dialog)}
         task={dialog?.task ?? null}
         members={members}
-        defaultAssignee={mine ? userId : ""}
+        defaultAssignee={userId ?? ""}
         onClose={() => setDialog(null)}
         onSave={save}
         onDelete={remove}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { boardColumns, nextDueDate, taskCounts, taskUrgency } from "./taskBoard.js";
+import { boardColumns, nextDueDate, taskCounts, taskGroups, taskUrgency } from "./taskBoard.js";
 
 const today = "2026-11-03";
 
@@ -61,5 +61,26 @@ describe("boardColumns e taskCounts", () => {
 
   it("conta atrasadas e de hoje, sem as feitas", () => {
     expect(taskCounts(tasks, today)).toEqual({ overdue: 1, today: 1 });
+  });
+});
+
+describe("taskGroups", () => {
+  const t = (id, due_date, status = "todo") => ({ id, due_date, status, created_at: `2026-10-0${id.length}` });
+
+  it("separa por prazo e deixa as feitas de fora", () => {
+    const groups = taskGroups(
+      [t("a", "2026-11-01"), t("b", today), t("c", "2026-11-10"), t("d", "2026-11-11"), t("e", null), t("f", today, "done")],
+      today,
+    );
+    expect(groups.overdue.map((x) => x.id)).toEqual(["a"]);
+    expect(groups.today.map((x) => x.id)).toEqual(["b"]);
+    expect(groups.week.map((x) => x.id)).toEqual(["c"]);
+    expect(groups.later.map((x) => x.id)).toEqual(["d"]);
+    expect(groups.none.map((x) => x.id)).toEqual(["e"]);
+  });
+
+  it("as já começadas vêm primeiro no grupo", () => {
+    const groups = taskGroups([t("a", "2026-11-05"), t("b", "2026-11-06", "doing")], today);
+    expect(groups.week.map((x) => x.id)).toEqual(["b", "a"]);
   });
 });
