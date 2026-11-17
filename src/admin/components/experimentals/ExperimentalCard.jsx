@@ -116,7 +116,7 @@ const isReschedule =
         </button>
 
         {/* No celular as ações ficam numa linha própria, com botões largos */}
-        <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+        <div className="flex w-full items-center justify-end gap-2 sm:w-[17rem]">
           {isPending && (
             <Button
               size="sm"

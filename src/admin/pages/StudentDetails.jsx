@@ -383,7 +383,7 @@ function TasksPanel({ enrollment, onChange, disabled }) {
                 const late = task.status === "pending" && task.due_date && task.due_date < today;
 
                 return (
-                  <li key={kind} className="flex items-center gap-3 px-4 py-2">
+                  <li key={kind} className="flex flex-wrap items-center gap-x-3 px-4 py-2 sm:flex-nowrap">
                     <button
                       type="button"
                       disabled={disabled}
@@ -403,7 +403,7 @@ function TasksPanel({ enrollment, onChange, disabled }) {
                     </button>
 
                     <span
-                      className={`shrink-0 text-right text-sm tabular-nums ${late ? "font-medium text-alert-text" : "text-muted"}`}
+                      className={`-mt-1 basis-full pb-1 pl-9 text-sm tabular-nums sm:mt-0 sm:basis-auto sm:shrink-0 sm:pb-0 sm:pl-0 sm:text-right touch:pl-10 ${late ? "font-medium text-alert-text" : "text-muted"}`}
                     >
                       {done
                         ? `Feito${task.done_at ? ` em ${formatDate(task.done_at)}` : ""}`

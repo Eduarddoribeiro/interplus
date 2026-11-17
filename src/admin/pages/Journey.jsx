@@ -197,15 +197,19 @@ function JourneyCard({ item, backTo }) {
         state={{ back: { to: backTo, label: "Voltar para a jornada" } }}
         className={`block rounded-lg border border-line bg-white px-3 py-2.5 transition-colors hover:border-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink ${urgencyRail(waiting ? "attention" : undefined)}`}
       >
-        <span className="block truncate font-semibold text-ink">{contact.child_name || "Sem nome"}</span>
+        <span className="block break-words font-semibold text-ink sm:truncate">{contact.child_name || "Sem nome"}</span>
         <span className="block truncate text-sm text-muted">
           {[contact.category?.name, contact.responsible_name].filter(Boolean).join(", ")}
         </span>
         {item.detail && <span className="mt-1 block text-sm text-ink">{item.detail}</span>}
+        {waiting && (
+          <span className="mt-1.5 block text-sm font-medium text-attention-text">
+            {waiting.charAt(0).toUpperCase() + waiting.slice(1)}
+          </span>
+        )}
         {days !== null && (
-          <span className={`mt-1 block text-xs ${waiting ? "font-medium text-attention-text" : "text-muted"}`}>
-            {waiting ? `${waiting}, ` : ""}
-            {days === 0 ? "mudou hoje" : `sem mudança há ${days} ${days === 1 ? "dia" : "dias"}`}
+          <span className={`block text-xs text-muted ${waiting ? "" : "mt-1"}`}>
+            {days === 0 ? "Mudou hoje" : `Sem mudança há ${days} ${days === 1 ? "dia" : "dias"}`}
           </span>
         )}
       </Link>
