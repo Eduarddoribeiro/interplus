@@ -1,6 +1,6 @@
 
 import { Button, DialogActions, inputClass } from "../../ui";
-import { LOST_REASON_OPTIONS } from "../../../constants/lostReasons";
+import LostReasonPicker from "../common/LostReasonPicker";
 
 export function ModalActions({
   saving,
@@ -80,39 +80,6 @@ export function FormTextarea({
   );
 }
 
-export function LostReasonSelect({
-  value,
-  onChange,
-  label,
-}) {
-  return (
-    <div className="mt-6">
-      <label className="text-sm font-medium text-ink">
-        {label}
-      </label>
-
-      <select
-        value={value}
-        onChange={(event) =>
-          onChange(event.target.value)
-        }
-        className={`mt-1.5 ${inputClass}`}
-      >
-        <option value="">
-          Selecione o motivo
-        </option>
-
-        {LOST_REASON_OPTIONS.map(
-          (reason) => (
-            <option
-              key={reason.value}
-              value={reason.value}
-            >
-              {reason.label}
-            </option>
-          )
-        )}
-      </select>
-    </div>
-  );
+export function LostReasonSelect({ value, onChange, label }) {
+  return <LostReasonPicker value={value} onChange={onChange} label={label} className="mt-6" />;
 }

@@ -13,9 +13,7 @@ import {
   isFollowUpClosingAction,
 } from "../../../constants/followUpActions";
 
-import {
-  LOST_REASON_OPTIONS,
-} from "../../../constants/lostReasons";
+import LostReasonPicker from "../common/LostReasonPicker";
 
 import {
   getTodayISO,
@@ -196,36 +194,7 @@ export default function FollowUpActionModal({
           {/* ENCERRAMENTO */}
 
           {isClosingAction && (
-            <div>
-              <label className="text-sm font-medium text-ink">
-                Motivo
-              </label>
-
-              <select
-                value={lostReason}
-                onChange={(event) =>
-                  setLostReason(
-                    event.target.value,
-                  )
-                }
-                className={`mt-1.5 ${inputClass}`}
-              >
-                <option value="">
-                  Selecione
-                </option>
-
-                {LOST_REASON_OPTIONS.map(
-                  (reason) => (
-                    <option
-                      key={reason.value}
-                      value={reason.value}
-                    >
-                      {reason.label}
-                    </option>
-                  ),
-                )}
-              </select>
-            </div>
+            <LostReasonPicker value={lostReason} onChange={setLostReason} />
           )}
 
           {/* =================================================

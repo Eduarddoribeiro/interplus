@@ -41,7 +41,8 @@ import { Button, Dialog, Panel, buttonClass, inputClass } from "../ui";
 import { formatPhone } from "../../helpers/phoneHelpers";
 import { getSourceLabel } from "../../constants/school";
 import { errorMessage } from "../../helpers/errorMessage";
-import { LOST_REASON_LABEL, LOST_REASON_OPTIONS, getLostReasonLabel } from "../../constants/lostReasons";
+import { LOST_REASON_LABEL, getLostReasonLabel } from "../../constants/lostReasons";
+import LostReasonPicker from "../components/common/LostReasonPicker";
 import { CONTACT_STATUS_LABEL } from "../../constants/contactStatus";
 import { ensureStudentForContact, getStudentByContact } from "../../services/students";
 
@@ -292,7 +293,7 @@ const [waitingForm, setWaitingForm] = useState({
   });
 
   const [closeForm, setCloseForm] = useState({
-    lostReason: "schedule",
+    lostReason: "",
     notes: "",
   });
 
@@ -455,7 +456,7 @@ const [waitingForm, setWaitingForm] = useState({
 
   function openCloseModal() {
     setCloseForm({
-      lostReason: LOST_REASON_LABEL[contact?.lost_reason] ? contact.lost_reason : "schedule",
+      lostReason: LOST_REASON_LABEL[contact?.lost_reason] ? contact.lost_reason : "",
       notes: "",
     });
 
@@ -1571,31 +1572,16 @@ const [waitingForm, setWaitingForm] = useState({
             seguirá no processo neste momento.
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-ink">
-              Motivo *
-            </label>
-
-            <select
-              value={closeForm.lostReason}
-              onChange={(event) =>
-                setCloseForm((current) => ({
-                  ...current,
-                  lostReason: event.target.value,
-                }))
-              }
-              className={inputClass}
-            >
-              {LOST_REASON_OPTIONS.map((reason) => (
-                <option
-                  key={reason.value}
-                  value={reason.value}
-                >
-                  {reason.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <LostReasonPicker
+            label="Motivo *"
+            value={closeForm.lostReason}
+            onChange={(lostReason) =>
+              setCloseForm((current) => ({
+                ...current,
+                lostReason,
+              }))
+            }
+          />
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink">
