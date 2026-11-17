@@ -1302,6 +1302,33 @@ export async function scheduleFollowUp(contactId, followUpDate, notes = "") {
   return ensureUpdated(data);
 }
 
+/*
+ * Desfaz um "Reagendar retorno" feito pelos atalhos de Retornos:
+ * volta a data, as tentativas e a última tentativa ao que eram antes.
+ */
+export async function restoreFollowUp(contactId, previous) {
+  if (!contactId) {
+    throw new Error("Contato não informado.");
+  }
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .update({
+      follow_up_date: previous.follow_up_date ?? null,
+      follow_up_attempts: previous.follow_up_attempts ?? 0,
+      last_follow_up_at: previous.last_follow_up_at ?? null,
+      ...withUpdatedAt(),
+    })
+    .eq("id", contactId)
+    .select(CONTACT_WITH_CATEGORY);
+
+  if (error) {
+    throw error;
+  }
+
+  return ensureUpdated(data);
+}
+
 export async function loseFromFollowUp(contactId, lostReason, notes = "") {
   if (!contactId) {
     throw new Error("Contato não informado.");

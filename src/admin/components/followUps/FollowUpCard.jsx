@@ -19,7 +19,7 @@ import { FOLLOW_UP_ACTION } from "../../../constants/followUpActions";
  * observação abrem ao clicar no nome. As ações ficam em "Registrar".
  * Faixa vermelha = atrasado ou limite atingido; âmbar = para hoje.
  */
-export default function FollowUpCard({ item, today, onAction }) {
+export default function FollowUpCard({ item, today, onAction, onQuickReschedule }) {
   const [open, setOpen] = useState(false);
 
   const whatsappUrl = createWhatsAppUrl(item.phone);
@@ -100,6 +100,7 @@ export default function FollowUpCard({ item, today, onAction }) {
             limitReached={state.limitReached}
             hadExperimental={Boolean(item.experimental_date)}
             onAction={(type) => onAction(item, type)}
+            onQuickReschedule={onQuickReschedule ? (days) => onQuickReschedule(item, days) : undefined}
           />
         </div>
       </div>
@@ -139,7 +140,14 @@ export default function FollowUpCard({ item, today, onAction }) {
 /*
  * "Registrar": as 3 saídas de um retorno num botão só.
  */
-function ActionMenu({ canReschedule, limitReached, hadExperimental, onAction }) {
+// Atalhos de "tentar de novo": a próxima tentativa sem abrir janela
+const QUICK_RESCHEDULE = [
+  { days: 2, label: "Em 2 dias" },
+  { days: 3, label: "Em 3 dias" },
+  { days: 7, label: "Em 1 semana" },
+];
+
+function ActionMenu({ canReschedule, limitReached, hadExperimental, onAction, onQuickReschedule }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -175,7 +183,11 @@ function ActionMenu({ canReschedule, limitReached, hadExperimental, onAction }) 
       icon: CalendarPlus,
     },
     { type: FOLLOW_UP_ACTION.ENROLL, label: "Matriculou", icon: GraduationCap },
-    canReschedule && { type: FOLLOW_UP_ACTION.RESCHEDULE, label: "Reagendar retorno", icon: RotateCcw },
+    canReschedule && {
+      type: FOLLOW_UP_ACTION.RESCHEDULE,
+      label: onQuickReschedule ? "Retorno em outra data" : "Reagendar retorno",
+      icon: RotateCcw,
+    },
     {
       type: FOLLOW_UP_ACTION.LOSE,
       label: "Encerrar",
@@ -195,6 +207,27 @@ function ActionMenu({ canReschedule, limitReached, hadExperimental, onAction }) 
           role="menu"
           className="absolute right-0 z-20 mt-1 w-56 overflow-hidden rounded-lg border border-line bg-white py-1 shadow-lg"
         >
+          {canReschedule && onQuickReschedule && (
+            <div className="border-b border-line pb-1">
+              <p className="px-3 pb-1 pt-1.5 text-xs font-medium text-muted">Tentar de novo</p>
+              {QUICK_RESCHEDULE.map(({ days, label }) => (
+                <button
+                  key={days}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    onQuickReschedule(days);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-canvas focus-visible:bg-canvas focus-visible:outline-none"
+                >
+                  <RotateCcw size={16} aria-hidden="true" className="text-muted" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {options.map(({ type, label, icon: Icon }) => (
             <button
               key={type}
