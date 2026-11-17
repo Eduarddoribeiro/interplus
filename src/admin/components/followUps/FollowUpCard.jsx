@@ -45,7 +45,7 @@ export default function FollowUpCard({ item, today, onAction }) {
 
   return (
     <article className={`border-b border-line last:border-b-0 ${urgencyRail(urgency)}`}>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-4 py-3 lg:grid-cols-[minmax(0,1.6fr)_6rem_minmax(0,1fr)_auto]">
+      <div className="grid grid-cols-1 items-center gap-x-4 gap-y-1 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1.6fr)_6rem_minmax(0,1fr)_auto]">
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
@@ -60,8 +60,8 @@ export default function FollowUpCard({ item, today, onAction }) {
           />
 
           <span className="min-w-0">
-            <span className="block truncate font-semibold">{name}</span>
-            <span className="block truncate text-sm text-muted">
+            <span className="block break-words font-semibold sm:truncate">{name}</span>
+            <span className="block break-words text-sm text-muted sm:truncate">
               {item.responsible_name || "Responsável não informado"}
               {item.phone && (
                 <>
@@ -74,7 +74,7 @@ export default function FollowUpCard({ item, today, onAction }) {
 
         <span className="hidden text-sm lg:block">{item.category?.name}</span>
 
-        <p className="col-start-1 pl-6 text-sm lg:col-start-auto lg:pl-0">
+        <p className="pl-6 text-sm sm:col-start-1 lg:col-start-auto lg:pl-0">
           <span className={`font-medium ${urgency ? urgencyText(urgency) : "text-ink"}`}>{when}</span>
           {!state.limitReached && attempt > 1 && (
             <span className="text-muted">, {attempt}ª de {state.maxAttempts} tentativas</span>
@@ -82,7 +82,7 @@ export default function FollowUpCard({ item, today, onAction }) {
           <span className="text-muted lg:hidden">{item.category?.name && `, ${item.category.name}`}</span>
         </p>
 
-        <div className="col-start-2 row-span-2 row-start-1 flex items-center gap-2 lg:col-start-auto lg:row-span-1 lg:row-start-auto">
+        <div className="flex items-center gap-2 pl-6 pt-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:pl-0 sm:pt-0 lg:col-start-auto lg:row-span-1 lg:row-start-auto">
           {whatsappUrl && (
             <a
               href={whatsappUrl}
