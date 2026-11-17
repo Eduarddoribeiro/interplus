@@ -47,7 +47,7 @@ Mudanças no `tailwind.config.js` exigem reiniciar o servidor de desenvolvimento
 | `/admin/students/import` | Importar a planilha de matrículas (CSV) |
 | `/admin/students/camisas` | Números de camisa de todos os ativos numa tela só |
 | `/admin/students/fichas` | Fichas da família: para conferir, link vencido, aguardando e conferidas (`?aba=`) |
-| `/admin/tarefas` | Tarefas da equipe: quadro A fazer / Fazendo / Feito (`?quem=minhas`, `?prazo=atrasadas\|hoje`) |
+| `/admin/tarefas` | Tarefas da equipe: lista por prazo, com criação rápida (`?quem=minhas`, `?prazo=atrasadas\|hoje`) |
 | `/admin/events`, `/admin/events/:id` | Eventos (Taça Gaúcha e rodadas, passeios, copas) |
 | `/admin/reports` | Relatórios |
 | `/admin/administration/*` | Unidades, locais, modalidades, categorias, turmas e horários |
@@ -120,10 +120,12 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 
 ### Tarefas da equipe
 
-- `staff_tasks`: tarefas do dia a dia da equipe, sem ligação com contato ou aluno. Colunas A fazer, Fazendo e Feito (`status` todo / doing / done), ordenadas pelo prazo. Feito mostra só os últimos 14 dias (`DONE_VISIBLE_DAYS`).
+- `staff_tasks`: tarefas do dia a dia da equipe, sem ligação com contato ou aluno. O banco guarda `status` todo / doing / done; a tela não é mais quadro: é uma lista por prazo (Atrasadas, Hoje, Próximos 7 dias, Mais adiante, Sem prazo; `taskGroups` em `helpers/taskBoard.js`, com testes), com as já começadas ("Em andamento") primeiro em cada grupo. Concluídas dos últimos 14 dias (`DONE_VISIBLE_DAYS`) ficam recolhidas no fim.
+- Criar rápido: escrever e Enter, com prazo Hoje, Amanhã ou Sem prazo; a tarefa fica com quem criou. Responsável, outra data, área, repetição e observação ficam em "Com detalhes" ou ao clicar na tarefa. "Em andamento" é uma caixa na edição.
+- Concluir é o círculo da linha, com "Desfazer" no aviso; clicar no círculo de uma concluída reabre.
 - Responsável escolhido entre a equipe pela RPC `staff_members()` (nome em `staff_users.name`; sem nome, a parte do e-mail antes do @).
 - Repetir (diária, semanal, mensal): ao concluir, o gatilho `staff_tasks_before_update` cria a próxima com o prazo seguinte, uma vez só (`next_created`). Reabrir e concluir de novo não duplica. A conta do prazo é igual em `staff_task_next_due` (banco) e `nextDueDate` (`helpers/taskBoard.js`, com testes).
-- No computador arrasta entre colunas (só com mouse); no celular, uma coluna por aba e botões no cartão (Começar, Concluir, Reabrir). Excluir pede confirmação.
+- Excluir pede confirmação.
 - Visão geral: "Tarefas atrasadas" (vermelho, `?prazo=atrasadas`) e "Tarefas para hoje" (amarelo, `?prazo=hoje`). O menu mostra só as atrasadas.
 
 ### Migração planejada do funil (não aplicada)
@@ -235,3 +237,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-10: filtro de local dos Relatórios passa a usar o local da experimental mais recente (horário → turma → local) quando o contato não tem `location_id` (`helpers/reportLocation.js`). Sai das pendências.
 - 2026-11-10: contato aberto pela Jornada volta para a Jornada (e não para Contatos), com a busca e a categoria mantidas na URL (`busca`, `categoria`). A página do contato aceita `state.back` ({ to, label }) para isso.
 - 2026-11-17: revisão visual do painel com prints de antes e depois. Demo: os dados iniciais são gravados na hora, e a ficha do aluno e o evento não quebram mais ao recarregar ou abrir por link. Cabeçalho de Contatos alinhado às colunas, colunas de Experimentais fixas qualquer que seja o botão, nome inteiro em Retornos no celular (ações numa linha própria), cartões da Visão geral com o número em cima, Jornada com a ação em amarelo e o tempo parado em cinza, e data das pendências da matrícula embaixo do nome no celular.
+- 2026-11-17: Tarefas viram lista por prazo no lugar do quadro de três colunas: criação rápida com Enter (prazo Hoje, Amanhã ou Sem prazo), concluir num toque com Desfazer, "Em andamento" marcado na edição e concluídas recolhidas. Sem arrastar e sem SQL.

@@ -182,3 +182,7 @@ O CRM só registra o que é de um contato (retornos, experimentais) ou de um alu
   - filtros Minhas e prazo;
   - 375px com uma coluna por aba e sem rolagem lateral.
 - 2026-11-03: fase 3 concluída. Item "Tarefas" no menu (depois de Alunos) com contador vermelho só das atrasadas; cartões "Tarefas atrasadas" e "Tarefas para hoje" na Visão geral, com a mesma conta do quadro (`taskCounts`), abrindo `?prazo=atrasadas` e `?prazo=hoje`. Se a leitura das tarefas falhar, o resto da Visão geral continua. `CLAUDE.md` com a rota, a tabela, as regras e o Histórico.
+
+## 2026-11-17: lista por prazo no lugar do quadro
+
+Com 1 ou 2 pessoas, a coluna Fazendo virou um passo a mais ("Começar" antes de "Concluir") e o quadro gastava um terço da tela com o que já foi feito. A tela passa a ser uma lista por prazo (Atrasadas, Hoje, Próximos 7 dias, Mais adiante, Sem prazo), com criação rápida (título e Enter, prazo Hoje, Amanhã ou Sem prazo) e concluir num toque com Desfazer. "Em andamento" continua existindo (`status = doing`), marcado na edição e mostrado na linha. Sem arrastar. O banco não muda.
