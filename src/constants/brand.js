@@ -22,6 +22,7 @@ const INTER = {
   whatsapp: "5551996476999",
   // Sistema oficial de cadastro e mensalidade, fora do CRM
   financeSystem: "Sogni",
+  financeSystemShort: "Sogni",
   championship: "Taça Gaúcha",
 };
 
@@ -38,6 +39,7 @@ const EXEMPLO = {
   city: "Cidade Exemplo",
   whatsapp: "",
   financeSystem: "sistema financeiro",
+  financeSystemShort: "Sistema",
   championship: "Copa Regional",
 };
 

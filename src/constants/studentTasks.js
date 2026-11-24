@@ -11,12 +11,12 @@ import { BRAND } from "./brand";
  */
 // missing = como a pendência aparece na lista de alunos ("Falta contrato e uniforme")
 export const STUDENT_TASKS = [
-  { kind: "sogni", label: `Cadastrado no ${BRAND.financeSystem}`, missing: `cadastro no ${BRAND.financeSystem}`, group: "Cadastro", days: 3 },
-  { kind: "community", label: "Entrou na comunidade", missing: "comunidade", group: "Cadastro", days: 3 },
+  { kind: "sogni", label: `Cadastrado no ${BRAND.financeSystem}`, missing: `cadastro no ${BRAND.financeSystem}`, short: BRAND.financeSystemShort, group: "Cadastro", days: 3 },
+  { kind: "community", label: "Entrou na comunidade", missing: "comunidade", short: "Comunidade", group: "Cadastro", days: 3 },
   // O contrato vai por e-mail no momento da matrícula: só falta a assinatura
-  { kind: "contract_signed", label: "Contrato assinado", missing: "contrato", group: "Cadastro", days: 7 },
-  { kind: "enrollment_fee", label: "Taxa de matrícula paga", missing: "taxa de matrícula", group: "Pagamentos", days: 7 },
-  { kind: "uniform", label: "Uniforme pago", missing: "uniforme", group: "Pagamentos", days: 15 },
+  { kind: "contract_signed", label: "Contrato assinado", missing: "contrato", short: "Contrato", group: "Cadastro", days: 7 },
+  { kind: "enrollment_fee", label: "Taxa de matrícula paga", missing: "taxa de matrícula", short: "Taxa", group: "Pagamentos", days: 7 },
+  { kind: "uniform", label: "Uniforme pago", missing: "uniforme", short: "Uniforme", group: "Pagamentos", days: 15 },
 ];
 
 export const STUDENT_TASK_MISSING = Object.fromEntries(

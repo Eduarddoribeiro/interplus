@@ -16,7 +16,7 @@ import {
   studentTaskSummary,
 } from "../../services/students";
 import { getActiveCategories } from "../../services/categories";
-import { STUDENT_TASKS, STUDENT_TASK_LABEL, STUDENT_TASK_MISSING, missingTasksText } from "../../constants/studentTasks";
+import { STUDENT_TASKS, STUDENT_TASK_LABEL, missingTasksText } from "../../constants/studentTasks";
 import { createWhatsAppUrl, getTodayISO } from "../../helpers/contactPresentation";
 import { getAge } from "../../helpers/dateHelpers";
 import { errorMessage } from "../../helpers/errorMessage";
@@ -350,6 +350,25 @@ export default function Students() {
           </div>
 
           <Panel as="ul" className="overflow-hidden">
+            {tab === "atrasadas" && (
+              <li
+                aria-hidden="true"
+                className="hidden items-center gap-x-3 border-b border-l-[3px] border-line border-l-transparent bg-canvas py-2 pr-3 text-sm text-muted lg:flex"
+              >
+                <span className="grid flex-1 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-x-4 px-4">
+                  <span>Aluno</span>
+                  <span>Responsável</span>
+                </span>
+                <span className={`grid shrink-0 ${TASK_GRID}`}>
+                  {STUDENT_TASKS.map((definition) => (
+                    <span key={definition.kind} className="text-center">
+                      {definition.short}
+                    </span>
+                  ))}
+                </span>
+                <span className="w-[3.625rem] shrink-0" />
+              </li>
+            )}
             {pageItems.map((row) => (
               <StudentRow
                 key={row.student.id}
@@ -402,6 +421,59 @@ function lateOrderOf(students, today) {
   return new Map(late.map((row, index) => [row.student.id, index]));
 }
 
+// Colunas das pendências na aba Atrasadas (5, de STUDENT_TASKS)
+const TASK_GRID = "grid-cols-5 lg:w-[30rem]";
+
+/*
+ * Uma pendência na grade de Atrasadas. Vencida: caixa vermelha.
+ * No prazo: caixa cinza (dá para adiantar). Feita: verde; só desmarca
+ * se foi marcada nesta visita. Não se aplica ou sem pendência: traço.
+ */
+function TaskCell({ definition, task, late, canUndo, studentName, onToggle }) {
+  const label = STUDENT_TASK_LABEL[definition.kind];
+
+  if (!task || task.status === "exempt") {
+    return (
+      <span className="flex flex-col items-center justify-center gap-1 py-1 text-muted">
+        <span aria-hidden="true" className="flex h-6 items-center">
+          —
+        </span>
+        <span className="text-xs lg:sr-only">{definition.short}</span>
+        <span className="sr-only">{task ? `${label}: não se aplica` : `${label}: sem pendência`}</span>
+      </span>
+    );
+  }
+
+  const done = task.status === "done";
+  const locked = done && !canUndo;
+
+  return (
+    <button
+      type="button"
+      aria-pressed={done}
+      disabled={locked}
+      onClick={() => onToggle(task)}
+      aria-label={`${label} de ${studentName}${late ? ", atrasado" : ""}`}
+      className="group flex flex-col items-center justify-center gap-1 rounded-lg py-1 transition-colors hover:bg-canvas disabled:cursor-default disabled:hover:bg-transparent touch:min-h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:h-full"
+    >
+      <span
+        className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors ${
+          done
+            ? "border-ok bg-ok text-white"
+            : late
+              ? "border-alert bg-white text-transparent group-hover:text-alert-text"
+              : "border-neutral-300 bg-white text-transparent group-hover:border-ok group-hover:text-ok"
+        }`}
+      >
+        <Check size={14} strokeWidth={3} aria-hidden="true" />
+      </span>
+      <span className={`text-xs lg:sr-only ${done ? "text-ok" : late ? "font-medium text-alert-text" : "text-muted"}`}>
+        {definition.short}
+      </span>
+    </button>
+  );
+}
+
 // O que falta, não o nome do passo: "Falta contrato e uniforme"
 function pendingText({ open, overdue }) {
   if (overdue.length) return `Atrasado: falta ${missingTasksText(overdue)}`;
@@ -418,23 +490,17 @@ function StudentRow({ row, emphasizeLate, marked, onToggleTask }) {
   const left = student.status === "left";
   const late = !left && overdue.length > 0;
 
-  // Atrasadas: as vencidas e as que já foram marcadas aqui, na ordem das pendências
+  // Atrasadas: as 5 pendências sempre nas mesmas colunas, alinhadas entre as linhas
+  const tasksByKind = Object.fromEntries((enrollment?.enrollment_tasks ?? []).map((task) => [task.kind, task]));
   const overdueIds = new Set(overdue.map((task) => task.id));
-  const chips = onToggleTask
-    ? STUDENT_TASKS.map((definition) =>
-        (enrollment?.enrollment_tasks ?? []).find(
-          (task) => task.kind === definition.kind && (overdueIds.has(task.id) || marked?.has(task.id)),
-        ),
-      ).filter(Boolean)
-    : [];
-  const showChips = !left && chips.length > 0;
+  const showChips = Boolean(onToggleTask) && !left;
 
   return (
     <li className={`flex flex-wrap items-center gap-x-3 border-t border-line first:border-t-0 lg:flex-nowrap ${urgencyRail(late && emphasizeLate ? "alert" : null)}`}>
       <Link
         to={`/admin/students/${student.id}`}
         className={`grid min-w-0 flex-1 gap-x-4 gap-y-0.5 px-4 py-3 hover:bg-canvas ${
-          showChips ? "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.6fr)]"
+          showChips ? "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:self-stretch lg:content-center" : "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.6fr)]"
         }`}
       >
         <span className="min-w-0">
@@ -463,35 +529,20 @@ function StudentRow({ row, emphasizeLate, marked, onToggleTask }) {
         )}
       </Link>
 
-      {/* Atrasadas: cada pendência vira um botão de dar baixa */}
+      {/* Atrasadas: uma coluna por pendência; tocar dá baixa (vermelho = vencida) */}
       {showChips && (
-        <div className="order-last flex w-full flex-wrap items-center gap-1.5 px-4 pb-3 lg:order-none lg:w-[40%] lg:shrink-0 lg:px-0 lg:pb-0">
-          <span className={`text-sm font-medium ${late ? "text-alert-text" : "text-ok"}`}>{late ? "Falta" : "Em dia"}</span>
-          {chips.map((task) => {
-            const done = task.status === "done";
-
-            return (
-              <button
-                key={task.id}
-                type="button"
-                aria-pressed={done}
-                onClick={() => onToggleTask(student, task)}
-                aria-label={`${STUDENT_TASK_LABEL[task.kind]} de ${student.name}`}
-                className={`group inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-sm transition-colors touch:h-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                  done ? "border-ok bg-ok-soft text-ok" : "border-line bg-white text-ink hover:border-ok"
-                }`}
-              >
-                <span
-                  className={`flex h-4 w-4 items-center justify-center rounded border ${
-                    done ? "border-ok bg-ok text-white" : "border-neutral-300 text-transparent group-hover:border-ok group-hover:text-ok"
-                  }`}
-                >
-                  <Check size={12} strokeWidth={3} aria-hidden="true" />
-                </span>
-                {STUDENT_TASK_MISSING[task.kind]}
-              </button>
-            );
-          })}
+        <div className={`order-last grid w-full gap-1 px-3 pb-3 lg:order-none lg:shrink-0 lg:gap-0 lg:self-stretch lg:p-0 ${TASK_GRID}`}>
+          {STUDENT_TASKS.map((definition) => (
+            <TaskCell
+              key={definition.kind}
+              definition={definition}
+              task={tasksByKind[definition.kind]}
+              late={overdueIds.has(tasksByKind[definition.kind]?.id)}
+              canUndo={marked?.has(tasksByKind[definition.kind]?.id)}
+              studentName={student.name}
+              onToggle={(task) => onToggleTask(student, task)}
+            />
+          ))}
         </div>
       )}
 
