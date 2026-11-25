@@ -216,7 +216,7 @@ export default function StudentDetails() {
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => setCopying(true)}>
             <ClipboardCopy size={16} aria-hidden="true" />
-            Passar para o {BRAND.financeSystem}
+            Copiar dados
           </Button>
           {student.contact_id && (
             <Button to={`/admin/contacts/${student.contact_id}`} variant="quiet">

@@ -109,7 +109,7 @@ export default function SogniCopyDialog({ open, onClose, student, guardians, enr
       onClose={onClose}
       busy={saving}
       size="lg"
-      title={`Passar para o ${BRAND.financeSystem}`}
+      title="Copiar dados da ficha"
       description={`${student.name}. Toque numa linha para copiar.`}
       footer={
         <div className="space-y-3">
