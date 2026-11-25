@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Edit3, Eye, EyeOff, Lock, MessageCircle, Plus } from "lucide-react";
+import { ArrowLeft, Check, ClipboardCopy, Edit3, Eye, EyeOff, Lock, MessageCircle, Plus } from "lucide-react";
 
 import { Button, Dialog, DialogActions, Panel, inputClass } from "../ui";
 import { toast } from "../components/common/Toaster";
 import FieldsDialog, { Field } from "../components/students/FieldsDialog";
 import EnrollmentFormPanel from "../components/students/EnrollmentFormPanel";
+import SogniCopyDialog from "../components/students/SogniCopyDialog";
 
 import {
   addGuardian,
@@ -119,6 +120,7 @@ export default function StudentDetails() {
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(null);
   const [leaving, setLeaving] = useState(false);
+  const [copying, setCopying] = useState(false);
 
   useEffect(() => {
     load();
@@ -212,6 +214,10 @@ export default function StudentDetails() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setCopying(true)}>
+            <ClipboardCopy size={16} aria-hidden="true" />
+            Copiar dados
+          </Button>
           {student.contact_id && (
             <Button to={`/admin/contacts/${student.contact_id}`} variant="quiet">
               Contato de origem
@@ -277,6 +283,22 @@ export default function StudentDetails() {
         enrollment={enrollment}
         studentName={student.name}
         onSaved={load}
+      />
+
+      <SogniCopyDialog
+        open={copying}
+        onClose={() => setCopying(false)}
+        student={student}
+        guardians={guardians}
+        enrollment={enrollment}
+        sogniTask={left ? null : enrollment?.enrollment_tasks?.find((task) => task.kind === "sogni")}
+        onDone={async (code) => {
+          if (code && code !== (student.sogni_id ?? "")) await updateStudent(student.id, { sogni_id: code });
+          const task = enrollment?.enrollment_tasks?.find((item) => item.kind === "sogni");
+          if (task) await setTaskStatus(task.id, "done");
+          toast(`Cadastrado no ${BRAND.financeSystem}.`, { type: "success" });
+          load();
+        }}
       />
 
       <LeaveDialog open={leaving} onClose={() => setLeaving(false)} student={student} onSaved={load} />
