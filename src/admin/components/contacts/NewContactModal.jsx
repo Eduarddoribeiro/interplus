@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  AlertTriangle,
   CalendarDays,
   CheckCircle2,
   GraduationCap,
@@ -448,6 +447,21 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                 <Field
                   label="Data de nascimento"
                   required={requiresCompleteData}
+                  hint={
+                    !birthDate ? (
+                      "A categoria sai do ano de nascimento."
+                    ) : categoryLoading ? (
+                      "Calculando a categoria…"
+                    ) : category ? (
+                      <>
+                        Categoria <span className="font-semibold text-ink">{category.name}</span>
+                      </>
+                    ) : (
+                      <span className="text-attention-text">
+                        Nenhuma categoria ativa para esse ano. Dá para salvar mesmo assim.
+                      </span>
+                    )
+                  }
                 >
                   <input
                     type="date"
@@ -458,95 +472,6 @@ export default function NewContactModal({ open, onClose, onCreated }) {
                 </Field>
               </div>
 
-              {/* AVISO DE CADASTRO INCOMPLETO */}
-
-              {!requiresCompleteData && missingData.length > 0 && (
-                <div
-                  className="
-                      mt-5
-                      flex
-                      items-start
-                      gap-3
-                      rounded-lg
-                      border
-                      border-attention/40
-                      bg-attention-soft
-                      p-4
-                    "
-                >
-                  <AlertTriangle
-                    size={19}
-                    className="
-                        mt-0.5
-                        shrink-0
-                        text-attention-text
-                      "
-                  />
-
-                  <div>
-                    <p className="text-sm font-semibold text-attention-text">
-                      Cadastro incompleto
-                    </p>
-
-                    <p className="mt-1 text-xs leading-5 text-attention-text">
-                      Faltando: {missingData.join(", ")}. Isso não impede salvar
-                      o contato.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* CATEGORIA AUTOMÁTICA */}
-
-              {birthDate && (
-                <div className="mt-5">
-                  {categoryLoading ? (
-                    <div className="flex items-center gap-3 rounded-lg bg-canvas p-4 text-sm text-muted">
-                      <Loader2 size={18} className="animate-spin" />
-                      Identificando categoria...
-                    </div>
-                  ) : category ? (
-                    <div
-                      className="
-                        flex
-                        flex-col
-                        gap-3
-                        rounded-lg
-                        border
-                        border-alert/30
-                        bg-alert-soft
-                        p-4
-                        sm:flex-row
-                        sm:items-center
-                        sm:justify-between
-                      "
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-muted">
-                          Categoria identificada
-                        </p>
-
-                        <p className="mt-1 text-lg font-bold text-ink">
-                          {category.name}
-                        </p>
-                      </div>
-
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-attention/40 bg-attention-soft p-4">
-                      <p className="text-sm font-semibold text-attention-text">
-                        Nenhuma categoria ativa encontrada para esta data de
-                        nascimento.
-                      </p>
-
-                      <p className="mt-1 text-xs text-attention-text">
-                        Ainda é possível cadastrar o contato ou adicioná-lo à
-                        lista de interesse.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
             </FormSection>
 
             {/* RESPONSÁVEL */}
@@ -917,6 +842,11 @@ export default function NewContactModal({ open, onClose, onCreated }) {
           {/* FOOTER */}
 
           <div className="sticky -bottom-5 -mx-5 -mb-5 mt-8 border-t border-line bg-white px-5 py-4">
+            {!requiresCompleteData && missingData.length > 0 && !success && (
+              <p className="mb-3 text-sm text-muted">
+                Ainda sem {joinList(missingData)}. Dá para salvar e completar depois.
+              </p>
+            )}
             <DialogActions>
             <button
               type="button"
@@ -991,7 +921,7 @@ function FormSection({ number, title, description, children }) {
   );
 }
 
-function Field({ label, required = false, children }) {
+function Field({ label, required = false, hint, children }) {
   return (
     <label className="block">
       <span className="text-sm font-medium text-ink">
@@ -1001,8 +931,16 @@ function Field({ label, required = false, children }) {
       </span>
 
       <div className="mt-2">{children}</div>
+
+      {hint && <span className="mt-1.5 block text-sm text-muted">{hint}</span>}
     </label>
   );
+}
+
+// "a, b e c"
+function joinList(items) {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} e ${items.at(-1)}`;
 }
 
 /*
