@@ -16,6 +16,7 @@ export const TASK_AREAS = ["Secretaria", "Financeiro", "Eventos", "Uniforme", "C
 export const TASK_REPEAT_OPTIONS = [
   { value: "none", label: "Não repete" },
   { value: "daily", label: "Todo dia" },
+  { value: "weekdays", label: "Dias úteis" },
   { value: "weekly", label: "Toda semana" },
   { value: "monthly", label: "Todo mês" },
 ];

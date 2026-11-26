@@ -126,7 +126,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - Criar rápido: escrever e Enter, com prazo Hoje, Amanhã ou Sem prazo; a tarefa fica com quem criou. Responsável, outra data, área, repetição e observação ficam em "Com detalhes" ou ao clicar na tarefa. "Em andamento" é uma caixa na edição.
 - Concluir é o círculo da linha, com "Desfazer" no aviso; clicar no círculo de uma concluída reabre.
 - Responsável escolhido entre a equipe pela RPC `staff_members()` (nome em `staff_users.name`; sem nome, a parte do e-mail antes do @).
-- Repetir (diária, semanal, mensal): ao concluir, o gatilho `staff_tasks_before_update` cria a próxima com o prazo seguinte, uma vez só (`next_created`). Reabrir e concluir de novo não duplica. A conta do prazo é igual em `staff_task_next_due` (banco) e `nextDueDate` (`helpers/taskBoard.js`, com testes).
+- Repetir (diária, dias úteis, semanal, mensal). Dias úteis (`weekdays`) vai para o próximo dia de segunda a sexta; precisa do SQL `20261126120000_tarefas_dias_uteis.sql` aplicado (checagem da coluna e `staff_task_next_due`). Ao concluir, o gatilho `staff_tasks_before_update` cria a próxima com o prazo seguinte, uma vez só (`next_created`). Reabrir e concluir de novo não duplica. A conta do prazo é igual em `staff_task_next_due` (banco) e `nextDueDate` (`helpers/taskBoard.js`, com testes).
 - Excluir pede confirmação.
 - Visão geral: "Tarefas atrasadas" (vermelho, `?prazo=atrasadas`) e "Tarefas para hoje" (amarelo, `?prazo=hoje`). O menu mostra só as atrasadas.
 
@@ -196,6 +196,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 
 - Pós-matrícula: aplicar `20261030120000_pos_matricula.sql` no SQL Editor (verificação e reversão no scratchpad), publicar e importar a planilha.
 - Pós-matrícula, próximas fases: envio ao Sogni (depende das respostas do fornecedor). Saúde só para a coordenação: aplicar `20261107120000_saude_coordenacao.sql` com os e-mails certos.
+- Tarefas: aplicar `20261126120000_tarefas_dias_uteis.sql` antes de publicar a opção "Dias úteis".
 - Migração do funil (ver acima).
 - Limpeza técnica:
   - remover da Vercel as variáveis antigas da integração de WhatsApp;
@@ -243,3 +244,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-17: menos cliques: atalhos "Tentar de novo" em Retornos (2 dias, 3 dias, 1 semana, com Desfazer), "Confirmar as N" por dia em Experimentais, motivo de encerramento em botões nas três janelas de Encerrar (sem motivo pré-marcado) e baixa das pendências direto na aba Atrasadas de Alunos. Sem SQL.
 - 2026-11-24: pendências da aba Atrasadas em grade de colunas fixas (Sogni, Comunidade, Contrato, Taxa, Uniforme) no lugar dos botões que quebravam linha. Sem SQL.
 - 2026-11-25: "Copiar dados" na ficha do aluno, para passar ao Sogni (copiar campo a campo, sem abrir Editar, e dar baixa na pendência no mesmo lugar). Novo contato sem as caixas amarela e vermelha: categoria numa linha embaixo da data e o que falta em texto cinza no rodapé. Sem SQL.
+- 2026-11-26: repetição "Dias úteis" nas Tarefas (segunda a sexta), para a rotina diária da secretaria sem cair no fim de semana. SQL `20261126120000_tarefas_dias_uteis.sql`.
