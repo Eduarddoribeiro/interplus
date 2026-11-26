@@ -47,7 +47,7 @@ Mudanças no `tailwind.config.js` exigem reiniciar o servidor de desenvolvimento
 | `/admin/students/import` | Importar a planilha de matrículas (CSV) |
 | `/admin/students/camisas` | Números de camisa de todos os ativos numa tela só |
 | `/admin/students/fichas` | Fichas da família: para conferir, link vencido, aguardando e conferidas (`?aba=`) |
-| `/admin/tarefas` | Tarefas da equipe: lista por prazo, com criação rápida (`?quem=minhas`, `?prazo=atrasadas\|hoje`) |
+| `/admin/tarefas` | Tarefas da equipe: quadro A fazer (por prazo) / Fazendo / Feito, com criação rápida (`?quem=minhas`, `?prazo=atrasadas\|hoje`) |
 | `/admin/events`, `/admin/events/:id` | Eventos (Taça Gaúcha e rodadas, passeios, copas) |
 | `/admin/reports` | Relatórios |
 | `/admin/administration/*` | Unidades, locais, modalidades, categorias, turmas e horários |
@@ -122,7 +122,7 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 
 ### Tarefas da equipe
 
-- `staff_tasks`: tarefas do dia a dia da equipe, sem ligação com contato ou aluno. O banco guarda `status` todo / doing / done; a tela não é mais quadro: é uma lista por prazo (Atrasadas, Hoje, Próximos 7 dias, Mais adiante, Sem prazo; `taskGroups` em `helpers/taskBoard.js`, com testes), com as já começadas ("Em andamento") primeiro em cada grupo. Concluídas dos últimos 14 dias (`DONE_VISIBLE_DAYS`) ficam recolhidas no fim.
+- `staff_tasks`: tarefas do dia a dia da equipe, sem ligação com contato ou aluno. Quadro A fazer / Fazendo / Feito (`status` todo / doing / done). A fazer vem separada por prazo (Atrasadas, Hoje, Próximos 7 dias, Mais adiante, Sem prazo; `taskGroups` em `helpers/taskBoard.js`, com testes). Feito mostra as 5 mais recentes dos últimos 14 dias (`DONE_VISIBLE_DAYS`), com "Ver todas". No computador arrasta entre colunas (só com mouse); no celular, uma coluna por aba.
 - Criar rápido: escrever e Enter, com prazo Hoje, Amanhã ou Sem prazo; a tarefa fica com quem criou. Responsável, outra data, área, repetição e observação ficam em "Com detalhes" ou ao clicar na tarefa. "Em andamento" é uma caixa na edição.
 - Concluir é o círculo da linha, com "Desfazer" no aviso; clicar no círculo de uma concluída reabre.
 - Responsável escolhido entre a equipe pela RPC `staff_members()` (nome em `staff_users.name`; sem nome, a parte do e-mail antes do @).
@@ -245,3 +245,4 @@ RLS: a equipe acessa tudo via `is_staff()`; o público (anon) só lê o catálog
 - 2026-11-24: pendências da aba Atrasadas em grade de colunas fixas (Sogni, Comunidade, Contrato, Taxa, Uniforme) no lugar dos botões que quebravam linha. Sem SQL.
 - 2026-11-25: "Copiar dados" na ficha do aluno, para passar ao Sogni (copiar campo a campo, sem abrir Editar, e dar baixa na pendência no mesmo lugar). Novo contato sem as caixas amarela e vermelha: categoria numa linha embaixo da data e o que falta em texto cinza no rodapé. Sem SQL.
 - 2026-11-26: repetição "Dias úteis" nas Tarefas (segunda a sexta), para a rotina diária da secretaria sem cair no fim de semana. SQL `20261126120000_tarefas_dias_uteis.sql`.
+- 2026-11-26: Tarefas voltam a ser quadro (A fazer / Fazendo / Feito), mantendo a criação rápida, o concluir num toque e a coluna A fazer separada por prazo. Feito mostra as 5 mais recentes. Sem SQL.

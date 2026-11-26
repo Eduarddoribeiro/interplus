@@ -25,14 +25,25 @@ function dueText(task, today, urgency) {
  * Linha da lista de tarefas. O círculo conclui (ou reabre) num toque;
  * o resto da linha abre a edição.
  */
-export default function TaskRow({ task, today, ownerName, busy, onOpen, onToggle }) {
+export default function TaskRow({ task, today, ownerName, busy, onOpen, onToggle, card = false, draggable = false, onDragStart, onDragEnd }) {
   const done = task.status === "done";
   const urgency = taskUrgency(task, today);
   const due = dueText(task, today, urgency);
   const details = [ownerName, task.area].filter(Boolean).join(", ");
 
   return (
-    <li className={`flex items-start gap-3 border-t border-line px-3 py-2.5 first:border-t-0 sm:px-4 ${urgencyRail(urgency)} ${busy ? "opacity-60" : ""}`}>
+    <li
+      draggable={draggable}
+      onDragStart={(event) => {
+        event.dataTransfer.setData("text/plain", task.id);
+        event.dataTransfer.effectAllowed = "move";
+        onDragStart?.(task);
+      }}
+      onDragEnd={onDragEnd}
+      className={`flex items-start gap-3 px-3 py-2.5 ${
+        card ? "rounded-lg border border-line bg-white" : "border-t border-line first:border-t-0 sm:px-4"
+      } ${urgencyRail(urgency)} ${draggable ? "cursor-grab active:cursor-grabbing" : ""} ${busy ? "opacity-60" : ""}`}
+    >
       <button
         type="button"
         disabled={busy}
@@ -53,9 +64,9 @@ export default function TaskRow({ task, today, ownerName, busy, onOpen, onToggle
         <span className={`block break-words font-medium ${done ? "text-muted line-through decoration-neutral-400" : "text-ink"}`}>
           {task.title}
         </span>
-        {(due || details || task.repeat !== "none" || task.status === "doing") && (
+        {(due || details || task.repeat !== "none" || (task.status === "doing" && !card)) && (
           <span className="mt-0.5 flex flex-wrap items-center gap-x-3 text-sm">
-            {task.status === "doing" && <span className="font-medium text-ink">Em andamento</span>}
+            {task.status === "doing" && !card && <span className="font-medium text-ink">Em andamento</span>}
             {due && <span className={urgency ? urgencyText(urgency) : "text-muted"}>{due}</span>}
             {details && <span className="text-muted">{details}</span>}
             {task.repeat !== "none" && (
