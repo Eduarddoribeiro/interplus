@@ -23,6 +23,16 @@ describe("nextDueDate", () => {
     expect(nextDueDate("2026-08-05", "monthly", today)).toBe("2026-11-05");
   });
 
+  it("dias úteis: pula o fim de semana e nunca fica no passado", () => {
+    // 2026-11-05 é quinta; 06 sexta; 09 segunda
+    expect(nextDueDate("2026-11-05", "weekdays", "2026-11-05")).toBe("2026-11-06");
+    expect(nextDueDate("2026-11-06", "weekdays", "2026-11-06")).toBe("2026-11-09");
+    // Concluída com atraso numa quarta: a próxima é hoje mesmo
+    expect(nextDueDate("2026-11-02", "weekdays", "2026-11-04")).toBe("2026-11-04");
+    // Concluída num sábado: vai para segunda
+    expect(nextDueDate("2026-11-06", "weekdays", "2026-11-07")).toBe("2026-11-09");
+  });
+
   it("sem prazo conta a partir de hoje; sem repetição não há próxima", () => {
     expect(nextDueDate(null, "weekly", today)).toBe("2026-11-10");
     expect(nextDueDate("2026-11-03", "none", today)).toBeNull();

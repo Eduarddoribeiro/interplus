@@ -9,6 +9,9 @@ import { DONE_VISIBLE_DAYS } from "../constants/tasks.js";
 const toDate = (iso) => new Date(`${iso}T12:00:00Z`);
 const toIso = (date) => date.toISOString().slice(0, 10);
 
+// Sábado ou domingo
+const isWeekend = (iso) => [0, 6].includes(toDate(iso).getUTCDay());
+
 function addDays(iso, days) {
   const date = toDate(iso);
   date.setUTCDate(date.getUTCDate() + days);
@@ -26,13 +29,21 @@ function addMonths(iso, months) {
 
 /*
  * Prazo da próxima tarefa repetida: o prazo anterior + 1 dia, semana
- * ou mês. Se já passou, avança até hoje ou depois (concluir com atraso
+ * ou mês (dias úteis: o próximo de segunda a sexta). Se já passou, avança até hoje ou depois (concluir com atraso
  * não gera tarefas vencidas). Sem prazo, conta a partir de hoje.
  */
 export function nextDueDate(dueDate, repeat, today) {
   if (!repeat || repeat === "none") return null;
 
   const base = dueDate || today;
+
+  // Dias úteis: o próximo dia de segunda a sexta, nunca antes de hoje
+  if (repeat === "weekdays") {
+    let next = base;
+    do next = addDays(next, 1);
+    while (isWeekend(next) || next < today);
+    return next;
+  }
   const step = (count) =>
     repeat === "daily" ? addDays(base, count) : repeat === "weekly" ? addDays(base, 7 * count) : addMonths(base, count);
 
