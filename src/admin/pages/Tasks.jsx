@@ -6,11 +6,11 @@ import SectionTitle from "../components/common/SectionTitle";
 import TaskRow from "../components/tasks/TaskRow";
 import TaskDialog from "../components/tasks/TaskDialog";
 import { toast } from "../components/common/Toaster";
-import { Button, Count, Panel, inputClass } from "../ui";
+import { Button, Count, Panel, Tabs, inputClass } from "../ui";
 
 import { createTask, deleteTask, getStaffMembers, getTasks, moveTask, updateTask } from "../../services/tasks";
 import { getCurrentUser } from "../../services/auth";
-import { DONE_VISIBLE_DAYS } from "../../constants/tasks";
+import { DONE_VISIBLE_DAYS, TASK_COLUMNS } from "../../constants/tasks";
 import { TASK_GROUPS, nextDueDate, recentDone, taskCounts, taskGroups, taskUrgency } from "../../helpers/taskBoard";
 import { addDaysISO, toLocalISO } from "../../helpers/dashboardSummary";
 import { errorMessage } from "../../helpers/errorMessage";
@@ -26,6 +26,12 @@ const QUICK_DUE = [
   { value: "tomorrow", label: "Amanhã" },
   { value: "none", label: "Sem prazo" },
 ];
+
+// Arrastar só com mouse; no toque, o círculo conclui e a edição marca "Em andamento"
+const canDrag = () => typeof window !== "undefined" && window.matchMedia?.("(hover: hover) and (pointer: fine)").matches;
+
+// Feito mostra as mais recentes; o resto abre em "Ver todas"
+const DONE_PREVIEW = 5;
 
 const formatDay = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 
@@ -49,6 +55,10 @@ export default function Tasks() {
   const [quickDue, setQuickDue] = useState("today");
   const [adding, setAdding] = useState(false);
   const [showDone, setShowDone] = useState(false);
+  const [dragging, setDragging] = useState(null);
+  const [dropTarget, setDropTarget] = useState(null);
+  const [mobileColumn, setMobileColumn] = useState("todo");
+  const draggable = useMemo(canDrag, []);
   const quickRef = useRef(null);
 
   const mine = searchParams.get("quem") === "minhas";
@@ -101,10 +111,21 @@ export default function Tasks() {
     [tasks, mine, userId, dueFilter, today],
   );
 
-  const groups = useMemo(() => taskGroups(visible, today), [visible, today]);
+  const groups = useMemo(
+    () => taskGroups(visible.filter((task) => task.status === "todo"), today),
+    [visible, today],
+  );
+  const doing = useMemo(
+    () =>
+      visible
+        .filter((task) => task.status === "doing")
+        .sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999")),
+    [visible],
+  );
   const done = useMemo(() => (dueFilter ? [] : recentDone(visible, today)), [visible, today, dueFilter]);
   const counts = useMemo(() => taskCounts(tasks, today), [tasks, today]);
-  const openCount = TASK_GROUPS.reduce((total, group) => total + groups[group.key].length, 0);
+  const todoCount = TASK_GROUPS.reduce((total, group) => total + groups[group.key].length, 0);
+  const columnCount = { todo: todoCount, doing: doing.length, done: done.length };
 
   // Muda já na tela; se o banco recusar, volta como estava
   async function setStatus(task, status, { undo = true } = {}) {
@@ -131,7 +152,7 @@ export default function Tasks() {
           action: undo ? { label: "Desfazer", onClick: () => setStatus({ ...task, status: "done" }, task.status, { undo: false }) } : undefined,
         });
       } else if (undo) {
-        toast("Tarefa reaberta.", { type: "success" });
+        toast(status === "doing" ? "Em andamento." : "Voltou para A fazer.", { type: "success" });
       }
 
       await load();
@@ -211,11 +232,55 @@ export default function Tasks() {
       busy={busyId === task.id}
       onOpen={(item) => setDialog({ task: item })}
       onToggle={(item) => setStatus(item, item.status === "done" ? "todo" : "done")}
+      card
+      draggable={draggable && busyId !== task.id}
+      onDragStart={setDragging}
+      onDragEnd={() => {
+        setDragging(null);
+        setDropTarget(null);
+      }}
     />
   );
 
+  function drop(event, status) {
+    event.preventDefault();
+    setDropTarget(null);
+    const task = tasks.find((item) => item.id === event.dataTransfer.getData("text/plain"));
+    if (task) setStatus(task, status);
+  }
+
+  // Coluna do quadro: recebe tarefas arrastadas (computador) e some no celular quando não é a aba aberta
+  const column = (value, children) => {
+    const label = TASK_COLUMNS.find((item) => item.value === value).label;
+
+    return (
+      <section
+        key={value}
+        aria-labelledby={`coluna-${value}`}
+        onDragOver={(event) => {
+          if (!dragging) return;
+          event.preventDefault();
+          setDropTarget(value);
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setDropTarget(null);
+        }}
+        onDrop={(event) => drop(event, value)}
+        className={`${value === mobileColumn ? "" : "hidden"} min-w-0 rounded-xl border bg-canvas p-2 transition-colors lg:block ${
+          dropTarget === value && dragging?.status !== value ? "border-ink" : "border-line"
+        }`}
+      >
+        <h2 id={`coluna-${value}`} className="hidden items-center gap-2 px-2 pb-2 pt-1 font-semibold lg:flex">
+          {label}
+          <Count value={columnCount[value]} />
+        </h2>
+        {children}
+      </section>
+    );
+  };
+
   return (
-    <div className="max-w-3xl space-y-5">
+    <div className="space-y-5">
       <SectionTitle
         title="Tarefas"
         summary={summary}
@@ -307,49 +372,83 @@ export default function Tasks() {
           </Button>
         </Panel>
       ) : (
-        <div className="space-y-5">
-          {openCount === 0 && (
-            <Panel className="px-5 py-6 text-center text-muted">
-              {dueFilter ? "Nada com esse prazo." : "Nenhuma tarefa aberta."}
-            </Panel>
-          )}
+        <>
+          <div className="lg:hidden">
+            <Tabs
+              label="Colunas do quadro"
+              value={mobileColumn}
+              onChange={setMobileColumn}
+              items={TASK_COLUMNS.map((item) => ({ ...item, count: columnCount[item.value] }))}
+            />
+          </div>
 
-          {TASK_GROUPS.filter((group) => groups[group.key].length > 0).map((group) => (
-            <section key={group.key} aria-labelledby={`grupo-${group.key}`}>
-              <h2 id={`grupo-${group.key}`} className="mb-2 flex items-center gap-2 text-lg font-semibold">
-                {group.label}
-                <Count value={groups[group.key].length} urgency={group.urgency} />
-              </h2>
-              <Panel as="ul" className="overflow-hidden">
-                {groups[group.key].map(row)}
-              </Panel>
-            </section>
-          ))}
+          <div className="grid items-start gap-4 lg:grid-cols-3">
+            {column(
+              "todo",
+              todoCount === 0 ? (
+                <p className="px-2 py-6 text-center text-sm text-muted">
+                  {dueFilter ? "Nada com esse prazo." : "Nada a fazer."}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {TASK_GROUPS.filter((group) => groups[group.key].length > 0).map((group) => (
+                    <div key={group.key}>
+                      <p
+                        className={`px-2 pb-1.5 text-sm font-medium ${
+                          group.urgency === "alert"
+                            ? "text-alert-text"
+                            : group.urgency === "attention"
+                              ? "text-attention-text"
+                              : "text-muted"
+                        }`}
+                      >
+                        {group.label}
+                      </p>
+                      <ul className="space-y-2">{groups[group.key].map(row)}</ul>
+                    </div>
+                  ))}
+                </div>
+              ),
+            )}
 
-          {done.length > 0 && (
-            <section>
-              <button
-                type="button"
-                onClick={() => setShowDone((current) => !current)}
-                aria-expanded={showDone}
-                aria-controls="tarefas-concluidas"
-                className="flex items-center gap-2 rounded-md text-sm font-medium text-muted hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink"
-              >
-                <ChevronDown
-                  size={16}
-                  aria-hidden="true"
-                  className={`transition-transform motion-reduce:transition-none ${showDone ? "rotate-180" : ""}`}
-                />
-                Concluídas nos últimos {DONE_VISIBLE_DAYS} dias ({done.length})
-              </button>
-              {showDone && (
-                <Panel as="ul" id="tarefas-concluidas" className="mt-2 overflow-hidden">
-                  {done.map(row)}
-                </Panel>
-              )}
-            </section>
-          )}
-        </div>
+            {column(
+              "doing",
+              doing.length === 0 ? (
+                <p className="px-2 py-6 text-center text-sm text-muted">
+                  {draggable ? "Arraste para cá o que você começou." : "Marque \"Em andamento\" na tarefa."}
+                </p>
+              ) : (
+                <ul className="space-y-2">{doing.map(row)}</ul>
+              ),
+            )}
+
+            {column(
+              "done",
+              done.length === 0 ? (
+                <p className="px-2 py-6 text-center text-sm text-muted">Nada concluído nos últimos {DONE_VISIBLE_DAYS} dias.</p>
+              ) : (
+                <>
+                  <ul className="space-y-2">{(showDone ? done : done.slice(0, DONE_PREVIEW)).map(row)}</ul>
+                  {done.length > DONE_PREVIEW && (
+                    <button
+                      type="button"
+                      onClick={() => setShowDone((current) => !current)}
+                      aria-expanded={showDone}
+                      className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md py-2 text-sm font-medium text-muted hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink"
+                    >
+                      <ChevronDown
+                        size={16}
+                        aria-hidden="true"
+                        className={`transition-transform motion-reduce:transition-none ${showDone ? "rotate-180" : ""}`}
+                      />
+                      {showDone ? "Mostrar menos" : `Ver todas (${done.length})`}
+                    </button>
+                  )}
+                </>
+              ),
+            )}
+          </div>
+        </>
       )}
 
       <TaskDialog
